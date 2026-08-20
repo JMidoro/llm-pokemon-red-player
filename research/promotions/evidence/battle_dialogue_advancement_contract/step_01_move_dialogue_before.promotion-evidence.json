@@ -371,7 +371,7 @@
   "evidence_id": "step_01_move_dialogue_before",
   "expected_observation": "Wild battle move-result dialogue is visible after a move. Safe next input is A. The battle UI kind should be dialogue.",
   "label": "Move-result dialogue before advancement",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_dialogue_advancement_contract\\step_01_move_dialogue_before.state",
+  "local_state_file": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_move_dialogue_before.state",
   "note": "Captured for battle dialogue advancement: move-result dialogue before bounded A advancement.",
   "pokedex": {
     "by_dex_number": {
@@ -527,13 +527,13 @@
   "promotion_id": "battle_dialogue_advancement_contract",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_dialogue_advancement_contract\\step_01_move_dialogue_before.png",
+  "screenshot_file": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_move_dialogue_before.png",
   "snapshot": {
     "active_party_member": {
       "hp": 24,

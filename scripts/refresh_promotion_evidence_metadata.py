@@ -18,6 +18,7 @@ from pokemon_player.promotion_evidence_io import (  # noqa: E402
 )
 from pokemon_player.pokedex import read_pokedex  # noqa: E402
 from pokemon_player.pyboy_lab import load_state, open_emulator, snapshot  # noqa: E402
+from pokemon_player.repo_paths import portable_repo_path, resolve_repo_path  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict  # noqa: E402
 
@@ -30,7 +31,7 @@ def refresh_one(metadata_path: Path, *, rom_path: Path, infer_assertions: bool, 
     if record.get("schema") != PROMOTION_EVIDENCE_SCHEMA:
         raise ValueError(f"{metadata_path} is not a {PROMOTION_EVIDENCE_SCHEMA} record.")
 
-    state_path = Path(record["local_state_file"])
+    state_path = resolve_repo_path(record["local_state_file"], repo_root=ROOT)
     if not state_path.exists():
         raise FileNotFoundError(state_path)
 
@@ -44,7 +45,7 @@ def refresh_one(metadata_path: Path, *, rom_path: Path, infer_assertions: bool, 
         pyboy.stop(False)
 
     record["rom"] = {
-        "path": str(rom.path),
+        "path": portable_repo_path(rom.path, repo_root=ROOT),
         "title": rom.title,
         "size_bytes": rom.size_bytes,
         "md5": rom.md5,

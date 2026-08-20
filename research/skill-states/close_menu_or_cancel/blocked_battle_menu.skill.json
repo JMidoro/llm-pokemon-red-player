@@ -3,20 +3,20 @@
   "created_utc": "2026-06-20T14:15:35.064148+00:00",
   "expected_reason": "blocked_battle_menu",
   "expected_status": "blocked",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\close_menu_or_cancel\\blocked_battle_menu.state",
+  "local_state_file": "research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.state",
   "manual_action": "Capture a battle action, item, move, or party menu state.",
   "note": "A battle menu is active and should be handled by battle-specific skills.",
   "paired_capture_id": null,
   "phase": "single",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\close_menu_or_cancel\\blocked_battle_menu.png",
+  "screenshot_file": "research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.png",
   "skill_id": "close_menu_or_cancel",
   "snapshot": {
     "badge_names": [],

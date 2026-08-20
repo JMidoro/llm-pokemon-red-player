@@ -3,20 +3,20 @@
   "created_utc": "2026-06-20T13:53:37.802302+00:00",
   "expected_reason": "dialogue_success_before",
   "expected_status": "succeeded",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\dialogue_success_before.state",
+  "local_state_file": "research/skill-states/local/recover_to_overworld/dialogue_success_before.state",
   "manual_action": "Capture before advancing dialogue, then advance to overworld and capture after.",
   "note": "Dialogue/text box is active before recovery.",
   "paired_capture_id": "dialogue_success_after",
   "phase": "before",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\dialogue_success_before.png",
+  "screenshot_file": "research/skill-states/local/recover_to_overworld/dialogue_success_before.png",
   "skill_id": "recover_to_overworld",
   "snapshot": {
     "badge_names": [],

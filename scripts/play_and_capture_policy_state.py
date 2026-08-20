@@ -21,6 +21,7 @@ from pokemon_player.pyboy_lab import (  # noqa: E402
     snapshot,
 )
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
+from pokemon_player.repo_paths import portable_repo_path  # noqa: E402
 from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict  # noqa: E402
 
 
@@ -121,14 +122,14 @@ def capture_policy_state(
         "tags": tags,
         "note": note,
         "rom": {
-            "path": str(rom.path),
+            "path": portable_repo_path(rom.path, repo_root=ROOT),
             "title": rom.title,
             "size_bytes": rom.size_bytes,
             "md5": rom.md5,
             "sha256": rom.sha256,
         },
-        "local_state_file": str(state_path),
-        "screenshot_file": str(screenshot_path),
+        "local_state_file": portable_repo_path(state_path, repo_root=ROOT),
+        "screenshot_file": portable_repo_path(screenshot_path, repo_root=ROOT),
         "snapshot_hash": snapshot_hash(current),
         "snapshot": snapshot_to_dict(current),
     }

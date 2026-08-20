@@ -363,7 +363,7 @@
   "evidence_id": "step_01_battle_intro_dialogue_after",
   "expected_observation": "Wild battle action menu is visible after advancing intro dialogue. The battle UI kind should be action_menu.",
   "label": "Battle intro dialogue resolved to action menu",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_dialogue_advancement_contract\\step_01_battle_intro_dialogue_after.state",
+  "local_state_file": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_after.state",
   "note": "Captured for battle dialogue advancement: intro dialogue after manual advancement yielded control.",
   "pokedex": {
     "by_dex_number": {
@@ -519,13 +519,13 @@
   "promotion_id": "battle_dialogue_advancement_contract",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_dialogue_advancement_contract\\step_01_battle_intro_dialogue_after.png",
+  "screenshot_file": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_after.png",
   "snapshot": {
     "active_party_member": {
       "hp": 24,

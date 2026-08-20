@@ -3,20 +3,20 @@
   "created_utc": "2026-06-24T17:32:28.151949+00:00",
   "expected_reason": "trainer_defeated_text",
   "expected_status": "succeeded",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\artifacts\\director-player-runs\\manual_input\\a-20260624T170510073970Z0000\\after.state",
+  "local_state_file": "research/artifacts/director-player-runs/manual_input/a-20260624T170510073970Z0000/after.state",
   "manual_action": "Advance trainer defeated/payout text until battle exit.",
   "note": "From Director manual gap: trainer defeated text after final opponent fainted.",
   "paired_capture_id": null,
   "phase": "after",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\artifacts\\director-player-runs\\manual_input\\a-20260624T170510073970Z0000\\after.png",
+  "screenshot_file": "research/artifacts/director-player-runs/manual_input/a-20260624T170510073970Z0000/after.png",
   "skill_id": "resolve_battle_outcome_dialogue_bundle",
   "snapshot": {
     "active_party_member": {

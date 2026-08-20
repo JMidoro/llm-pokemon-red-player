@@ -63,3 +63,31 @@ def test_golden_expected_record_can_include_screenshot() -> None:
     )
 
     assert record["screenshot_file"] == "state.png"
+
+
+def test_capture_records_serialize_checkout_paths_as_portable_identifiers() -> None:
+    root = Path(__file__).resolve().parents[1]
+    state_path = root / "research" / "skill-states" / "local" / "example.state"
+    screenshot_path = state_path.with_suffix(".png")
+
+    record = skill_state_record(
+        skill_id="detect_wild_battle",
+        capture_id="portable_example",
+        phase="single",
+        expected_status="succeeded",
+        expected_reason="wild_battle_detected",
+        rom=RomFingerprint(
+            path=root / "research" / "PokemonRed.gb",
+            title="POKEMON RED",
+            size_bytes=1,
+            md5="md5",
+            sha256="sha256",
+        ),
+        state_file=state_path,
+        screenshot_file=screenshot_path,
+        snapshot=snapshot(),
+    )
+
+    assert record["rom"]["path"] == "research/PokemonRed.gb"
+    assert record["local_state_file"] == "research/skill-states/local/example.state"
+    assert record["screenshot_file"] == "research/skill-states/local/example.png"

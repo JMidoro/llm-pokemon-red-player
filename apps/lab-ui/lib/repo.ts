@@ -13,7 +13,7 @@ import type {
   StateRecord,
 } from "@/lib/types";
 
-export const repoRoot = path.resolve(process.cwd(), "..", "..");
+export const repoRoot = findRepoRoot(process.cwd());
 const goldenDir = path.join(repoRoot, "research", "golden-states");
 const artifactsDir = path.join(repoRoot, "research", "artifacts");
 const skillStatesDir = path.join(repoRoot, "research", "skill-states");
@@ -422,7 +422,8 @@ function normalizeGoldenState(metadataPath: string, raw: JsonObject): StateRecor
   }
   const snapshot = raw.snapshot as StateRecord["snapshot"];
   const name = String(raw.name ?? path.basename(metadataPath, ".expected.json"));
-  const statePath = typeof raw.local_state_file === "string" ? raw.local_state_file : null;
+  const statePath = resolveRepoPath(raw.local_state_file);
+  const screenshotPath = resolveRepoPath(raw.screenshot_file);
   const humanVerified = raw.human_verified === true;
 
   return {
@@ -432,9 +433,8 @@ function normalizeGoldenState(metadataPath: string, raw: JsonObject): StateRecor
     statePath,
     metadataPath,
     localStateExists: statePath ? fileExistsSyncish(statePath) : false,
-    screenshotPath: typeof raw.screenshot_file === "string" ? raw.screenshot_file : null,
-    screenshotExists:
-      typeof raw.screenshot_file === "string" ? fileExistsSyncish(raw.screenshot_file) : false,
+    screenshotPath,
+    screenshotExists: screenshotPath ? fileExistsSyncish(screenshotPath) : false,
     goal: null,
     note: typeof raw.note === "string" ? raw.note : null,
     approval: {
@@ -452,7 +452,8 @@ function normalizeGeneratedState(metadataPath: string, raw: JsonObject): StateRe
     return null;
   }
   const snapshot = raw.snapshot as StateRecord["snapshot"];
-  const statePath = typeof raw.output_state === "string" ? path.resolve(repoRoot, raw.output_state) : null;
+  const statePath = resolveRepoPath(raw.output_state);
+  const screenshotPath = resolveRepoPath(raw.screenshot_file);
   const name = statePath
     ? path.basename(statePath).replace(/\.state$/, "")
     : path.basename(metadataPath).replace(/\.state\.report\.json$/, "");
@@ -465,9 +466,8 @@ function normalizeGeneratedState(metadataPath: string, raw: JsonObject): StateRe
     statePath,
     metadataPath,
     localStateExists: statePath ? fileExistsSyncish(statePath) : false,
-    screenshotPath: typeof raw.screenshot_file === "string" ? path.resolve(repoRoot, raw.screenshot_file) : null,
-    screenshotExists:
-      typeof raw.screenshot_file === "string" ? fileExistsSyncish(path.resolve(repoRoot, raw.screenshot_file)) : false,
+    screenshotPath,
+    screenshotExists: screenshotPath ? fileExistsSyncish(screenshotPath) : false,
     goal: typeof raw.goal === "string" ? raw.goal : null,
     note: typeof raw.description === "string" ? raw.description : null,
     approval: {
@@ -490,8 +490,8 @@ function normalizeSkillState(metadataPath: string, raw: JsonObject): SkillStateR
     return null;
   }
   const snapshot = raw.snapshot as SkillStateRecord["snapshot"];
-  const statePath = typeof raw.local_state_file === "string" ? raw.local_state_file : null;
-  const screenshotPath = typeof raw.screenshot_file === "string" ? raw.screenshot_file : null;
+  const statePath = resolveRepoPath(raw.local_state_file);
+  const screenshotPath = resolveRepoPath(raw.screenshot_file);
   const skillId = String(raw.skill_id ?? "");
   const captureId = String(raw.capture_id ?? "");
 
@@ -687,7 +687,32 @@ function resolveRepoPath(value: unknown): string | null {
   if (typeof value !== "string" || !value) {
     return null;
   }
-  return path.isAbsolute(value) ? value : path.resolve(repoRoot, value);
+  const normalized = value.replace(/\\/g, "/");
+  const parts = normalized.split("/").filter(Boolean);
+  const anchorIndex = parts.findIndex((part) =>
+    ["apps", "research", "scripts", "src", "tests"].includes(part.toLowerCase()),
+  );
+  if (anchorIndex >= 0) {
+    const remapped = path.join(repoRoot, ...parts.slice(anchorIndex));
+    if (existsSync(remapped) || !path.isAbsolute(value) || !existsSync(value)) {
+      return remapped;
+    }
+  }
+  return path.isAbsolute(value) ? path.resolve(value) : path.resolve(repoRoot, normalized);
+}
+
+function findRepoRoot(start: string): string {
+  let candidate = path.resolve(start);
+  for (;;) {
+    if (existsSync(path.join(candidate, "pyproject.toml")) && existsSync(path.join(candidate, "research"))) {
+      return candidate;
+    }
+    const parent = path.dirname(candidate);
+    if (parent === candidate) {
+      throw new Error(`Could not find the Pokemon Player repository root from ${start}.`);
+    }
+    candidate = parent;
+  }
 }
 
 async function loadRawPromotionManifest(): Promise<JsonObject> {
@@ -742,7 +767,10 @@ function normalizeRepoRelativePath(value: string | null | undefined): string | u
   if (!value || !value.trim()) {
     return undefined;
   }
-  const absolutePath = path.isAbsolute(value) ? path.resolve(value) : path.resolve(repoRoot, value);
+  const absolutePath = resolveRepoPath(value);
+  if (!absolutePath) {
+    return undefined;
+  }
   assertWithin(absolutePath, repoRoot);
   return path.relative(repoRoot, absolutePath).replace(/\\/g, "/");
 }

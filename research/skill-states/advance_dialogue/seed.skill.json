@@ -3,20 +3,20 @@
   "created_utc": "2026-06-20T14:11:17.989264+00:00",
   "expected_reason": "skill_seed",
   "expected_status": "seed",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\advance_dialogue\\seed.state",
+  "local_state_file": "research/skill-states/local/advance_dialogue/seed.state",
   "manual_action": "Seed state used as reset point for this skill capture session.",
   "note": "Seed state for Advance Dialogue.",
   "paired_capture_id": null,
   "phase": "seed",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\advance_dialogue\\seed.png",
+  "screenshot_file": "research/skill-states/local/advance_dialogue/seed.png",
   "skill_id": "advance_dialogue",
   "snapshot": {
     "badge_names": [],

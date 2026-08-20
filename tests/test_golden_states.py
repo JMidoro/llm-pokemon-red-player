@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from pokemon_player.pyboy_lab import load_state, open_emulator, snapshot
+from pokemon_player.repo_paths import resolve_repo_path
 from pokemon_player.rom import fingerprint_rom
 from pokemon_player.snapshot_io import snapshot_hash
 from pokemon_player.state_model import GameMode
@@ -23,7 +24,7 @@ def load_available_records() -> list[tuple[Path, dict]]:
     records: list[tuple[Path, dict]] = []
     for expected_path in EXPECTED_FILES:
         record = json.loads(expected_path.read_text(encoding="utf-8"))
-        if Path(record["local_state_file"]).exists():
+        if resolve_repo_path(record["local_state_file"], repo_root=ROOT).exists():
             records.append((expected_path, record))
     return records
 
@@ -40,7 +41,7 @@ def test_all_golden_states_reload_to_expected_snapshot_hash() -> None:
     for expected_path, record in load_available_records():
         assert record["rom"]["sha256"] == rom.sha256
 
-        state_path = Path(record["local_state_file"])
+        state_path = resolve_repo_path(record["local_state_file"], repo_root=ROOT)
         assert state_path.exists(), state_path
 
         pyboy = open_emulator(rom.path)

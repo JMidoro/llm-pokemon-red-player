@@ -3,20 +3,20 @@
   "created_utc": "2026-06-16T18:53:25.514107+00:00",
   "expected_reason": "success_wild_battle",
   "expected_status": "succeeded",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\detect_wild_battle\\success_wild_battle.state",
+  "local_state_file": "research/skill-states/local/detect_wild_battle/success_wild_battle.state",
   "manual_action": "Load a Capsule A derivative or golden battle state and capture without changing it.",
   "note": "A wild battle is active in Viridian Forest.",
   "paired_capture_id": null,
   "phase": "single",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\detect_wild_battle\\success_wild_battle.png",
+  "screenshot_file": "research/skill-states/local/detect_wild_battle/success_wild_battle.png",
   "skill_id": "detect_wild_battle",
   "snapshot": {
     "badge_names": [],

@@ -445,7 +445,7 @@
   "evidence_id": "step_04_blocked_requested_move_missing_hyper_beam",
   "expected_observation": "Battle state with Wartortle active. Requested move Hyper Beam is missing from the active battler moveset; use_move should block before menu selection.",
   "label": "blocked_requested_move_missing_hyper_beam",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_move_selection_and_result\\step_04_blocked_requested_move_missing_hyper_beam.state",
+  "local_state_file": "research/promotions/evidence/local/battle_move_selection_and_result/step_04_blocked_requested_move_missing_hyper_beam.state",
   "note": "Synthetic promotion evidence using an existing human-captured battle state plus the Director request parameter Hyper Beam. This proves missing-move precondition checking without requiring an unnatural 0 PP battle capture.",
   "pokedex": {
     "by_dex_number": {
@@ -640,13 +640,13 @@
   "promotion_id": "battle_move_selection_and_result",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_move_selection_and_result\\step_04_blocked_requested_move_missing_hyper_beam.png",
+  "screenshot_file": "research/promotions/evidence/local/battle_move_selection_and_result/step_04_blocked_requested_move_missing_hyper_beam.png",
   "snapshot": {
     "active_party_member": {
       "hp": 58,

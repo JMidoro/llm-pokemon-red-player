@@ -2,18 +2,18 @@
   "boot_frames": 0,
   "created_utc": "2026-06-16T12:19:19.955332+00:00",
   "human_verified": true,
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\oaks_lab_received_pokeballs.state",
+  "local_state_file": "research/golden-states/local/oaks_lab_received_pokeballs.state",
   "name": "oaks_lab_received_pokeballs",
   "note": "Captured during human play; needs human verification.",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "golden_state_expected_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\oaks_lab_received_pokeballs.png",
+  "screenshot_file": "research/golden-states/local/oaks_lab_received_pokeballs.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,

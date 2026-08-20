@@ -18,6 +18,7 @@ from pokemon_player.capsule_a_navigation import (
 )
 from pokemon_player.memory_map import SPECIES_NAMES, dex_number_for_species_id
 from pokemon_player.rom import RomFingerprint
+from pokemon_player.repo_paths import portable_repo_path, resolve_repo_path
 from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict
 from pokemon_player.state_model import GameSnapshot
 from pokemon_player.skills.visual_state import UiVisualState, inspect_ui_visual_state
@@ -190,14 +191,14 @@ def promotion_evidence_record(
         "created_utc": datetime.now(UTC).isoformat(),
         "note": note,
         "rom": {
-            "path": str(rom.path),
+            "path": portable_repo_path(rom.path),
             "title": rom.title,
             "size_bytes": rom.size_bytes,
             "md5": rom.md5,
             "sha256": rom.sha256,
         },
-        "local_state_file": str(state_file),
-        "screenshot_file": str(screenshot_file) if screenshot_file else None,
+        "local_state_file": portable_repo_path(state_file),
+        "screenshot_file": portable_repo_path(screenshot_file) if screenshot_file else None,
         "snapshot_hash": snapshot_hash(snapshot),
         "snapshot": snapshot_to_dict(snapshot),
         "assertions": assertions or [],
@@ -1439,7 +1440,7 @@ def enrich_visual_assertion_facts(record: dict[str, Any]) -> dict[str, Any]:
     screenshot = record.get("screenshot_file")
     if not isinstance(screenshot, str) or not screenshot:
         return record
-    screenshot_path = Path(screenshot)
+    screenshot_path = resolve_repo_path(screenshot)
     if not screenshot_path.exists():
         return record
     try:

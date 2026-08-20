@@ -21,18 +21,18 @@
   "evidence_id": "advance-dialogue-before",
   "expected_observation": "Snapshot mode remains menu while bottom text box is visible; this is the visual fallback edge case.",
   "label": "Dialogue prompt visual fallback",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\advance_dialogue\\dialogue_success_before.state",
+  "local_state_file": "research/skill-states/local/advance_dialogue/dialogue_success_before.state",
   "note": "Attached from existing metadata: research/skill-states/advance_dialogue/dialogue_success_before.skill.json",
   "promotion_id": "mode_and_ui_state_classification",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\advance_dialogue\\dialogue_success_before.png",
+  "screenshot_file": "research/skill-states/local/advance_dialogue/dialogue_success_before.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,
@@ -93,7 +93,7 @@
     "warnings": []
   },
   "snapshot_hash": "433DD5400E48E49A0BAC35E8D0EFC53B0A1063BDFB372695B265CE4398B094F4",
-  "source_metadata_file": "research\\skill-states\\advance_dialogue\\dialogue_success_before.skill.json",
+  "source_metadata_file": "research/skill-states/advance_dialogue/dialogue_success_before.skill.json",
   "step_number": 3,
   "step_title": "Capture or attach stale-flag edge cases",
   "visual": {

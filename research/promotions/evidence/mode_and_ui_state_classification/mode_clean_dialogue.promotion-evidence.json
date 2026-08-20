@@ -21,18 +21,18 @@
   "evidence_id": "mode-clean-dialogue",
   "expected_observation": "Mode is dialogue. Bottom text box is visible.",
   "label": "Clean dialogue textbox fixture",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\dialogue_textbox_open.state",
+  "local_state_file": "research/golden-states/local/dialogue_textbox_open.state",
   "note": "Attached from existing metadata: research/golden-states/dialogue_textbox_open.expected.json",
   "promotion_id": "mode_and_ui_state_classification",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\dialogue_textbox_open.png",
+  "screenshot_file": "research/golden-states/local/dialogue_textbox_open.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,
@@ -263,7 +263,7 @@
     "warnings": []
   },
   "snapshot_hash": "C8815858BF4E5DA3E1F4FE82DAD89456937691B0F959B9189397E019A2AAC455",
-  "source_metadata_file": "research\\golden-states\\dialogue_textbox_open.expected.json",
+  "source_metadata_file": "research/golden-states/dialogue_textbox_open.expected.json",
   "step_number": 1,
   "step_title": "Load one fixture from each expected mode",
   "visual": {

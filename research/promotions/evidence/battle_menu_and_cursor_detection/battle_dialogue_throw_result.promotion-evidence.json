@@ -355,7 +355,7 @@
   "evidence_id": "battle_dialogue_throw_result",
   "expected_observation": "Wild battle dialogue is visible after a throw result. The battle UI kind should be dialogue.",
   "label": "Battle dialogue after throw result",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\attempt_catch\\uncertain_throw_dialogue.state",
+  "local_state_file": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.state",
   "note": "Attached from existing metadata: research/skill-states/attempt_catch/uncertain_throw_dialogue.skill.json",
   "pokedex": {
     "by_dex_number": {
@@ -511,13 +511,13 @@
   "promotion_id": "battle_menu_and_cursor_detection",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\attempt_catch\\uncertain_throw_dialogue.png",
+  "screenshot_file": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.png",
   "snapshot": {
     "active_party_member": {
       "hp": 24,
@@ -732,7 +732,7 @@
     "warnings": []
   },
   "snapshot_hash": "EC895D418274598CCF7DC2D2D4B2D8D1ED14506E3BB729BD91060003D9EAA3BD",
-  "source_metadata_file": "research\\skill-states\\attempt_catch\\uncertain_throw_dialogue.skill.json",
+  "source_metadata_file": "research/skill-states/attempt_catch/uncertain_throw_dialogue.skill.json",
   "step_number": 2,
   "step_title": "Capture cursor positions across battle surfaces",
   "visual": {

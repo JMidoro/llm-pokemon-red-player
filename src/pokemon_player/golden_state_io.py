@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from pokemon_player.rom import RomFingerprint
+from pokemon_player.repo_paths import portable_repo_path
 from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict
 from pokemon_player.state_model import GameSnapshot
 
@@ -39,14 +40,14 @@ def expected_record(
         "created_utc": datetime.now(UTC).isoformat(),
         "note": note,
         "rom": {
-            "path": str(rom.path),
+            "path": portable_repo_path(rom.path),
             "title": rom.title,
             "size_bytes": rom.size_bytes,
             "md5": rom.md5,
             "sha256": rom.sha256,
         },
-        "local_state_file": str(state_file),
-        "screenshot_file": str(screenshot_file) if screenshot_file else None,
+        "local_state_file": portable_repo_path(state_file),
+        "screenshot_file": portable_repo_path(screenshot_file) if screenshot_file else None,
         "boot_frames": boot_frames,
         "snapshot_hash": snapshot_hash(snapshot),
         "snapshot": snapshot_to_dict(snapshot),

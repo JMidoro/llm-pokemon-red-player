@@ -3,20 +3,20 @@
   "created_utc": "2026-06-16T19:18:56.240844+00:00",
   "expected_reason": "uncertain_throw_dialogue",
   "expected_status": "uncertain",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\attempt_catch\\uncertain_throw_dialogue.state",
+  "local_state_file": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.state",
   "manual_action": "Capture only if you can pause in an in-between dialogue/prompt state.",
   "note": "Ball count changed but catch result is not yet stable or party evidence cannot be verified.",
   "paired_capture_id": null,
   "phase": "single",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\attempt_catch\\uncertain_throw_dialogue.png",
+  "screenshot_file": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.png",
   "skill_id": "attempt_catch",
   "snapshot": {
     "badge_names": [],

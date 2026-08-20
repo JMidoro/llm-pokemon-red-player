@@ -21,18 +21,18 @@
   "evidence_id": "step_01_party_menu_switch",
   "expected_observation": "Party menu open, Squirtle selected. Cursor is in party submenu on \"Switch\"",
   "label": "party_menu_switch",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_menu_and_cursor_detection\\step_01_party_menu_switch.state",
+  "local_state_file": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_party_menu_switch.state",
   "note": "Captured for promotion step 1: Start from a pre-action wild battle",
   "promotion_id": "battle_menu_and_cursor_detection",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_menu_and_cursor_detection\\step_01_party_menu_switch.png",
+  "screenshot_file": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_party_menu_switch.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,

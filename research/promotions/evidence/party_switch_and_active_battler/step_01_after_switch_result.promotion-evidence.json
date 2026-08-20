@@ -301,7 +301,7 @@
   "evidence_id": "step_01_after_switch_result",
   "expected_observation": "After switching to Squirtle. Weedle used attack as part of resolution.",
   "label": "after_switch_result",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\party_switch_and_active_battler\\step_01_after_switch_result.state",
+  "local_state_file": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_after_switch_result.state",
   "note": "Captured for promotion step 1: Capture active battler baseline",
   "pokedex": {
     "by_dex_number": {
@@ -457,13 +457,13 @@
   "promotion_id": "party_switch_and_active_battler",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\party_switch_and_active_battler\\step_01_after_switch_result.png",
+  "screenshot_file": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_after_switch_result.png",
   "snapshot": {
     "active_party_member": {
       "hp": 29,
