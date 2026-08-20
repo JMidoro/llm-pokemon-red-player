@@ -4056,7 +4056,6 @@ def select_requested_move_from_battle_menu(
 
     save_screenshot(pyboy, screenshot_path)
     ui = inspect_battle_ui_screenshot(screenshot_path)
-    current_slot = move_cursor_slot(ui.cursor) or 1
     for button in path_to_battle_move_slot(ui.cursor, target.slot):
         append_and_run_button(pyboy, trace, button, render=render, settle_frames=18)
     append_and_run_button(pyboy, trace, "a", render=render, settle_frames=36)

@@ -11,6 +11,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from pokemon_player.pyboy_lab import load_state, open_emulator, save_screenshot  # noqa: E402
+from pokemon_player.repo_paths import portable_repo_path, resolve_repo_path  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 
 
@@ -35,7 +36,7 @@ def main() -> int:
     finally:
         pyboy.stop(False)
 
-    record["screenshot_file"] = str(screenshot_path)
+    record["screenshot_file"] = portable_repo_path(screenshot_path, repo_root=ROOT)
     metadata_path.write_text(json.dumps(record, indent=2, sort_keys=True), encoding="utf-8")
     print(f"Wrote screenshot: {screenshot_path}")
     print(f"Updated metadata: {metadata_path}")
@@ -45,13 +46,13 @@ def main() -> int:
 def resolve_state_path(record: dict) -> Path:
     schema = record.get("schema")
     if schema == "golden_state_expected_v1":
-        return Path(record["local_state_file"])
+        return resolve_repo_path(record["local_state_file"], repo_root=ROOT)
     if schema == "generated_state_report_v1":
-        return Path(record["output_state"])
+        return resolve_repo_path(record["output_state"], repo_root=ROOT)
     if schema == "skill_state_capture_v1":
-        return Path(record["local_state_file"])
+        return resolve_repo_path(record["local_state_file"], repo_root=ROOT)
     if schema == "promotion_evidence_capture_v1":
-        return Path(record["local_state_file"])
+        return resolve_repo_path(record["local_state_file"], repo_root=ROOT)
     raise ValueError(f"Unsupported metadata schema {schema!r}.")
 
 

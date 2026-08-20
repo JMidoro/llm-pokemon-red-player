@@ -2,18 +2,18 @@
   "boot_frames": 0,
   "created_utc": "2026-06-29T15:31:01.078063+00:00",
   "human_verified": true,
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\pewter_museum_bush.state",
+  "local_state_file": "research/golden-states/local/pewter_museum_bush.state",
   "name": "pewter_museum_bush",
   "note": "Captured during human play; needs human verification.",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "golden_state_expected_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\pewter_museum_bush.png",
+  "screenshot_file": "research/golden-states/local/pewter_museum_bush.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,

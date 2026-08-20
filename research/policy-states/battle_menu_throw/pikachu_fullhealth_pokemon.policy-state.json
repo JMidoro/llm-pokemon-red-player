@@ -1,18 +1,18 @@
 {
   "capture_id": "pikachu_fullhealth_pokemon",
   "created_utc": "2026-06-16T21:00:11.248727+00:00",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\policy-states\\local\\battle_menu_throw\\pikachu_fullhealth_pokemon.state",
+  "local_state_file": "research/policy-states/local/battle_menu_throw/pikachu_fullhealth_pokemon.state",
   "note": "",
   "policy_id": "battle_menu_throw",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "policy_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\policy-states\\local\\battle_menu_throw\\pikachu_fullhealth_pokemon.png",
+  "screenshot_file": "research/policy-states/local/battle_menu_throw/pikachu_fullhealth_pokemon.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,

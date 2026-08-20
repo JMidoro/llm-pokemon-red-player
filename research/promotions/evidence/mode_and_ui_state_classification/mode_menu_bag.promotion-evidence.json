@@ -29,18 +29,18 @@
   "evidence_id": "mode-menu-bag",
   "expected_observation": "Mode is menu. Upper menu is visible. No bottom text box.",
   "label": "Bag menu fixture",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\menu_open_bag_state.state",
+  "local_state_file": "research/golden-states/local/menu_open_bag_state.state",
   "note": "Attached from existing metadata: research/golden-states/menu_open_bag_state.expected.json",
   "promotion_id": "mode_and_ui_state_classification",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\menu_open_bag_state.png",
+  "screenshot_file": "research/golden-states/local/menu_open_bag_state.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,
@@ -276,7 +276,7 @@
     "warnings": []
   },
   "snapshot_hash": "34ABAF55761CE0702E7F0711E7F1333D377D3312D4949231B48BA1A95A403267",
-  "source_metadata_file": "research\\golden-states\\menu_open_bag_state.expected.json",
+  "source_metadata_file": "research/golden-states/menu_open_bag_state.expected.json",
   "step_number": 1,
   "step_title": "Load one fixture from each expected mode",
   "visual": {

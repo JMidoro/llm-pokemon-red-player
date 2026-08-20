@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from pokemon_player.capsule_model import StateRecord
+from pokemon_player.repo_paths import resolve_repo_path
 
 
 def load_json(path: str | Path) -> dict[str, Any]:
@@ -39,7 +40,9 @@ def discover_golden_records(directory: Path) -> dict[str, StateRecord]:
             source="golden",
             status="human_verified" if raw.get("human_verified") else "unverified",
             metadata_path=str(path),
-            state_path=raw.get("local_state_file"),
+            state_path=str(resolve_repo_path(raw["local_state_file"], repo_root=directory.parents[1]))
+            if raw.get("local_state_file")
+            else None,
             snapshot_hash=str(raw.get("snapshot_hash", "")),
             snapshot=dict(raw.get("snapshot", {})),
         )
@@ -54,7 +57,12 @@ def discover_generated_records(directory: Path) -> dict[str, StateRecord]:
         raw = load_json(path)
         if raw.get("schema") != "generated_state_report_v1":
             continue
-        output_state = str(raw.get("output_state", ""))
+        stored_output_state = str(raw.get("output_state", ""))
+        output_state = (
+            str(resolve_repo_path(stored_output_state, repo_root=directory.parents[1]))
+            if stored_output_state
+            else ""
+        )
         name = Path(output_state).name.removesuffix(".state") if output_state else path.name
         approval = raw.get("approval", {})
         status = str(approval.get("status", "loadable_unapproved"))

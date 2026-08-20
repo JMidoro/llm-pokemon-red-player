@@ -12,13 +12,14 @@ if str(SRC) not in sys.path:
 
 from pokemon_player.golden_state_io import expected_record, write_expected_record  # noqa: E402
 from pokemon_player.pyboy_lab import load_state, open_emulator, snapshot  # noqa: E402
+from pokemon_player.repo_paths import resolve_repo_path  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 
 
 def refresh_one(expected_path: Path, *, rom_path: Path, human_verified: bool | None) -> None:
     existing = json.loads(expected_path.read_text(encoding="utf-8"))
     rom = fingerprint_rom(rom_path)
-    state_path = Path(existing["local_state_file"])
+    state_path = resolve_repo_path(existing["local_state_file"], repo_root=ROOT)
     if not state_path.exists():
         raise FileNotFoundError(state_path)
 
@@ -34,7 +35,11 @@ def refresh_one(expected_path: Path, *, rom_path: Path, human_verified: bool | N
         name=existing["name"],
         rom=rom,
         state_file=state_path,
-        screenshot_file=Path(existing["screenshot_file"]) if existing.get("screenshot_file") else None,
+        screenshot_file=(
+            resolve_repo_path(existing["screenshot_file"], repo_root=ROOT)
+            if existing.get("screenshot_file")
+            else None
+        ),
         snapshot=state,
         note=existing.get("note", ""),
         boot_frames=existing.get("boot_frames", 0),

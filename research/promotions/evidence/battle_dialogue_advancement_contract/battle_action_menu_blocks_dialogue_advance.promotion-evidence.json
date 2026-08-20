@@ -363,7 +363,7 @@
   "evidence_id": "battle_action_menu_blocks_dialogue_advance",
   "expected_observation": "Wild battle action menu is visible with no dialogue waiting. advance_battle_dialogue should be blocked because the battle UI kind is action_menu.",
   "label": "Battle action menu blocks dialogue advance",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\attempt_catch\\success_before.state",
+  "local_state_file": "research/skill-states/local/attempt_catch/success_before.state",
   "note": "Attached from existing metadata: research/skill-states/attempt_catch/success_before.skill.json",
   "pokedex": {
     "by_dex_number": {
@@ -519,13 +519,13 @@
   "promotion_id": "battle_dialogue_advancement_contract",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\attempt_catch\\success_before.png",
+  "screenshot_file": "research/skill-states/local/attempt_catch/success_before.png",
   "snapshot": {
     "active_party_member": {
       "hp": 24,
@@ -740,7 +740,7 @@
     "warnings": []
   },
   "snapshot_hash": "FD72E1E49294F9908744B48F458C791841E8A60BE91BBD2826BDFBA9FFFDA289",
-  "source_metadata_file": "research\\skill-states\\attempt_catch\\success_before.skill.json",
+  "source_metadata_file": "research/skill-states/attempt_catch/success_before.skill.json",
   "step_number": 2,
   "step_title": "Attach a neutral action-menu blocker",
   "visual": {

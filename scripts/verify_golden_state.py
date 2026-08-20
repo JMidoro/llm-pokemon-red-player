@@ -11,6 +11,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from pokemon_player.pyboy_lab import load_state, open_emulator, snapshot  # noqa: E402
+from pokemon_player.repo_paths import resolve_repo_path  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 from pokemon_player.snapshot_io import snapshot_hash  # noqa: E402
 
@@ -35,7 +36,11 @@ def main() -> int:
         )
         return 2
 
-    state_path = Path(args.state or expected["local_state_file"])
+    state_path = (
+        Path(args.state)
+        if args.state
+        else resolve_repo_path(expected["local_state_file"], repo_root=ROOT)
+    )
     rom = fingerprint_rom(args.rom)
     expected_sha = expected["rom"]["sha256"]
     if rom.sha256 != expected_sha:
@@ -64,4 +69,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

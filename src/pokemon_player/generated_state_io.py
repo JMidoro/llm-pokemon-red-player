@@ -8,6 +8,7 @@ from typing import Any
 
 from pokemon_player.patch_model import PatchReport, StatePatch
 from pokemon_player.rom import RomFingerprint
+from pokemon_player.repo_paths import portable_repo_path
 from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict
 from pokemon_player.state_model import GameSnapshot
 from pokemon_player.invariants import check_snapshot_invariants
@@ -52,9 +53,9 @@ def generated_state_record(
         "created_utc": datetime.now(UTC).isoformat(),
         "description": patch.description,
         "goal": patch.goal,
-        "base_state": str(base_state),
-        "output_state": str(output_state),
-        "patch_path": str(patch_path),
+        "base_state": portable_repo_path(base_state),
+        "output_state": portable_repo_path(output_state),
+        "patch_path": portable_repo_path(patch_path),
         "patch_metadata": dict(patch.metadata),
         "rom": {
             "title": rom.title,

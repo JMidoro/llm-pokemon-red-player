@@ -3,20 +3,20 @@
   "created_utc": "2026-06-20T13:54:51.004209+00:00",
   "expected_reason": "blocked_battle",
   "expected_status": "blocked",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\blocked_battle.state",
+  "local_state_file": "research/skill-states/local/recover_to_overworld/blocked_battle.state",
   "manual_action": "Capture an active wild battle state.",
   "note": "Battle is active; recover_to_overworld should not pretend it can safely clear it.",
   "paired_capture_id": null,
   "phase": "single",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\blocked_battle.png",
+  "screenshot_file": "research/skill-states/local/recover_to_overworld/blocked_battle.png",
   "skill_id": "recover_to_overworld",
   "snapshot": {
     "badge_names": [],

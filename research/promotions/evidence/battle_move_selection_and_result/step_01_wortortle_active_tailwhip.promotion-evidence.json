@@ -453,7 +453,7 @@
   "evidence_id": "step_01_wortortle_active_tailwhip",
   "expected_observation": "Wortortle active. Cursor on Tail Whip. Move menu open",
   "label": "wortortle_active_tailwhip",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_move_selection_and_result\\step_01_wortortle_active_tailwhip.state",
+  "local_state_file": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_tailwhip.state",
   "note": "Captured for promotion step 1: Choose a battle state with a known active moveset",
   "pokedex": {
     "by_dex_number": {
@@ -648,13 +648,13 @@
   "promotion_id": "battle_move_selection_and_result",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_move_selection_and_result\\step_01_wortortle_active_tailwhip.png",
+  "screenshot_file": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_tailwhip.png",
   "snapshot": {
     "active_party_member": {
       "hp": 58,

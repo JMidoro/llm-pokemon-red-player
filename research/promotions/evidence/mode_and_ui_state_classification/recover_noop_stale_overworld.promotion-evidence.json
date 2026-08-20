@@ -37,18 +37,18 @@
   "evidence_id": "recover-noop-stale-overworld",
   "expected_observation": "Snapshot reports overworld with stale text/menu WRAM flags. No bottom text box. No upper menu.",
   "label": "Recover noop overworld with stale flags",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\noop_overworld.state",
+  "local_state_file": "research/skill-states/local/recover_to_overworld/noop_overworld.state",
   "note": "Attached from existing metadata: research/skill-states/recover_to_overworld/noop_overworld.skill.json",
   "promotion_id": "mode_and_ui_state_classification",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\noop_overworld.png",
+  "screenshot_file": "research/skill-states/local/recover_to_overworld/noop_overworld.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,
@@ -111,7 +111,7 @@
     ]
   },
   "snapshot_hash": "85E4F662457F9655E5B8D3C4CA9DA099B6C95C16AC94371BC9BF8D015991B80B",
-  "source_metadata_file": "research\\skill-states\\recover_to_overworld\\noop_overworld.skill.json",
+  "source_metadata_file": "research/skill-states/recover_to_overworld/noop_overworld.skill.json",
   "step_number": 3,
   "step_title": "Capture or attach stale-flag edge cases",
   "visual": {

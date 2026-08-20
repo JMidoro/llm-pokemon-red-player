@@ -21,7 +21,7 @@
   "evidence_id": "step_02_target_after_pikachu_caught",
   "expected_observation": "Post-capture, after battle has resolved back to overworld. Pikachu in party/pokedex owned",
   "label": "target-after_pikachu_caught",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\capsule_success_target_ownership\\step_02_target_after_pikachu_caught.state",
+  "local_state_file": "research/promotions/evidence/local/capsule_success_target_ownership/step_02_target_after_pikachu_caught.state",
   "note": "Captured for promotion step 2: Attach target-after evidence",
   "pokedex": {
     "by_dex_number": {
@@ -183,13 +183,13 @@
   "promotion_id": "capsule_success_target_ownership",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\capsule_success_target_ownership\\step_02_target_after_pikachu_caught.png",
+  "screenshot_file": "research/promotions/evidence/local/capsule_success_target_ownership/step_02_target_after_pikachu_caught.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,

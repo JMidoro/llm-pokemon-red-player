@@ -622,8 +622,8 @@
             {
               "id": "catchable-wild-battle",
               "label": "Catchable wild battle before throw",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.png",
+              "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+              "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png",
               "reason": "Starts in a wild battle with Poke Balls available, before the catch attempt has resolved.",
               "capture_hint": "Throw balls until a catch succeeds, then press Z while the caught-Pokemon dialogue is still visible."
             }
@@ -638,8 +638,8 @@
             {
               "id": "catchable-wild-battle",
               "label": "Catchable wild battle before throw",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.png",
+              "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+              "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png",
               "reason": "Starts before the catch so you can reproduce a post-catch branch instead of replaying from the overworld.",
               "capture_hint": "Catch the Pokemon, advance one post-catch prompt or branch, then press Z on the progressed dialogue/state."
             }
@@ -654,8 +654,8 @@
             {
               "id": "trainer-weedle-action-menu",
               "label": "Trainer battle action menu before Weedle KO",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "state_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
               "reason": "Starts in the trainer battle before a known KO/outcome sequence.",
               "capture_hint": "Use a damaging move until Weedle faints, then press Z before advancing the first victory or outcome text you are trying to classify."
             }
@@ -682,8 +682,8 @@
             {
               "id": "trainer-weedle-action-menu",
               "label": "Trainer battle action menu before Weedle KO",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "state_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
               "reason": "Starts in battle just before the known XP and level-up sequence from the latest director run.",
               "capture_hint": "KO Weedle, then stop on the first XP, level-up, stat, or learned-move text you want to capture."
             }
@@ -704,8 +704,8 @@
             {
               "id": "trainer-weedle-action-menu",
               "label": "Trainer battle action menu before Weedle KO",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "state_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
               "reason": "Known nearby sequence where Nidoran learns Horn Attack after the KO; this covers learned-move text, not a four-move overwrite decision.",
               "capture_hint": "KO Weedle and advance through XP/level-up until learned-move text appears, then press Z. A true overwrite prompt still needs a later-game or edited state."
             }
@@ -720,8 +720,8 @@
             {
               "id": "trainer-weedle-action-menu",
               "label": "Trainer battle action menu before Weedle KO",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "state_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
               "reason": "Starts in a trainer battle before the known opposing Weedle KO sequence.",
               "capture_hint": "KO Weedle and advance until the optional yes/no change-Pokemon prompt appears, then press Z before answering."
             }
@@ -736,8 +736,8 @@
             {
               "id": "forced-party-menu-nidoran",
               "label": "Forced party menu after player faint",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.png",
+              "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.state",
+              "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.png",
               "reason": "Promotion evidence shows the party menu after the active Spearow fainted, with remaining party members available.",
               "capture_hint": "Press Z immediately if you want a skill-state fixture for the forced-selection surface."
             }
@@ -764,8 +764,8 @@
             {
               "id": "neutral-battle-menu",
               "label": "Neutral battle action menu",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.png",
+              "state_path": "research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.state",
+              "screenshot_path": "research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.png",
               "reason": "Starts directly on a neutral battle menu where this bundle should refuse.",
               "capture_hint": "Press Z immediately and record this as the blocked neutral-menu case."
             }
@@ -780,8 +780,8 @@
             {
               "id": "stable-overworld-noop",
               "label": "Stable overworld no-op state",
-              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/recover_to_overworld/noop_overworld.state",
-              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/recover_to_overworld/noop_overworld.png",
+              "state_path": "research/skill-states/local/recover_to_overworld/noop_overworld.state",
+              "screenshot_path": "research/skill-states/local/recover_to_overworld/noop_overworld.png",
               "reason": "Starts directly in stable overworld with no battle aftermath dialogue.",
               "capture_hint": "Press Z immediately and record this as the blocked overworld case."
             }

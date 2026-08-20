@@ -37,18 +37,18 @@
   "evidence_id": "step_02_l6_kakuna_low",
   "expected_observation": "Level 6, Kakuna, Low health",
   "label": "l6_kakuna_low",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_enemy_facts\\step_02_l6_kakuna_low.state",
+  "local_state_file": "research/promotions/evidence/local/battle_enemy_facts/step_02_l6_kakuna_low.state",
   "note": "Captured for promotion step 2: Collect full-health and damaged-health examples",
   "promotion_id": "battle_enemy_facts",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "promotion_evidence_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\battle_enemy_facts\\step_02_l6_kakuna_low.png",
+  "screenshot_file": "research/promotions/evidence/local/battle_enemy_facts/step_02_l6_kakuna_low.png",
   "snapshot": {
     "badge_names": [],
     "badges": 0,

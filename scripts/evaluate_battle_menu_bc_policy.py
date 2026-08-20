@@ -15,7 +15,6 @@ if str(SRC) not in sys.path:
 
 from pokemon_player.battle_menu_bc import load_policy, predict_action  # noqa: E402
 from pokemon_player.battle_menu_env import (  # noqa: E402
-    ACTION_NAMES,
     BattleMenuEnvConfig,
     BattleMenuThrowEnv,
     valid_action_mask_for,

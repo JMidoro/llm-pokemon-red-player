@@ -22,6 +22,9 @@ rl = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "local_artifacts: requires ignored host artifacts such as ROMs, save states, screenshots, or run reports",
+]
 
 [tool.ruff]
 line-length = 100

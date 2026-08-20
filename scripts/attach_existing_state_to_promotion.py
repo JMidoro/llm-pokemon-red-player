@@ -20,6 +20,7 @@ from pokemon_player.promotion_evidence_io import (  # noqa: E402
 )
 from pokemon_player.pokedex import read_pokedex  # noqa: E402
 from pokemon_player.pyboy_lab import load_state, open_emulator, save_screenshot, snapshot  # noqa: E402
+from pokemon_player.repo_paths import portable_repo_path, resolve_repo_path  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 from pokemon_player.snapshot_io import snapshot_hash  # noqa: E402
 
@@ -31,18 +32,18 @@ EVIDENCE_ROOT = ROOT / "research" / "promotions" / "evidence"
 def resolve_state_path(record: dict[str, Any]) -> Path:
     schema = record.get("schema")
     if schema in {"golden_state_expected_v1", "skill_state_capture_v1", "promotion_evidence_capture_v1"}:
-        return Path(record["local_state_file"])
+        return resolve_repo_path(record["local_state_file"], repo_root=ROOT)
     if schema == "generated_state_report_v1":
-        return Path(record["output_state"])
+        return resolve_repo_path(record["output_state"], repo_root=ROOT)
     if schema == "policy_state_capture_v1":
-        return Path(record["local_state_file"])
+        return resolve_repo_path(record["local_state_file"], repo_root=ROOT)
     raise ValueError(f"Unsupported metadata schema {schema!r}.")
 
 
 def resolve_screenshot_path(record: dict[str, Any], state_path: Path) -> Path:
     screenshot = record.get("screenshot_file")
     if isinstance(screenshot, str) and screenshot:
-        return Path(screenshot)
+        return resolve_repo_path(screenshot, repo_root=ROOT)
     if state_path.suffix == ".state":
         return state_path.with_suffix(".png")
     return Path(str(state_path) + ".png")
@@ -77,7 +78,9 @@ def main() -> int:
         load_state(pyboy, state_path)
         if args.capture_missing_screenshot and not screenshot_path.exists():
             save_screenshot(pyboy, screenshot_path)
-            source_record["screenshot_file"] = str(screenshot_path)
+            source_record["screenshot_file"] = portable_repo_path(
+                screenshot_path, repo_root=ROOT
+            )
             source_metadata.write_text(json.dumps(source_record, indent=2, sort_keys=True), encoding="utf-8")
         current = snapshot(pyboy)
         pokedex = read_pokedex(pyboy.memory)
@@ -114,7 +117,7 @@ def main() -> int:
         pokedex=pokedex,
         note=args.note or f"Attached from existing metadata: {source_metadata.as_posix()}",
     )
-    record["source_metadata_file"] = str(source_metadata)
+    record["source_metadata_file"] = portable_repo_path(source_metadata, repo_root=ROOT)
     write_promotion_evidence_record(record, metadata_path)
 
     if not args.no_attach:

@@ -3,20 +3,20 @@
   "created_utc": "2026-06-24T17:32:28.019946+00:00",
   "expected_reason": "enemy_ko_damage_text",
   "expected_status": "succeeded",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\artifacts\\director-player-runs\\sessions\\session-20260624T165939662396Z0000\\events\\00013-observation\\state.state",
+  "local_state_file": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00013-observation/state.state",
   "manual_action": "Advance post-KO damage text and capture the next outcome branch.",
   "note": "From Director session: enemy Weedle HP reached zero while critical-hit text was still visible.",
   "paired_capture_id": null,
   "phase": "after",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\artifacts\\director-player-runs\\sessions\\session-20260624T165939662396Z0000\\events\\00013-observation\\screenshot.png",
+  "screenshot_file": "research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00013-observation/screenshot.png",
   "skill_id": "resolve_battle_outcome_dialogue_bundle",
   "snapshot": {
     "active_party_member": {

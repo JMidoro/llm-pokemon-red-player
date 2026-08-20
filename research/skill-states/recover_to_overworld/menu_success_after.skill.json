@@ -3,20 +3,20 @@
   "created_utc": "2026-06-20T13:53:13.154667+00:00",
   "expected_reason": "menu_success_after",
   "expected_status": "succeeded",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\menu_success_after.state",
+  "local_state_file": "research/skill-states/local/recover_to_overworld/menu_success_after.state",
   "manual_action": "Capture immediately after the menu closes.",
   "note": "Overworld after menu recovery.",
   "paired_capture_id": "menu_success_before",
   "phase": "after",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\recover_to_overworld\\menu_success_after.png",
+  "screenshot_file": "research/skill-states/local/recover_to_overworld/menu_success_after.png",
   "skill_id": "recover_to_overworld",
   "snapshot": {
     "badge_names": [],

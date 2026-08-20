@@ -3,20 +3,20 @@
   "created_utc": "2026-06-24T18:24:25.875698+00:00",
   "expected_reason": "xp_or_level_up_dialogue",
   "expected_status": "succeeded",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\resolve_battle_outcome_dialogue_bundle\\xp_or_level_up_dialogue.state",
+  "local_state_file": "research/skill-states/local/resolve_battle_outcome_dialogue_bundle/xp_or_level_up_dialogue.state",
   "manual_action": "Capture any XP or level-up dialogue state before advancing it.",
   "note": "Experience gain, level-up, stat increase, or learned-move dialogue is visible.",
   "paired_capture_id": null,
   "phase": "single",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\resolve_battle_outcome_dialogue_bundle\\xp_or_level_up_dialogue.png",
+  "screenshot_file": "research/skill-states/local/resolve_battle_outcome_dialogue_bundle/xp_or_level_up_dialogue.png",
   "skill_id": "resolve_battle_outcome_dialogue_bundle",
   "snapshot": {
     "active_party_member": {

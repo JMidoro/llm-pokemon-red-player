@@ -3,20 +3,20 @@
   "created_utc": "2026-06-16T18:51:57.584187+00:00",
   "expected_reason": "skill_seed",
   "expected_status": "seed",
-  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\detect_wild_battle\\seed.state",
+  "local_state_file": "research/skill-states/local/detect_wild_battle/seed.state",
   "manual_action": "Seed state used as reset point for this skill capture session.",
   "note": "Seed state for Detect Wild Battle.",
   "paired_capture_id": null,
   "phase": "seed",
   "rom": {
     "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
-    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "path": "research/PokemonRed.gb",
     "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
     "size_bytes": 1048576,
     "title": "POKEMON RED"
   },
   "schema": "skill_state_capture_v1",
-  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\detect_wild_battle\\seed.png",
+  "screenshot_file": "research/skill-states/local/detect_wild_battle/seed.png",
   "skill_id": "detect_wild_battle",
   "snapshot": {
     "badge_names": [],
