@@ -12,7 +12,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
-    "ruff>=0.5",
+    "ruff==0.15.17",
 ]
 rl = [
     "gymnasium>=0.29",
