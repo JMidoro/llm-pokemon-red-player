@@ -1,0 +1,1006 @@
+{
+  "schema": "directive_deck_v1",
+  "description": "Phase 3 v0 curated single-user directive deck with 100 human-authored expected verdicts.",
+  "cases": [
+    {
+      "id": "vf_accept_catch_pikachu",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Poke Ball x5, Potion x1\nParty: NIDORAN Lv8 HP 4/26",
+      "objective": "Catch a wild Pokemon in Viridian Forest without blacking out.",
+      "directive": "Catch a Pikachu if we see one.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_defer_catch_no_balls",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Potion x1\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+      "objective": "Catch a wild Pokemon in Viridian Forest.",
+      "directive": "Capture the next Weedle.",
+      "expected": {
+        "category": "impossible",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "vf_accept_nickname",
+      "state_summary": "Mode: battle\nLocation: Viridian Forest\nInventory: Poke Ball x5",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Nickname the catch SPARKY.",
+      "expected": {
+        "category": "cosmetic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_reject_release",
+      "state_summary": "Mode: overworld\nParty: PIKACHU Lv9 HP 26/26",
+      "objective": "Prepare for Brock.",
+      "directive": "Release Pikachu because it would be funny.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_reject_spend_all",
+      "state_summary": "Mode: overworld\nLocation: Viridian Mart\nMoney: 3000",
+      "objective": "Buy enough Poke Balls for catching.",
+      "directive": "Spend all our money.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_accept_heal_low_hp",
+      "state_summary": "Mode: overworld\nParty: CHARMANDER Lv8 HP 3/26\nInventory: Potion x1",
+      "objective": "Reach Viridian Forest safely.",
+      "directive": "Use a Potion now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_defer_heal_not_needed",
+      "state_summary": "Mode: overworld\nParty: SQUIRTLE Lv9 HP 29/29\nInventory: Potion x1",
+      "objective": "Reach Viridian Forest safely.",
+      "directive": "Use a Potion now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "misty_constraint_no_overlevel",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym\nBadges: Boulder Badge",
+      "objective": "Defeat Misty.",
+      "directive": "Don't overlevel Wartortle.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_accept_train",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nBadges: Boulder Badge",
+      "objective": "Prepare for Misty.",
+      "directive": "Train Pikachu a little before the gym.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_reject_overwrite",
+      "state_summary": "Mode: overworld\nParty: PIKACHU Lv18 moves: ThunderShock, Growl, Thunder Wave, Quick Attack",
+      "objective": "Defeat Misty.",
+      "directive": "Overwrite ThunderShock with anything.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "brock_accept_fight",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym\nParty: SQUIRTLE Lv12 HP 20/36",
+      "objective": "Defeat Brock.",
+      "directive": "Fight Brock now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "ambiguous_go_back",
+      "state_summary": "Mode: overworld\nLocation: Route 2",
+      "objective": "Reach Viridian Forest.",
+      "directive": "Go back.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "ambiguous_use_bird",
+      "state_summary": "Mode: overworld\nParty: SPEAROW Lv10 HP 29/29",
+      "objective": "Prepare for Misty.",
+      "directive": "Use the bird.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "constraint_only_squirtle",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym\nParty: SQUIRTLE Lv12 HP 20/36",
+      "objective": "Defeat Brock.",
+      "directive": "Only use Squirtle.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "playful_flavor",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Act mysterious.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "reject_throw_key_item",
+      "state_summary": "Mode: overworld\nInventory: Town Map x1, HM01 x1",
+      "objective": "Progress through Cerulean.",
+      "directive": "Throw away the Town Map.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "accept_capture_species",
+      "state_summary": "Mode: overworld\nLocation: Route 3\nInventory: Poke Ball x4",
+      "objective": "Build a stronger team.",
+      "directive": "Capture a new teammate.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "reject_delete_save",
+      "state_summary": "Mode: overworld\nLocation: Pallet Town",
+      "objective": "Start the journey.",
+      "directive": "Delete the save.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "accept_avoid_fainting",
+      "state_summary": "Mode: overworld\nParty: NIDORAN Lv8 HP 4/26",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Avoid blacking out.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "accept_train_before_brock",
+      "state_summary": "Mode: overworld\nLocation: Pewter City\nParty: SQUIRTLE Lv9 HP 29/29",
+      "objective": "Defeat Brock.",
+      "directive": "Train before the gym.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_accept_catch_caterpie",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Poke Ball x3\nParty: SQUIRTLE Lv9 HP 29/29",
+      "objective": "Catch a wild Pokemon in Viridian Forest.",
+      "directive": "Catch a Caterpie if one appears.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_accept_capture_new_teammate",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Poke Ball x4",
+      "objective": "Build a safer early-game team.",
+      "directive": "Capture a new teammate before leaving the forest.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_accept_buy_balls",
+      "state_summary": "Mode: overworld\nLocation: Viridian Mart\nMoney: 1200\nInventory: Poke Ball x0",
+      "objective": "Prepare for Viridian Forest catching.",
+      "directive": "Buy Poke Balls before entering the forest.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_accept_switch_pikachu_lead",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nParty: SQUIRTLE Lv13 HP 38/38, PIKACHU Lv9 HP 26/26",
+      "objective": "Catch a wild Pokemon safely.",
+      "directive": "Switch Pikachu to the lead slot.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_accept_heal_before_grass",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest South Gate\nParty: NIDORAN Lv8 HP 2/26\nInventory: Potion x2",
+      "objective": "Catch a wild Pokemon without blacking out.",
+      "directive": "Use a Potion before walking into grass.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_defer_potion_missing",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nParty: NIDORAN Lv8 HP 2/26\nInventory: Poke Ball x5",
+      "objective": "Catch a wild Pokemon safely.",
+      "directive": "Use a Potion now.",
+      "expected": {
+        "category": "impossible",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "vf_defer_catch_zero_balls_pikachu",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Antidote x2\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+      "objective": "Catch Pikachu.",
+      "directive": "Catch the first Pikachu we find.",
+      "expected": {
+        "category": "impossible",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "vf_defer_capture_no_balls_route2",
+      "state_summary": "Mode: overworld\nLocation: Route 2\nInventory: Potion x1\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+      "objective": "Add a teammate before Brock.",
+      "directive": "Capture a Pidgey on Route 2.",
+      "expected": {
+        "category": "impossible",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "vf_constraint_no_blackout",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nParty: NIDORAN Lv8 HP 4/26",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Do not risk a blackout.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_constraint_only_throw_one_ball",
+      "state_summary": "Mode: battle\nLocation: Viridian Forest\nInventory: Poke Ball x2",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Only throw one ball if the target is at full health.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_constraint_without_using_potion",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Poke Ball x5, Potion x1",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Try to catch something without using the Potion.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_cosmetic_nickname_buzzy",
+      "state_summary": "Mode: battle\nLocation: Viridian Forest\nInventory: Poke Ball x5",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Name the next catch BUZZY.",
+      "expected": {
+        "category": "cosmetic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_cosmetic_nickname_leaf",
+      "state_summary": "Mode: battle\nLocation: Viridian Forest\nInventory: Poke Ball x5",
+      "objective": "Catch a Caterpie.",
+      "directive": "Nickname it LEAF.",
+      "expected": {
+        "category": "cosmetic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "vf_playful_act_mysterious",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Act mysterious while we search.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "vf_playful_be_dramatic",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Be dramatic about every encounter.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "vf_playful_style_points",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Style points are mandatory.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "vf_ambiguous_do_it",
+      "state_summary": "Mode: battle\nLocation: Viridian Forest\nInventory: Poke Ball x3",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Do it.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "vf_ambiguous_that_one",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nParty: SQUIRTLE, PIKACHU, NIDORAN",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Use that one.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "vf_ambiguous_take_shortcut",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Reach the forest exit safely.",
+      "directive": "Take the shortcut.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "vf_reject_toss_balls",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Poke Ball x5",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Toss all the Poke Balls.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_reject_discard_antidotes",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Antidote x3",
+      "objective": "Cross Viridian Forest safely.",
+      "directive": "Discard our Antidotes.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_reject_use_all_potions",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest\nInventory: Potion x3\nParty: SQUIRTLE Lv13 HP 38/38",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Use all our Potions right now.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_reject_release_only_healthy",
+      "state_summary": "Mode: overworld\nParty: SQUIRTLE Lv13 HP 38/38, SPEAROW Lv10 HP 0/29",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Release Squirtle.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_derail_elite_four",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Go to the Elite Four instead.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_derail_walk_circles",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Walk in circles for ten minutes.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "vf_derail_ignore_objective",
+      "state_summary": "Mode: overworld\nLocation: Viridian Forest",
+      "objective": "Catch a wild Pokemon.",
+      "directive": "Ignore the objective.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_accept_enter_gym",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nBadges: Boulder Badge",
+      "objective": "Defeat Misty.",
+      "directive": "Go to Cerulean Gym.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_accept_fight_now",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym\nParty: PIKACHU Lv18 HP 44/44",
+      "objective": "Defeat Misty.",
+      "directive": "Fight Misty now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_accept_use_thundershock",
+      "state_summary": "Mode: battle\nLocation: Cerulean Gym\nParty: PIKACHU Lv18 HP 37/44 moves: ThunderShock, Growl",
+      "objective": "Defeat Misty.",
+      "directive": "Use ThunderShock when Pikachu is active.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_accept_train_wartortle",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nParty: WARTORTLE Lv16 HP 50/50",
+      "objective": "Defeat Misty.",
+      "directive": "Train Wartortle before challenging Misty.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_accept_heal_pikachu_low",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym\nParty: PIKACHU Lv18 HP 3/44\nInventory: Potion x4",
+      "objective": "Defeat Misty.",
+      "directive": "Use a Potion on Pikachu.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_defer_heal_pikachu_full",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym\nParty: PIKACHU Lv18 HP 44/44\nInventory: Potion x4",
+      "objective": "Defeat Misty.",
+      "directive": "Use a Potion on Pikachu.",
+      "expected": {
+        "category": "strategic",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "misty_defer_potion_missing_lowhp",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym\nParty: PIKACHU Lv18 HP 2/44\nInventory: Poke Ball x4",
+      "objective": "Defeat Misty.",
+      "directive": "Use a Potion on Pikachu.",
+      "expected": {
+        "category": "impossible",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "misty_accept_antidote_poison",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nParty: NIDORAN Lv15 HP 31/47 status poison\nInventory: Antidote x1",
+      "objective": "Prepare for Misty.",
+      "directive": "Use an Antidote.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_defer_antidote_no_poison",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nParty: PIKACHU Lv18 HP 44/44 OK\nInventory: Antidote x1",
+      "objective": "Prepare for Misty.",
+      "directive": "Use an Antidote.",
+      "expected": {
+        "category": "strategic",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "misty_constraint_no_overlevel_20",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nParty: WARTORTLE Lv19 HP 58/58",
+      "objective": "Defeat Misty.",
+      "directive": "Don't level Wartortle past 20.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_constraint_only_pikachu_starmie",
+      "state_summary": "Mode: battle\nLocation: Cerulean Gym\nParty: PIKACHU Lv18 HP 37/44, WARTORTLE Lv19 HP 30/58",
+      "objective": "Defeat Misty.",
+      "directive": "Only use Pikachu against Starmie if possible.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_constraint_avoid_rare_candy",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym\nInventory: Rare Candy x1",
+      "objective": "Defeat Misty.",
+      "directive": "Avoid using Rare Candy.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_constraint_without_items",
+      "state_summary": "Mode: battle\nLocation: Cerulean Gym\nInventory: Potion x4",
+      "objective": "Defeat Misty.",
+      "directive": "Try to win without items.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_cosmetic_name_pikachu_zap",
+      "state_summary": "Mode: overworld\nParty: PIKACHU Lv18 HP 44/44",
+      "objective": "Defeat Misty.",
+      "directive": "Name Pikachu ZAP if we get a naming chance.",
+      "expected": {
+        "category": "cosmetic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "misty_playful_be_polite",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym",
+      "objective": "Defeat Misty.",
+      "directive": "Be polite to Misty.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "misty_playful_show_off",
+      "state_summary": "Mode: battle\nLocation: Cerulean Gym",
+      "objective": "Defeat Misty.",
+      "directive": "Show off a little.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "misty_ambiguous_switch_them",
+      "state_summary": "Mode: battle\nParty: PIKACHU, WARTORTLE, NIDORAN",
+      "objective": "Defeat Misty.",
+      "directive": "Switch them.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "misty_ambiguous_handle_it",
+      "state_summary": "Mode: battle\nLocation: Cerulean Gym",
+      "objective": "Defeat Misty.",
+      "directive": "Handle it.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "misty_reject_overwrite_water_gun",
+      "state_summary": "Mode: overworld\nParty: WARTORTLE Lv19 moves: Tackle, Tail Whip, Bubble, Water Gun",
+      "objective": "Defeat Misty.",
+      "directive": "Overwrite Water Gun with anything.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_reject_spend_all_money",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City\nMoney: 3255",
+      "objective": "Defeat Misty.",
+      "directive": "Spend all our money before the gym.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_reject_delete_run",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym",
+      "objective": "Defeat Misty.",
+      "directive": "Delete the save if we lose.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_reject_release_pikachu",
+      "state_summary": "Mode: overworld\nParty: PIKACHU Lv18 HP 44/44",
+      "objective": "Defeat Misty.",
+      "directive": "Release Pikachu before Misty.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_derail_start_over",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City",
+      "objective": "Defeat Misty.",
+      "directive": "Start over instead.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_derail_leave_forever",
+      "state_summary": "Mode: overworld\nLocation: Cerulean City",
+      "objective": "Defeat Misty.",
+      "directive": "Leave forever and never fight Misty.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "misty_derail_softlock",
+      "state_summary": "Mode: overworld\nLocation: Cerulean Gym",
+      "objective": "Defeat Misty.",
+      "directive": "Try to softlock the run.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "brock_accept_train_squirtle",
+      "state_summary": "Mode: overworld\nLocation: Pewter City\nParty: SQUIRTLE Lv9 HP 29/29",
+      "objective": "Defeat Brock.",
+      "directive": "Train Squirtle before the gym.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "brock_accept_enter_gym",
+      "state_summary": "Mode: overworld\nLocation: Pewter City",
+      "objective": "Defeat Brock.",
+      "directive": "Enter Pewter Gym.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "brock_accept_fight_brock",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym\nParty: SQUIRTLE Lv12 HP 36/36",
+      "objective": "Defeat Brock.",
+      "directive": "Battle Brock now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "brock_accept_heal_low_hp",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym\nParty: SQUIRTLE Lv12 HP 1/36\nInventory: Potion x1",
+      "objective": "Defeat Brock.",
+      "directive": "Use a Potion now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "brock_defer_heal_full_hp",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym\nParty: SQUIRTLE Lv12 HP 36/36\nInventory: Potion x1",
+      "objective": "Defeat Brock.",
+      "directive": "Use a Potion now.",
+      "expected": {
+        "category": "strategic",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "brock_constraint_only_squirtle_no_backup",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym\nParty: SQUIRTLE Lv12 HP 36/36",
+      "objective": "Defeat Brock.",
+      "directive": "Only use Squirtle for Brock.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "brock_constraint_avoid_pidgey",
+      "state_summary": "Mode: battle\nLocation: Pewter Gym\nParty: SQUIRTLE, PIDGEY",
+      "objective": "Defeat Brock.",
+      "directive": "Avoid using Pidgey.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "brock_ambiguous_go_back",
+      "state_summary": "Mode: overworld\nLocation: Pewter City",
+      "objective": "Defeat Brock.",
+      "directive": "Go back.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "brock_reject_release_squirtle",
+      "state_summary": "Mode: overworld\nParty: SQUIRTLE Lv12 HP 36/36",
+      "objective": "Defeat Brock.",
+      "directive": "Release Squirtle.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "brock_derail_ignore_brock",
+      "state_summary": "Mode: overworld\nLocation: Pewter Gym",
+      "objective": "Defeat Brock.",
+      "directive": "Ignore the objective and leave forever.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "route_accept_capture_pidgey",
+      "state_summary": "Mode: overworld\nLocation: Route 1\nInventory: Poke Ball x3",
+      "objective": "Add a teammate.",
+      "directive": "Capture a Pidgey.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_defer_capture_no_balls",
+      "state_summary": "Mode: overworld\nLocation: Route 1\nInventory: Potion x1\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+      "objective": "Add a teammate.",
+      "directive": "Capture a Pidgey.",
+      "expected": {
+        "category": "impossible",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "route_accept_train_route3",
+      "state_summary": "Mode: overworld\nLocation: Route 3\nParty: NIDORAN Lv10 HP 30/30",
+      "objective": "Prepare for Mt. Moon.",
+      "directive": "Train on Route 3.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_accept_go_to_pokecenter",
+      "state_summary": "Mode: overworld\nLocation: Route 3\nParty: SPEAROW Lv14 HP 4/37",
+      "objective": "Recover safely.",
+      "directive": "Go to the PokeCenter.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_accept_heal_low_hp",
+      "state_summary": "Mode: overworld\nLocation: Route 3\nParty: SPEAROW Lv14 HP 3/37\nInventory: Potion x1",
+      "objective": "Reach Mt. Moon safely.",
+      "directive": "Use a Potion.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_defer_heal_full_hp",
+      "state_summary": "Mode: overworld\nLocation: Route 3\nParty: SPEAROW Lv14 HP 37/37\nInventory: Potion x1",
+      "objective": "Reach Mt. Moon safely.",
+      "directive": "Use a Potion.",
+      "expected": {
+        "category": "strategic",
+        "decision": "defer"
+      }
+    },
+    {
+      "id": "route_constraint_avoid_trainers",
+      "state_summary": "Mode: overworld\nLocation: Route 3",
+      "objective": "Reach Mt. Moon.",
+      "directive": "Avoid optional trainers.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_constraint_without_blackout",
+      "state_summary": "Mode: overworld\nLocation: Route 3",
+      "objective": "Reach Mt. Moon.",
+      "directive": "Get there without blacking out.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_cosmetic_name_next_buddy",
+      "state_summary": "Mode: battle\nLocation: Route 3\nInventory: Poke Ball x2",
+      "objective": "Add a teammate.",
+      "directive": "Nickname the next catch BUDDY.",
+      "expected": {
+        "category": "cosmetic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "route_playful_taunt",
+      "state_summary": "Mode: battle\nLocation: Route 3",
+      "objective": "Win the battle.",
+      "directive": "Taunt them, but safely.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    },
+    {
+      "id": "route_ambiguous_use_that_one",
+      "state_summary": "Mode: battle\nParty: SQUIRTLE, PIKACHU, SPEAROW",
+      "objective": "Win the battle.",
+      "directive": "Use that one.",
+      "expected": {
+        "category": "ambiguous",
+        "decision": "ask_clarification"
+      }
+    },
+    {
+      "id": "route_reject_toss_map",
+      "state_summary": "Mode: overworld\nInventory: Town Map x1",
+      "objective": "Reach Mt. Moon.",
+      "directive": "Toss the Town Map.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "route_reject_discard_hm",
+      "state_summary": "Mode: overworld\nInventory: HM01 x1",
+      "objective": "Progress through Cerulean.",
+      "directive": "Discard HM01.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "route_derail_walk_circles",
+      "state_summary": "Mode: overworld\nLocation: Route 3",
+      "objective": "Reach Mt. Moon.",
+      "directive": "Walk in circles until we get bored.",
+      "expected": {
+        "category": "derailing",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "menu_accept_buy_potions",
+      "state_summary": "Mode: menu\nLocation: Viridian Mart\nMoney: 1200",
+      "objective": "Prepare for Viridian Forest.",
+      "directive": "Buy Potions if we can afford them.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "menu_accept_buy_pokeballs",
+      "state_summary": "Mode: menu\nLocation: Viridian Mart\nMoney: 1200",
+      "objective": "Prepare for catching.",
+      "directive": "Buy Poke Balls.",
+      "expected": {
+        "category": "strategic",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "menu_constraint_no_rare_candy",
+      "state_summary": "Mode: menu\nInventory: Rare Candy x1",
+      "objective": "Prepare for Misty.",
+      "directive": "Do not use Rare Candy.",
+      "expected": {
+        "category": "constraint",
+        "decision": "accept"
+      }
+    },
+    {
+      "id": "menu_reject_spend_all",
+      "state_summary": "Mode: menu\nLocation: Cerulean Mart\nMoney: 5000",
+      "objective": "Prepare for Misty.",
+      "directive": "Spend all our money.",
+      "expected": {
+        "category": "destructive",
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "dialogue_playful_be_polite",
+      "state_summary": "Mode: dialogue\nLocation: Cerulean Gym",
+      "objective": "Defeat Misty.",
+      "directive": "Be polite.",
+      "expected": {
+        "category": "playful",
+        "decision": "reinterpret"
+      }
+    }
+  ]
+}

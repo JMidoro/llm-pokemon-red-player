@@ -1,0 +1,30 @@
+{
+  "description": "Viridian Forest catching setup: low-health lead with Poke Balls available.",
+  "goal": "From Viridian Forest, safely continue exploring and catch a wild Pokemon without blacking out.",
+  "operations": [
+    {
+      "type": "set_party_stats",
+      "slot": 1,
+      "level": 8,
+      "current_hp": 4,
+      "max_hp": 26,
+      "status": "ok"
+    },
+    {
+      "type": "set_party_moves",
+      "slot": 1,
+      "moves": ["Scratch", "Growl"],
+      "pp": [35, 40]
+    },
+    {
+      "type": "set_item_quantity",
+      "item": "Poke Ball",
+      "quantity": 5
+    },
+    {
+      "type": "set_item_quantity",
+      "item": "Potion",
+      "quantity": 1
+    }
+  ]
+}

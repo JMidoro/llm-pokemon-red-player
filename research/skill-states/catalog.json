@@ -1,0 +1,1303 @@
+{
+  "schema": "skill_catalog_v1",
+  "description": "Phase 5 skill-state capture catalog.",
+  "skills": [
+    {
+      "id": "detect_wild_battle",
+      "name": "Detect Wild Battle",
+      "status": "flagging_implemented",
+      "purpose": "Classify whether the current state is an active Capsule A wild battle candidate.",
+      "result_statuses": [
+        "succeeded",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "success_wild_battle",
+          "expected_status": "succeeded",
+          "condition": "A wild battle is active in Viridian Forest.",
+          "manual_action": "Load a Capsule A derivative or golden battle state and capture without changing it."
+        },
+        {
+          "id": "failed_overworld",
+          "expected_status": "failed",
+          "condition": "The player is in Viridian Forest overworld with no battle active.",
+          "manual_action": "Load an overworld Capsule A state and capture without entering grass."
+        },
+        {
+          "id": "uncertain_ui_or_unknown_battle",
+          "expected_status": "uncertain",
+          "condition": "Mode or battle source is ambiguous, such as a UI/dialogue-adjacent state or battle source not classifiable yet.",
+          "manual_action": "Capture only if you naturally encounter an ambiguous state; this is optional for first pass."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "battle_type_raw",
+        "location",
+        "snapshot warnings"
+      ]
+    },
+    {
+      "id": "wild_battle_policy",
+      "name": "Wild Battle Action Bundle",
+      "status": "bundle_defined",
+      "purpose": "Bundle the director-facing wild battle execution skills. The Director chooses strategy; this bundle only groups bounded menu executors such as use_move, attempt_catch, use_item, switch_party_member, flee_battle, and battle-dialogue recovery.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "bundle_contract_review",
+          "expected_status": "blocked",
+          "condition": "No direct emulator capture is expected for the umbrella bundle itself; capture child skill states instead.",
+          "manual_action": "Use this entry as the lab UI index for battle-action promotions and child-skill readiness."
+        },
+        {
+          "id": "battle_action_log_review",
+          "expected_status": "uncertain",
+          "condition": "A chained battle run has multiple child skill reports that should roll up into one battle action transcript.",
+          "manual_action": "Attach a skill-chain report later once battle action chaining exists."
+        }
+      ],
+      "flagging_evidence": [
+        "child skill result reports",
+        "director-selected action intent",
+        "battle UI/cursor facts",
+        "active battler and enemy facts",
+        "battle action transcript"
+      ]
+    },
+    {
+      "id": "use_move",
+      "name": "Use Move",
+      "status": "executor_started",
+      "purpose": "Execute one Director-selected move in battle by navigating to Fight, selecting the requested move slot/name, confirming the command, and advancing dialogue far enough to classify the result. This skill does not choose which move is strategically best.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "action_menu_before",
+          "expected_status": "succeeded",
+          "condition": "Battle action menu is visible before opening Fight.",
+          "manual_action": "Capture a battle state before selecting Fight, with the intended active Pokemon and move list known."
+        },
+        {
+          "id": "move_menu_slot_1_before",
+          "expected_status": "succeeded",
+          "condition": "Move menu is open with the cursor or requested move on slot 1.",
+          "manual_action": "Open Fight, place the cursor on slot 1, and capture before confirming the move."
+        },
+        {
+          "id": "move_menu_slot_2_before",
+          "expected_status": "succeeded",
+          "condition": "Move menu is open with the cursor or requested move on slot 2.",
+          "manual_action": "Open Fight, place the cursor on slot 2, and capture before confirming the move."
+        },
+        {
+          "id": "move_menu_slot_3_before",
+          "expected_status": "succeeded",
+          "condition": "Move menu is open with the cursor or requested move on slot 3.",
+          "manual_action": "Open Fight, place the cursor on slot 3, and capture before confirming the move."
+        },
+        {
+          "id": "move_menu_slot_4_before",
+          "expected_status": "succeeded",
+          "condition": "Move menu is open with the cursor or requested move on slot 4.",
+          "manual_action": "Open Fight, place the cursor on slot 4, and capture before confirming the move."
+        },
+        {
+          "id": "use_move_tackle_after",
+          "expected_status": "succeeded",
+          "condition": "Tackle has been selected and the resulting turn dialogue or stable post-turn battle state is visible.",
+          "manual_action": "From a before state where Tackle is available, use Tackle and capture after the game shows the result or returns to a stable battle state."
+        },
+        {
+          "id": "use_move_tail_whip_after",
+          "expected_status": "succeeded",
+          "condition": "Tail Whip has been selected and the resulting turn dialogue or stable post-turn battle state is visible.",
+          "manual_action": "From a before state where Tail Whip is available, use Tail Whip and capture after the game shows the result or returns to a stable battle state."
+        },
+        {
+          "id": "use_move_bubble_after",
+          "expected_status": "succeeded",
+          "condition": "Bubble has been selected and the resulting turn dialogue or stable post-turn battle state is visible.",
+          "manual_action": "From a before state where Bubble is available, use Bubble and capture after the game shows the result or returns to a stable battle state."
+        },
+        {
+          "id": "use_move_water_gun_after",
+          "expected_status": "succeeded",
+          "condition": "Water Gun has been selected and the resulting turn dialogue or stable post-turn battle state is visible.",
+          "manual_action": "From a before state where Water Gun is available, use Water Gun and capture after the game shows the result or returns to a stable battle state."
+        },
+        {
+          "id": "blocked_move_missing",
+          "expected_status": "blocked",
+          "condition": "The Director requested a move that is not in the active Pokemon's moveset.",
+          "manual_action": "Capture a battle state where the active Pokemon lacks the requested move; no menu action should be taken."
+        },
+        {
+          "id": "blocked_move_no_pp",
+          "expected_status": "blocked",
+          "condition": "The requested move is known but has 0 PP.",
+          "manual_action": "Capture a battle state where the requested move exists but PP is 0 before any attempt to select it."
+        },
+        {
+          "id": "uncertain_turn_dialogue",
+          "expected_status": "uncertain",
+          "condition": "A move appears to have been selected, but turn dialogue has not resolved far enough to classify damage/status/PP outcome.",
+          "manual_action": "Capture an in-between battle dialogue state only if it naturally occurs during manual demonstration."
+        }
+      ],
+      "flagging_evidence": [
+        "battle UI kind and cursor",
+        "active battler species and move list",
+        "requested move name and slot",
+        "move PP before/after",
+        "enemy HP/status before/after",
+        "battle dialogue/result classifier"
+      ]
+    },
+    {
+      "id": "attempt_catch",
+      "name": "Attempt Catch",
+      "status": "flagging_implemented",
+      "purpose": "Use a Poke Ball in a wild battle and classify catch success, failed throw, blocked precondition, or uncertain evidence.",
+      "result_statuses": [
+        "succeeded",
+        "failed",
+        "blocked",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "success_before",
+          "expected_status": "succeeded",
+          "condition": "Before throwing a ball in a catchable wild battle with Poke Balls available.",
+          "manual_action": "Capture before the throw, then manually catch the Pokemon and capture the paired after state."
+        },
+        {
+          "id": "success_after",
+          "expected_status": "succeeded",
+          "condition": "After a successful catch where party count/species or nickname evidence changed.",
+          "manual_action": "Capture after the successful catch reaches a stable state."
+        },
+        {
+          "id": "failed_after_breakout",
+          "expected_status": "failed",
+          "condition": "After a Poke Ball was used but the wild battle continues.",
+          "manual_action": "Capture after the target breaks free and the battle is stable again."
+        },
+        {
+          "id": "blocked_no_balls",
+          "expected_status": "blocked",
+          "condition": "Wild battle active but inventory has no Poke Balls.",
+          "manual_action": "Load or create a no-ball battle state and capture without trying to throw."
+        },
+        {
+          "id": "uncertain_throw_dialogue",
+          "expected_status": "uncertain",
+          "condition": "Ball count changed but catch result is not yet stable or party evidence cannot be verified.",
+          "manual_action": "Capture only if you can pause in an in-between dialogue/prompt state."
+        }
+      ],
+      "flagging_evidence": [
+        "Poke Ball count diff",
+        "party diff",
+        "mode before/after",
+        "battle continuation"
+      ]
+    },
+    {
+      "id": "switch_party_member",
+      "name": "Switch Party Member",
+      "status": "executor_started",
+      "purpose": "Switch to a Director-requested viable party member during battle, then classify whether active battler ownership changed as requested. This skill does not decide battle strategy.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "action_menu_before",
+          "expected_status": "succeeded",
+          "condition": "Battle action menu is visible and the requested target is alive, non-active, and present in party.",
+          "manual_action": "Run switch_party_member from a stable battle action menu and capture the before state."
+        },
+        {
+          "id": "switch_after",
+          "expected_status": "succeeded",
+          "condition": "The requested party member is active after switch dialogue resolves.",
+          "manual_action": "Run the executor and capture the stable after state once active battler facts update."
+        },
+        {
+          "id": "blocked_current_active",
+          "expected_status": "blocked",
+          "condition": "The requested target is already active.",
+          "manual_action": "Load a battle where the target is active and run/capture without sending menu input."
+        },
+        {
+          "id": "blocked_fainted_target",
+          "expected_status": "blocked",
+          "condition": "The requested target is fainted.",
+          "manual_action": "Load a party menu/battle state with a fainted target and run/capture without switching."
+        },
+        {
+          "id": "uncertain_switch_dialogue",
+          "expected_status": "uncertain",
+          "condition": "Switch input has been sent, but battle dialogue has not resolved enough to verify active battler.",
+          "manual_action": "Capture only if an in-between switch dialogue state is useful for tuning wait budgets."
+        }
+      ],
+      "flagging_evidence": [
+        "battle UI kind and cursor",
+        "target party slot/species",
+        "target HP",
+        "active party slot before/after",
+        "battle dialogue/result classifier"
+      ]
+    },
+    {
+      "id": "overworld_rearrange_party",
+      "name": "Overworld Rearrange Party",
+      "status": "executor_started",
+      "purpose": "Reorder the party from stable overworld so a Director request such as \"Put Squirtle in the first slot\" is enacted without changing party membership. This skill changes party order only; it does not decide battle strategy or edit memory directly.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "reorder_success_before",
+          "expected_status": "succeeded",
+          "condition": "Stable overworld with at least two party members, where the requested target is present but not already in the destination slot.",
+          "manual_action": "Run overworld_rearrange_party from a stable overworld state and capture the before state."
+        },
+        {
+          "id": "reorder_success_after",
+          "expected_status": "succeeded",
+          "condition": "The same party roster is present after execution, and the requested target is in the destination slot.",
+          "manual_action": "Capture immediately after the executor returns to stable overworld and the party order is visibly/human verified."
+        },
+        {
+          "id": "noop_already_in_slot",
+          "expected_status": "succeeded",
+          "condition": "Stable overworld where the requested target already occupies the requested destination slot.",
+          "manual_action": "Load a state where the target is already in place and confirm the skill reports a successful no-op without menu input."
+        },
+        {
+          "id": "blocked_wrong_mode",
+          "expected_status": "blocked",
+          "condition": "Battle, dialogue, menu, or other non-overworld mode is active.",
+          "manual_action": "Capture a non-overworld state where recovery or battle handling must run first."
+        },
+        {
+          "id": "blocked_invalid_target_or_slot",
+          "expected_status": "blocked",
+          "condition": "The requested target is missing, the party has fewer than two members, or the destination slot is outside the current party size.",
+          "manual_action": "Capture only if a natural invalid-party example appears; otherwise the unit tests cover the precondition boundary."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "battle_type_raw",
+        "party roster before/after",
+        "target party identity",
+        "source slot",
+        "destination slot",
+        "roster multiset unchanged",
+        "overworld menu route trace"
+      ]
+    },
+    {
+      "id": "use_item",
+      "name": "Use Item",
+      "status": "almost_ready",
+      "purpose": "Use a Director-requested battle item, such as a Potion or ball-like item, then classify item-count and target/effect evidence. Ball use is currently covered by attempt_catch; Potion use still needs party-target execution evidence.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "battle_bag_before",
+          "expected_status": "succeeded",
+          "condition": "Battle item menu is open with visible item names and counts.",
+          "manual_action": "Use the existing item-use promotion states for battle bag surface and inventory assertions."
+        },
+        {
+          "id": "potion_damaged_party_before",
+          "expected_status": "succeeded",
+          "condition": "Potion is available and at least one party member has HP below max HP.",
+          "manual_action": "Capture a battle state before using Potion on a damaged target."
+        },
+        {
+          "id": "potion_after",
+          "expected_status": "succeeded",
+          "condition": "Potion use resolves and HP/item count changes are visible in WRAM.",
+          "manual_action": "Capture after Potion use resolves enough to verify HP delta and Potion count delta."
+        },
+        {
+          "id": "blocked_invalid_item",
+          "expected_status": "blocked",
+          "condition": "Requested item is not battle-usable in v0, such as Town Map.",
+          "manual_action": "Use the existing Town Map battle-bag evidence as the blocked precondition example."
+        }
+      ],
+      "flagging_evidence": [
+        "battle item menu",
+        "inventory item counts",
+        "selected/target item",
+        "party HP before/after",
+        "item whitelist"
+      ]
+    },
+    {
+      "id": "choose_starter",
+      "name": "Choose Starter",
+      "status": "executor_started",
+      "purpose": "Select a Director-requested starter from Oak's Lab starter table, confirm the choice, optionally enter a provided nickname, and classify the result by party membership.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "starter_prompt_before",
+          "expected_status": "succeeded",
+          "condition": "Oak's Lab starter-selection prompt or starter table surface is active before choosing a starter.",
+          "manual_action": "Use an Oak's Lab starter prompt state, run choose_starter with the requested starter, and capture the before state."
+        },
+        {
+          "id": "starter_after",
+          "expected_status": "succeeded",
+          "condition": "The requested starter is present in party after the selection, with the requested nickname if one was provided.",
+          "manual_action": "Capture immediately after the executor returns and party WRAM shows the selected starter."
+        },
+        {
+          "id": "blocked_already_has_party",
+          "expected_status": "blocked",
+          "condition": "The party already contains a Pokemon before starter selection.",
+          "manual_action": "Load a post-starter Oak's Lab state and verify the skill refuses to select another starter."
+        },
+        {
+          "id": "blocked_wrong_location",
+          "expected_status": "blocked",
+          "condition": "The player is not in Oak's Lab.",
+          "manual_action": "Use any stable non-lab overworld state where starter selection should be unavailable."
+        }
+      ],
+      "flagging_evidence": [
+        "map_id and position",
+        "requested starter",
+        "party roster before/after",
+        "optional requested nickname",
+        "expected starter species",
+        "starter-selection trace"
+      ]
+    },
+    {
+      "id": "recover_to_overworld",
+      "name": "Recover To Overworld",
+      "status": "flagging_implemented",
+      "purpose": "Recover from menu/dialogue drift to overworld, or block when active battle requires another skill.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "menu_success_before",
+          "expected_status": "succeeded",
+          "condition": "Menu is open before recovery.",
+          "manual_action": "Capture before pressing cancel, then close the menu and capture the paired after state."
+        },
+        {
+          "id": "menu_success_after",
+          "expected_status": "succeeded",
+          "condition": "Overworld after menu recovery.",
+          "manual_action": "Capture immediately after the menu closes."
+        },
+        {
+          "id": "dialogue_success_before",
+          "expected_status": "succeeded",
+          "condition": "Dialogue/text box is active before recovery.",
+          "manual_action": "Capture before advancing dialogue, then advance to overworld and capture after."
+        },
+        {
+          "id": "dialogue_success_after",
+          "expected_status": "succeeded",
+          "condition": "Overworld after dialogue recovery.",
+          "manual_action": "Capture immediately after dialogue clears."
+        },
+        {
+          "id": "noop_overworld",
+          "expected_status": "succeeded",
+          "condition": "Already in overworld; recovery should be a no-op success.",
+          "manual_action": "Capture an overworld state without changing it."
+        },
+        {
+          "id": "blocked_battle",
+          "expected_status": "blocked",
+          "condition": "Battle is active; recover_to_overworld should not pretend it can safely clear it.",
+          "manual_action": "Capture an active wild battle state."
+        }
+      ],
+      "flagging_evidence": [
+        "mode sequence",
+        "text/menu flags",
+        "battle_type_raw",
+        "final snapshot mode"
+      ]
+    },
+    {
+      "id": "heal_at_pokecenter",
+      "name": "Heal At PokeCenter",
+      "status": "executor_started",
+      "purpose": "Heal the party from inside the Viridian PokeCenter by walking to the nurse counter, initiating dialogue, and advancing the nurse flow until party HP/status are restored.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "inside_center_needs_heal",
+          "expected_status": "succeeded",
+          "condition": "Player is inside the Viridian PokeCenter and at least one real party Pokemon is fainted, damaged, or statused.",
+          "manual_action": "Use the Viridian PokeCenter navigation target, then capture before interacting with the nurse."
+        },
+        {
+          "id": "after_successful_heal",
+          "expected_status": "succeeded",
+          "condition": "Nurse dialogue has completed and all real party Pokemon have full HP and no status.",
+          "manual_action": "Capture immediately after the party has been restored."
+        },
+        {
+          "id": "blocked_outside_center",
+          "expected_status": "blocked",
+          "condition": "Player is outside the Viridian PokeCenter or in battle.",
+          "manual_action": "Capture an overworld or battle state that should not allow PokeCenter healing."
+        },
+        {
+          "id": "npc_blocked_counter_route",
+          "expected_status": "uncertain",
+          "condition": "A wandering PokeCenter NPC blocks the route to the nurse counter long enough for the executor to stop.",
+          "manual_action": "Capture only if naturally encountered during testing."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "map id and player position",
+        "party HP before/after",
+        "party status before/after",
+        "bounded nurse dialogue trace"
+      ]
+    },
+    {
+      "id": "advance_dialogue",
+      "name": "Advance Dialogue",
+      "status": "flagging_implemented",
+      "purpose": "Advance visible dialogue or text prompts without making strategic choices.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "dialogue_success_before",
+          "expected_status": "succeeded",
+          "condition": "A dialogue/text box is active and the next safe action is pressing A.",
+          "manual_action": "Capture before pressing A, then advance the dialogue and capture the paired after state."
+        },
+        {
+          "id": "dialogue_success_after",
+          "expected_status": "succeeded",
+          "condition": "Dialogue has advanced, changed, or cleared after a safe A press.",
+          "manual_action": "Capture immediately after pressing A produces visible progress."
+        },
+        {
+          "id": "blocked_no_dialogue",
+          "expected_status": "blocked",
+          "condition": "No dialogue/text box is active; pressing A would interact with the world or menu instead.",
+          "manual_action": "Capture a stable overworld or menu state where dialogue advancement is not the correct skill."
+        },
+        {
+          "id": "uncertain_repeating_dialogue",
+          "expected_status": "uncertain",
+          "condition": "Dialogue appears active but repeated A presses may be looping or not changing state.",
+          "manual_action": "Capture only if you naturally hit a prompt where progress is ambiguous."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "text/menu flags",
+        "screenshot dialogue region",
+        "snapshot hash change"
+      ]
+    },
+    {
+      "id": "advance_battle_dialogue",
+      "name": "Advance Battle Dialogue",
+      "status": "executor_started",
+      "purpose": "Advance battle result/dialogue text until the battle action menu is available again or the battle ends, without selecting moves, items, party actions, or run.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "battle_dialogue_before",
+          "expected_status": "succeeded",
+          "condition": "A battle dialogue/text box is active after a move, item, catch attempt, or turn result.",
+          "manual_action": "Capture before pressing through the battle dialogue, then advance until the action menu returns or the battle ends."
+        },
+        {
+          "id": "battle_action_menu_after",
+          "expected_status": "succeeded",
+          "condition": "Battle dialogue has resolved back to the neutral battle action menu, or the battle has ended cleanly.",
+          "manual_action": "Capture immediately after bounded A presses produce a battle action menu or a non-battle state."
+        },
+        {
+          "id": "blocked_action_menu",
+          "expected_status": "blocked",
+          "condition": "The battle action menu is already visible and no dialogue is waiting.",
+          "manual_action": "Capture a neutral battle action menu."
+        },
+        {
+          "id": "blocked_wrong_menu",
+          "expected_status": "blocked",
+          "condition": "A move, item, or party menu is active; a menu-specific skill should recover or act instead.",
+          "manual_action": "Capture any non-neutral battle submenu if this distinction needs more validation."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "battle_type_raw",
+        "battle UI kind",
+        "before/after UI transition"
+      ]
+    },
+    {
+      "id": "resolve_battle_outcome_dialogue_bundle",
+      "name": "Resolve Battle Outcome Dialogue Bundle",
+      "status": "capture_needed",
+      "purpose": "Resolve post-catch and end-of-battle dialogue sequences after the tactical battle action is already complete. This is a bundle because the Director may need separate decision skills for nickname prompts, Pokedex pages, move learning, evolution cancellation, and other battle aftermath branches.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "post_catch_dialogue_before",
+          "expected_status": "succeeded",
+          "condition": "A catch has succeeded and the game is still in the post-catch dialogue sequence.",
+          "manual_action": "Capture before advancing through the caught-Pokemon text, then progress until the next branch prompt or stable state.",
+          "recommended_start_states": [
+            {
+              "id": "catchable-wild-battle",
+              "label": "Catchable wild battle before throw",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.png",
+              "reason": "Starts in a wild battle with Poke Balls available, before the catch attempt has resolved.",
+              "capture_hint": "Throw balls until a catch succeeds, then press Z while the caught-Pokemon dialogue is still visible."
+            }
+          ]
+        },
+        {
+          "id": "post_catch_dialogue_after",
+          "expected_status": "succeeded",
+          "condition": "Post-catch text has advanced to the next prompt, Pokedex page, nickname prompt, or overworld.",
+          "manual_action": "Capture immediately after post-catch dialogue makes visible progress.",
+          "recommended_start_states": [
+            {
+              "id": "catchable-wild-battle",
+              "label": "Catchable wild battle before throw",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/attempt_catch/success_before.png",
+              "reason": "Starts before the catch so you can reproduce a post-catch branch instead of replaying from the overworld.",
+              "capture_hint": "Catch the Pokemon, advance one post-catch prompt or branch, then press Z on the progressed dialogue/state."
+            }
+          ]
+        },
+        {
+          "id": "victory_dialogue_before",
+          "expected_status": "succeeded",
+          "condition": "Enemy Pokemon has fainted or a trainer battle has ended, and victory/defeat text is waiting.",
+          "manual_action": "Capture before advancing through the win text or payout/defeat text.",
+          "recommended_start_states": [
+            {
+              "id": "trainer-weedle-action-menu",
+              "label": "Trainer battle action menu before Weedle KO",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "reason": "Starts in the trainer battle before a known KO/outcome sequence.",
+              "capture_hint": "Use a damaging move until Weedle faints, then press Z before advancing the first victory or outcome text you are trying to classify."
+            }
+          ]
+        },
+        {
+          "id": "enemy_ko_damage_text",
+          "expected_status": "succeeded",
+          "condition": "Enemy HP has reached zero but the visible text is still the move/damage result, such as critical-hit text.",
+          "manual_action": "Capture immediately after the enemy HP reaches zero, before XP or next-Pokemon text appears."
+        },
+        {
+          "id": "xp_gain_text",
+          "expected_status": "succeeded",
+          "condition": "Experience gain text is visible after an enemy Pokemon fainted.",
+          "manual_action": "Capture before advancing the XP text."
+        },
+        {
+          "id": "xp_or_level_up_dialogue",
+          "expected_status": "succeeded",
+          "condition": "Experience gain, level-up, stat increase, or learned-move dialogue is visible.",
+          "manual_action": "Capture any XP or level-up dialogue state before advancing it.",
+          "recommended_start_states": [
+            {
+              "id": "trainer-weedle-action-menu",
+              "label": "Trainer battle action menu before Weedle KO",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "reason": "Starts in battle just before the known XP and level-up sequence from the latest director run.",
+              "capture_hint": "KO Weedle, then stop on the first XP, level-up, stat, or learned-move text you want to capture."
+            }
+          ]
+        },
+        {
+          "id": "level_up_text",
+          "expected_status": "succeeded",
+          "condition": "Level-up text or stat-growth text is visible after XP gain.",
+          "manual_action": "Capture before advancing level-up or stat-growth text."
+        },
+        {
+          "id": "move_learning_decision",
+          "expected_status": "uncertain",
+          "condition": "A Pokemon is trying to learn a move, especially when an overwrite decision is required.",
+          "manual_action": "Capture before choosing whether to learn, forget, or reject the move.",
+          "recommended_start_states": [
+            {
+              "id": "trainer-weedle-action-menu",
+              "label": "Trainer battle action menu before Weedle KO",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "reason": "Known nearby sequence where Nidoran learns Horn Attack after the KO; this covers learned-move text, not a four-move overwrite decision.",
+              "capture_hint": "KO Weedle and advance through XP/level-up until learned-move text appears, then press Z. A true overwrite prompt still needs a later-game or edited state."
+            }
+          ]
+        },
+        {
+          "id": "optional_switch_prompt_after_trainer_ko",
+          "expected_status": "uncertain",
+          "condition": "A trainer battle has an opposing Pokemon fainted and the game is asking whether to change Pokemon before the trainer sends the next Pokemon.",
+          "manual_action": "Capture the yes/no switch prompt before answering. This is a Director decision surface: answer no to continue, or answer yes and then route through party selection.",
+          "recommended_start_states": [
+            {
+              "id": "trainer-weedle-action-menu",
+              "label": "Trainer battle action menu before Weedle KO",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/state.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/artifacts/director-player-runs/sessions/session-20260624T165939662396Z0000/events/00007-observation/screenshot.png",
+              "reason": "Starts in a trainer battle before the known opposing Weedle KO sequence.",
+              "capture_hint": "KO Weedle and advance until the optional yes/no change-Pokemon prompt appears, then press Z before answering."
+            }
+          ]
+        },
+        {
+          "id": "forced_party_selection_after_player_ko",
+          "expected_status": "uncertain",
+          "condition": "The active player Pokemon has fainted, at least one party member remains conscious, and the game has already forced the player into party selection.",
+          "manual_action": "Capture before selecting a replacement. This may look like the normal switch-party menu, but cancel/no is not semantically equivalent to an optional switch.",
+          "recommended_start_states": [
+            {
+              "id": "forced-party-menu-nidoran",
+              "label": "Forced party menu after player faint",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.png",
+              "reason": "Promotion evidence shows the party menu after the active Spearow fainted, with remaining party members available.",
+              "capture_hint": "Press Z immediately if you want a skill-state fixture for the forced-selection surface."
+            }
+          ]
+        },
+        {
+          "id": "trainer_defeated_text",
+          "expected_status": "succeeded",
+          "condition": "Trainer defeated text is visible after the final opposing Pokemon fainted.",
+          "manual_action": "Capture before advancing trainer defeated/payout text."
+        },
+        {
+          "id": "evolution_sequence",
+          "expected_status": "uncertain",
+          "condition": "Evolution has started or an evolution-cancel decision/animation is active.",
+          "manual_action": "Capture before taking action; v0 likely allows evolution to proceed unless a Nuzlocke rule or test requires cancellation."
+        },
+        {
+          "id": "blocked_neutral_battle_action_menu",
+          "expected_status": "blocked",
+          "condition": "The normal battle action menu is visible and no aftermath dialogue is waiting.",
+          "manual_action": "Capture a neutral battle action menu where tactical battle skills, not aftermath skills, should run.",
+          "recommended_start_states": [
+            {
+              "id": "neutral-battle-menu",
+              "label": "Neutral battle action menu",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.png",
+              "reason": "Starts directly on a neutral battle menu where this bundle should refuse.",
+              "capture_hint": "Press Z immediately and record this as the blocked neutral-menu case."
+            }
+          ]
+        },
+        {
+          "id": "blocked_overworld_no_dialogue",
+          "expected_status": "blocked",
+          "condition": "Stable overworld with no post-battle or post-catch dialogue active.",
+          "manual_action": "Capture a normal overworld state where this bundle should refuse.",
+          "recommended_start_states": [
+            {
+              "id": "stable-overworld-noop",
+              "label": "Stable overworld no-op state",
+              "state_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/recover_to_overworld/noop_overworld.state",
+              "screenshot_path": "C:/Users/Joey/Documents/Pokemon Player/research/skill-states/local/recover_to_overworld/noop_overworld.png",
+              "reason": "Starts directly in stable overworld with no battle aftermath dialogue.",
+              "capture_hint": "Press Z immediately and record this as the blocked overworld case."
+            }
+          ]
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "battle_type_raw",
+        "battle UI kind",
+        "opponent fainted vs player fainted",
+        "optional switch prompt vs forced party selection",
+        "screenshot dialogue region",
+        "party roster and move-list changes",
+        "Pokedex owned bit changes",
+        "before/after snapshot hash"
+      ]
+    },
+    {
+      "id": "close_menu_or_cancel",
+      "name": "Close Menu Or Cancel",
+      "status": "flagging_implemented",
+      "purpose": "Cancel one level of menu state without selecting items, moves, party actions, or overworld interactions.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "menu_success_before",
+          "expected_status": "succeeded",
+          "condition": "A cancelable non-battle menu is open.",
+          "manual_action": "Capture before pressing B, then cancel the menu and capture the paired after state."
+        },
+        {
+          "id": "menu_success_after",
+          "expected_status": "succeeded",
+          "condition": "The menu closed or moved one level closer to overworld after B.",
+          "manual_action": "Capture immediately after the cancel action visibly changes or clears the menu."
+        },
+        {
+          "id": "blocked_no_menu",
+          "expected_status": "blocked",
+          "condition": "Already in stable overworld with no menu to cancel.",
+          "manual_action": "Capture a stable overworld state."
+        },
+        {
+          "id": "blocked_battle_menu",
+          "expected_status": "blocked",
+          "condition": "A battle menu is active and should be handled by battle-specific skills.",
+          "manual_action": "Capture a battle action, item, move, or party menu state."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "battle_type_raw",
+        "menu box detection",
+        "snapshot hash change"
+      ]
+    },
+    {
+      "id": "walk_local_direction",
+      "name": "Walk Local Direction",
+      "status": "flagging_implemented",
+      "purpose": "Take one bounded overworld step in a requested cardinal direction, or report a local blocker.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "step_success_before",
+          "expected_status": "succeeded",
+          "condition": "Stable overworld with at least one adjacent walkable tile.",
+          "manual_action": "Capture before taking a single step, then step once and capture the paired after state."
+        },
+        {
+          "id": "step_success_after",
+          "expected_status": "succeeded",
+          "condition": "Player coordinates changed by exactly one tile after the requested step.",
+          "manual_action": "Capture immediately after the one-tile movement completes."
+        },
+        {
+          "id": "blocked_wall_or_npc",
+          "expected_status": "blocked",
+          "condition": "Stable overworld but the requested direction is blocked by a wall, NPC, ledge, or other local obstacle.",
+          "manual_action": "Capture after attempting a single blocked step and confirming coordinates did not change."
+        },
+        {
+          "id": "blocked_wrong_mode",
+          "expected_status": "blocked",
+          "condition": "The state is battle, dialogue, menu, or otherwise not safe for overworld walking.",
+          "manual_action": "Capture a non-overworld mode where recovery or battle handling should run first."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "position before/after",
+        "battle_type_raw",
+        "snapshot warnings"
+      ]
+    },
+    {
+      "id": "navigate_within_viridian_forest_region",
+      "name": "Navigate Within Viridian Forest Region",
+      "status": "executor_started",
+      "purpose": "Move between known Capsule A landmarks without leaving the Viridian City/Route 2/Viridian Forest region. The v0 executor uses a promoted landmark catalog plus bounded emulator-probed same-map routing, not a hand-authored full-game map.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "route_to_grass_before",
+          "expected_status": "succeeded",
+          "condition": "Stable overworld at a known Capsule A landmark with a short route to grass or forest entrance.",
+          "manual_action": "Capture before navigating, then move to the intended local landmark and capture the paired after state."
+        },
+        {
+          "id": "route_to_grass_after",
+          "expected_status": "succeeded",
+          "condition": "Stable overworld at the intended grass, forest entrance, or forest interior landmark.",
+          "manual_action": "Capture immediately after reaching the target landmark."
+        },
+        {
+          "id": "blocked_wrong_region",
+          "expected_status": "blocked",
+          "condition": "Stable overworld, but outside the approved Capsule A region.",
+          "manual_action": "Capture a state outside the Viridian Forest/Route 2/Viridian corridor where this navigator should refuse."
+        },
+        {
+          "id": "blocked_wrong_mode",
+          "expected_status": "blocked",
+          "condition": "Battle, menu, dialogue, or other non-overworld mode is active.",
+          "manual_action": "Capture a non-overworld state where recovery or battle handling must run first."
+        },
+        {
+          "id": "uncertain_off_path",
+          "expected_status": "uncertain",
+          "condition": "The player is in-region but not at a landmark or route surface currently known to the navigator.",
+          "manual_action": "Capture only if you naturally reach an in-region location whose route should be learned later."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "map_id",
+        "position",
+        "target landmark",
+        "region bounds",
+        "planned route inputs",
+        "before/after position"
+      ]
+    },
+    {
+      "id": "navigate_within_pallet_region",
+      "name": "Navigate Within Pallet Region",
+      "status": "executor_started",
+      "purpose": "Move between early-game Pallet landmarks without changing the Viridian/Capsule A navigator. The v0 executor uses Pallet landmarks, explicit door transitions, and Pallet-scoped emulator-probed same-map routing.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "pallet_home_to_grass_before",
+          "expected_status": "succeeded",
+          "condition": "Stable Pallet Town overworld at or near the player house exterior.",
+          "manual_action": "Use the Pallet navigator toward pallet_grass_entrance or pallet_oak_trigger."
+        },
+        {
+          "id": "pallet_home_to_grass_after",
+          "expected_status": "succeeded",
+          "condition": "Player has reached the Pallet north grass approach or Oak-trigger tile.",
+          "manual_action": "Capture the reached position, including screenshot and snapshot warnings."
+        },
+        {
+          "id": "home_1f_transition",
+          "expected_status": "succeeded",
+          "condition": "Player transitions between Pallet Town and Red's House 1F.",
+          "manual_action": "Capture before/after entering and exiting the player house."
+        },
+        {
+          "id": "bedroom_transition_unverified",
+          "expected_status": "succeeded",
+          "condition": "Player transitions between Red's House 1F and bedroom.",
+          "manual_action": "Capture these states to verify the seeded bedroom coordinates."
+        },
+        {
+          "id": "rivals_home_transition_unverified",
+          "expected_status": "succeeded",
+          "condition": "Player transitions between Pallet Town and Rival's House.",
+          "manual_action": "Capture these states to verify the seeded Rival house door coordinates."
+        },
+        {
+          "id": "blocked_wrong_region",
+          "expected_status": "blocked",
+          "condition": "Stable overworld outside Pallet, Route 1, player house, Rival house, or Oak's Lab.",
+          "manual_action": "Use any non-Pallet-region state where this navigator should refuse."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "map_id",
+        "position",
+        "target landmark",
+        "landmark source",
+        "planned route inputs",
+        "before/after position",
+        "snapshot warnings"
+      ]
+    },
+    {
+      "id": "enter_grass_search_loop",
+      "name": "Enter Grass Search Loop",
+      "status": "executor_started",
+      "purpose": "Pace in the approved Viridian Forest south grass patch until a wild encounter starts, without leaving the local search patch.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "grass_search_before",
+          "expected_status": "succeeded",
+          "condition": "Stable overworld standing in or immediately beside the approved Capsule A grass patch: map 0x33, x=28..32, y=41..43.",
+          "manual_action": "Capture before pacing in grass, then walk until a wild battle begins and capture the paired after state. Current promotion evidence covers near, inside, blocked, and wild-battle examples."
+        },
+        {
+          "id": "grass_search_after_battle",
+          "expected_status": "succeeded",
+          "condition": "A wild battle started from the local grass search loop.",
+          "manual_action": "Capture immediately once the wild battle is stable enough for battle detection."
+        },
+        {
+          "id": "blocked_not_grass",
+          "expected_status": "blocked",
+          "condition": "Stable overworld but not at an approved grass search patch.",
+          "manual_action": "Capture an overworld state where pacing would be aimless or unsafe."
+        },
+        {
+          "id": "blocked_wrong_mode",
+          "expected_status": "blocked",
+          "condition": "Battle, menu, dialogue, or other non-overworld mode is active before the search loop starts.",
+          "manual_action": "Capture a non-overworld state."
+        },
+        {
+          "id": "uncertain_encounter_intro",
+          "expected_status": "uncertain",
+          "condition": "Encounter transition or intro dialogue is visible but battle state is not yet stable.",
+          "manual_action": "Capture only if you can pause during the transition between overworld pacing and battle."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "position",
+        "approved grass patch bounds",
+        "near/inside approved grass derived facts",
+        "battle_type_raw",
+        "wild battle detection",
+        "executor trace and final state report"
+      ]
+    },
+    {
+      "id": "handle_nickname_prompt",
+      "name": "Handle Nickname Prompt",
+      "status": "capture_available",
+      "purpose": "Resolve the post-catch yes/no nickname prompt by either declining naming or entering the naming screen when the Director explicitly requests a nickname.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "nickname_prompt_before",
+          "expected_status": "succeeded",
+          "condition": "The game is asking whether to give the newly caught Pokemon a nickname.",
+          "manual_action": "Capture before answering. The latest director-player captures include this prompt after a successful Pikachu catch."
+        },
+        {
+          "id": "nickname_prompt_after_decline",
+          "expected_status": "succeeded",
+          "condition": "Nickname prompt has been resolved and the game moved to the next stable dialogue or overworld state.",
+          "manual_action": "Capture immediately after declining the nickname prompt."
+        },
+        {
+          "id": "nickname_prompt_after_accept",
+          "expected_status": "succeeded",
+          "condition": "The prompt was answered yes and the naming keyboard is visible.",
+          "manual_action": "Capture immediately after accepting the nickname prompt, before entering letters."
+        },
+        {
+          "id": "blocked_no_prompt",
+          "expected_status": "blocked",
+          "condition": "No nickname prompt or naming screen is active.",
+          "manual_action": "Capture a normal overworld, battle, or dialogue state where this skill should refuse."
+        },
+        {
+          "id": "uncertain_naming_screen",
+          "expected_status": "uncertain",
+          "condition": "The actual naming entry screen is active rather than the yes/no prompt.",
+          "manual_action": "Capture only if you accidentally enter the naming screen or want to support typed names later."
+        }
+      ],
+      "flagging_evidence": [
+        "mode",
+        "screenshot prompt text",
+        "yes/no cursor",
+        "party count/species",
+        "post-catch dialogue state"
+      ]
+    },
+    {
+      "id": "enter_nickname_text",
+      "name": "Enter Nickname Text",
+      "status": "capture_available",
+      "purpose": "Navigate the Gen 1 naming keyboard to enter a Director-requested nickname and commit it with END.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "naming_screen_initial",
+          "expected_status": "succeeded",
+          "condition": "The naming keyboard is visible immediately after accepting the nickname prompt.",
+          "manual_action": "Capture before entering any letters."
+        },
+        {
+          "id": "case_toggle_after",
+          "expected_status": "succeeded",
+          "condition": "The naming keyboard case toggle has changed between upper and lower case.",
+          "manual_action": "Capture after selecting the case-toggle control."
+        },
+        {
+          "id": "nickname_text_entered",
+          "expected_status": "succeeded",
+          "condition": "The requested nickname text is visible in the naming buffer.",
+          "manual_action": "Capture after entering letters but before selecting END."
+        },
+        {
+          "id": "nickname_commit_after",
+          "expected_status": "succeeded",
+          "condition": "The naming screen has closed and the caught Pokemon has the requested nickname in party data.",
+          "manual_action": "Capture after selecting END and returning to overworld or the next stable post-catch state."
+        },
+        {
+          "id": "blocked_not_naming_screen",
+          "expected_status": "blocked",
+          "condition": "The naming keyboard is not active.",
+          "manual_action": "Capture a nickname prompt, battle dialogue, or overworld state where this skill should refuse."
+        }
+      ],
+      "flagging_evidence": [
+        "naming keyboard visual state",
+        "keyboard cursor/control row",
+        "requested nickname",
+        "party nickname before/after",
+        "mode transition after END"
+      ]
+    },
+    {
+      "id": "detect_party_changed",
+      "name": "Detect Party Changed",
+      "status": "flagging_implemented",
+      "purpose": "Compare before/after snapshots and report whether the party roster changed, without treating HP or status churn as a roster change.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "party_changed_after_catch",
+          "expected_status": "succeeded",
+          "condition": "A successful catch added a Pokemon to the party roster.",
+          "manual_action": "Use the existing attempt_catch success_before and success_after states, or capture an equivalent before/after pair."
+        },
+        {
+          "id": "party_unchanged_after_breakout",
+          "expected_status": "failed",
+          "condition": "A catch attempt failed and the party roster stayed unchanged.",
+          "manual_action": "Use the existing attempt_catch success_before and failed_after_breakout states, or capture an equivalent before/after pair."
+        }
+      ],
+      "flagging_evidence": [
+        "before party roster",
+        "after party roster",
+        "added species",
+        "removed species",
+        "target species count"
+      ]
+    },
+    {
+      "id": "detect_capsule_success",
+      "name": "Detect Capsule Success",
+      "status": "flagging_implemented",
+      "purpose": "Determine whether the capsule target species is Pokedex-owned, independent of whether the caught Pokemon is in party or PC storage.",
+      "result_statuses": [
+        "succeeded",
+        "blocked",
+        "failed",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "target_before_unowned",
+          "expected_status": "failed",
+          "condition": "Target species is encountered but not yet Pokedex-owned.",
+          "manual_action": "Use the capsule_success_target_ownership before evidence, or capture an equivalent target-before state."
+        },
+        {
+          "id": "target_after_owned",
+          "expected_status": "succeeded",
+          "condition": "Target species is Pokedex-owned after catch resolution.",
+          "manual_action": "Use the capsule_success_target_ownership after evidence, or capture an equivalent post-catch state."
+        }
+      ],
+      "flagging_evidence": [
+        "target species",
+        "target Pokedex number",
+        "Pokedex owned bit",
+        "party target count as diagnostic context"
+      ]
+    },
+    {
+      "id": "detect_blackout_or_party_wipe",
+      "name": "Detect Blackout Or Party Wipe",
+      "status": "capture_needed",
+      "purpose": "Detect full party wipe, blackout transition, or post-blackout recovery so the Director can stop or replan safely.",
+      "result_statuses": [
+        "succeeded",
+        "failed",
+        "blocked",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "one_fainted_member",
+          "expected_status": "failed",
+          "condition": "At least one party member is fainted, but another party member remains usable.",
+          "manual_action": "Use the existing one-fainted golden state as the non-terminal negative example."
+        },
+        {
+          "id": "full_party_wipe",
+          "expected_status": "succeeded",
+          "condition": "All party members have 0 HP or blackout transition is visible.",
+          "manual_action": "Capture a full party wipe or post-blackout state."
+        },
+        {
+          "id": "post_blackout_recovery",
+          "expected_status": "succeeded",
+          "condition": "Player has been warped/recovered after blackout.",
+          "manual_action": "Optional: capture after blackout recovery if we want map/money validation."
+        }
+      ],
+      "flagging_evidence": [
+        "party HP",
+        "battle/dialogue mode",
+        "map before/after",
+        "money before/after",
+        "blackout text or recovery state"
+      ]
+    },
+    {
+      "id": "detect_stuckness",
+      "name": "Detect Stuckness",
+      "status": "capture_needed",
+      "purpose": "Detect repeated no-progress loops from recent skill reports or trace history, then return a replanning signal to the Director.",
+      "result_statuses": [
+        "succeeded",
+        "failed",
+        "blocked",
+        "uncertain"
+      ],
+      "needed_captures": [
+        {
+          "id": "blocked_movement_repeats",
+          "expected_status": "succeeded",
+          "condition": "Recent trace contains repeated blocked movement or unchanged position.",
+          "manual_action": "Use blocked walk_local_direction reports as the first concrete stuckness fixture."
+        },
+        {
+          "id": "dialogue_or_menu_loop",
+          "expected_status": "succeeded",
+          "condition": "Recent trace repeats the same UI mode/snapshot hash without useful progress.",
+          "manual_action": "Attach a failed recovery or dialogue-loop report once one is available."
+        },
+        {
+          "id": "progressing_trace",
+          "expected_status": "failed",
+          "condition": "Recent trace shows position/mode/objective progress.",
+          "manual_action": "Attach a successful navigation or recovery report as a negative example."
+        }
+      ],
+      "flagging_evidence": [
+        "recent snapshot hashes",
+        "position deltas",
+        "mode transitions",
+        "repeated skill failures",
+        "input trace"
+      ]
+    }
+  ]
+}

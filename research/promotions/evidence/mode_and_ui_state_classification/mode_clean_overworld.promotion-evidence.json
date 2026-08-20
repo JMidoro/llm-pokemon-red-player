@@ -1,0 +1,78 @@
+{
+  "assertions": [
+    {
+      "actual_path": "snapshot.mode",
+      "description": "Inspector snapshot mode matches the expected mode contract.",
+      "expected": "overworld",
+      "id": "snapshot_mode",
+      "op": "equals",
+      "source": "inspector"
+    },
+    {
+      "actual_path": "visual.ui.bottom_text_box",
+      "description": "Visual classifier identifies bottom text box presence.",
+      "expected": false,
+      "id": "visual_bottom_text_box",
+      "op": "equals",
+      "source": "human_visible"
+    },
+    {
+      "actual_path": "visual.ui.upper_menu",
+      "description": "Visual classifier identifies upper menu presence.",
+      "expected": false,
+      "id": "visual_upper_menu",
+      "op": "equals",
+      "source": "human_visible"
+    }
+  ],
+  "created_utc": "2026-06-24T00:21:04.620887+00:00",
+  "evidence_id": "mode-clean-overworld",
+  "expected_observation": "Mode is overworld. No bottom text box. No upper menu.",
+  "label": "Clean overworld fixture",
+  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\pallet_overworld_started.state",
+  "note": "Attached from existing metadata: research/golden-states/pallet_overworld_started.expected.json",
+  "promotion_id": "mode_and_ui_state_classification",
+  "rom": {
+    "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
+    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
+    "size_bytes": 1048576,
+    "title": "POKEMON RED"
+  },
+  "schema": "promotion_evidence_capture_v1",
+  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\pallet_overworld_started.png",
+  "snapshot": {
+    "badge_names": [],
+    "badges": 0,
+    "battle_type_raw": 0,
+    "facts": [
+      "No Poke Balls detected in inventory."
+    ],
+    "inventory": [],
+    "mode": "overworld",
+    "money": 3000,
+    "party": [],
+    "plaintext_summary": "Mode: overworld\nLocation: Pallet Town (map 0x00, x=5, y=6)\nParty: none detected\nInventory: none detected\nMoney: 3000\nBadges: none\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+    "position": {
+      "map_id": 0,
+      "map_name": "Pallet Town",
+      "x": 5,
+      "y": 6
+    },
+    "warnings": []
+  },
+  "snapshot_hash": "37F5BBEC6526D0EA1F76DBB0E9A512F3C37FA8A02CDAC8EBC5A874BCAAFE4967",
+  "source_metadata_file": "research\\golden-states\\pallet_overworld_started.expected.json",
+  "step_number": 1,
+  "step_title": "Load one fixture from each expected mode",
+  "visual": {
+    "battle_ui": {
+      "cursor": "unknown",
+      "kind": "dialogue"
+    },
+    "ui": {
+      "bottom_text_box": false,
+      "upper_menu": false
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "schema": "scenario_capsule_v1",
+  "id": "viridian_forest_catching",
+  "name": "Viridian Forest Catching",
+  "phase": 4,
+  "status": "v0",
+  "objective": "Catch Pikachu specifically in Viridian Forest, then navigate through Viridian Forest to the north exit without blacking out.",
+  "capsule_family": "early_catching",
+  "base_state_ids": [
+    "golden:viridian_forest_grass",
+    "golden:viridian_forest_south_gate",
+    "golden:viridian_forest_wild_battle_weedle",
+    "golden:viridian_forest_wild_battle_pikachu_full_health",
+    "golden:viridian_forest_wild_battle_pikachu_weakened",
+    "generated:viridian_forest_low_health_catching"
+  ],
+  "start_state_policy": {
+    "sources": ["human_verified_golden", "approved_generated"],
+    "split": {
+      "tuning": 0.8,
+      "holdout": 0.2,
+      "method": "deterministic_hash",
+      "seed": "phase4-v0"
+    }
+  },
+  "allowed_randomization": {
+    "party_species": ["Squirtle", "Charmander", "Bulbasaur", "Pikachu", "Nidoran M", "Nidoran F", "Spearow", "Butterfree"],
+    "level_range": [3, 14],
+    "hp_policy": "current_hp may vary from 1 to max_hp for at least one conscious Pokemon; some non-lead party members may be fainted.",
+    "items": {
+      "Poke Ball": [0, 8],
+      "Potion": [0, 3],
+      "Antidote": [0, 3]
+    },
+    "money_range": [0, 3000],
+    "locations": ["Viridian Forest", "Viridian Forest South Gate"],
+    "map_policy": "Use target-map template states only. Same-map coordinate nudges are allowed. Cross-map WRAM-only teleports are not allowed.",
+    "story_flags": "No story or event flag edits in v0."
+  },
+  "valid_start_requirements": [
+    "State loads through PyBoy and produces an inspectable snapshot.",
+    "Player is in Viridian Forest or the Viridian Forest South Gate.",
+    "At least one party Pokemon is conscious.",
+    "Core invariants pass.",
+    "If the start is intended as valid-catching, at least one Poke Ball is present."
+  ],
+  "impossible_or_degraded_starts": [
+    "No Poke Balls available.",
+    "Lead Pokemon has very low HP.",
+    "Most backup Pokemon are fainted.",
+    "No healing items available.",
+    "Wild encounter is already active with a risky HP/resource state."
+  ],
+  "success_conditions": [
+    "Pikachu is caught and appears in the party.",
+    "The player reaches the Viridian Forest north exit or north gate after catching Pikachu.",
+    "The player does not black out.",
+    "The final state is inspectable and stable.",
+    "Accepted safe nickname directives are applied when a nickname prompt occurs."
+  ],
+  "failure_conditions": [
+    "Party wipe or blackout.",
+    "No Poke Balls remain and no recoverable route to obtain more is available within budget.",
+    "The executor leaves the bounded Viridian/Route 2/Forest area without a recovery reason.",
+    "A destructive directive or action is accepted.",
+    "The run times out."
+  ],
+  "abort_conditions": [
+    "State fails to load.",
+    "State violates core invariants before the first action.",
+    "The evaluator cannot inspect party, inventory, map, or mode.",
+    "The state requires unpromoted story/event flags."
+  ],
+  "budgets": {
+    "max_button_actions": 2000,
+    "max_emulator_frames": 60000
+  },
+  "required_logged_events": [
+    "initial_snapshot",
+    "directive_decision",
+    "encounter_started",
+    "ball_used",
+    "party_changed",
+    "blackout_detected",
+    "final_snapshot"
+  ],
+  "relevant_state_fields": [
+    "mode",
+    "position.map_id",
+    "position.x",
+    "position.y",
+    "party.species_name",
+    "party.hp",
+    "party.max_hp",
+    "party.status",
+    "party.moves",
+    "inventory.Poke Ball",
+    "inventory.Potion",
+    "money",
+    "badges"
+  ],
+  "evaluator_notes": [
+    "Route 22 Spearow belongs to the preceding Poke Ball acquisition chapter, not this capsule.",
+    "v0 success requires Pikachu ownership/party detection plus forest north-exit navigation.",
+    "Automated detection should compare initial and final party species/count once run logs exist."
+  ]
+}

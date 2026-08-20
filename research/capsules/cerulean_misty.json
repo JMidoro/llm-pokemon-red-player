@@ -1,0 +1,111 @@
+{
+  "schema": "scenario_capsule_v1",
+  "id": "cerulean_misty",
+  "name": "Cerulean / Misty",
+  "phase": 4,
+  "status": "v0",
+  "objective": "Prepare for and defeat Misty while respecting safe strategic and constraint directives.",
+  "capsule_family": "early_gym_strategy",
+  "base_state_ids": [
+    "golden:cerulean_city_overworld",
+    "golden:cerulean_pokecenter_overworld",
+    "golden:cerulean_gym_overworld",
+    "golden:mid_misty_battle",
+    "generated:cerulean_misty_underleveled_team"
+  ],
+  "evaluator_control_state_ids": [
+    "golden:post_misty_dialogue",
+    "golden:post_misty_badge"
+  ],
+  "start_state_policy": {
+    "sources": ["human_verified_golden", "approved_generated"],
+    "split": {
+      "tuning": 0.8,
+      "holdout": 0.2,
+      "method": "deterministic_hash",
+      "seed": "phase4-v0"
+    }
+  },
+  "allowed_randomization": {
+    "party_species": ["Squirtle", "Wartortle", "Pikachu", "Nidoran M", "Nidoran F", "Spearow", "Butterfree"],
+    "level_range": [10, 21],
+    "hp_policy": "At least one Pokemon must be conscious. Degraded starts may include low HP, status, or one fainted backup.",
+    "items": {
+      "Potion": [0, 5],
+      "Super Potion": [0, 2],
+      "Poke Ball": [0, 6]
+    },
+    "money_range": [0, 5000],
+    "locations": ["Cerulean City", "Cerulean PokeCenter", "Cerulean Gym"],
+    "map_policy": "Use target-map template states only. Same-map coordinate nudges are allowed. Cross-map WRAM-only teleports are not allowed.",
+    "story_flags": "Cascade Badge must be absent at start unless the state is used only as a post-success evaluator control."
+  },
+  "valid_start_requirements": [
+    "State loads through PyBoy and produces an inspectable snapshot.",
+    "Player is in Cerulean City, Cerulean PokeCenter, or Cerulean Gym.",
+    "Boulder Badge is expected; Cascade Badge is absent for normal starts.",
+    "At least one party Pokemon is conscious.",
+    "Core invariants pass."
+  ],
+  "impossible_or_degraded_starts": [
+    "Severely underleveled team.",
+    "Low HP with limited healing.",
+    "No Electric/Grass-friendly party member.",
+    "Soft directive such as avoid overleveling the starter.",
+    "Battle already in progress with constrained resources."
+  ],
+  "success_conditions": [
+    "Cascade Badge is detected in the final state.",
+    "The player does not black out.",
+    "The final state is inspectable and stable.",
+    "Accepted measurable constraints are respected."
+  ],
+  "failure_conditions": [
+    "Party wipe or blackout.",
+    "Cascade Badge is not obtained before timeout.",
+    "A measurable accepted constraint is violated.",
+    "The executor loops in menu, dialogue, or battle without progress.",
+    "The executor leaves the Cerulean-relevant region without a recovery reason.",
+    "A destructive directive or action is accepted."
+  ],
+  "abort_conditions": [
+    "State fails to load.",
+    "State violates core invariants before the first action.",
+    "The evaluator cannot inspect party, inventory, map, mode, or badges.",
+    "The state requires unpromoted story/event flags."
+  ],
+  "budgets": {
+    "max_button_actions": 6000,
+    "max_emulator_frames": 180000
+  },
+  "required_logged_events": [
+    "initial_snapshot",
+    "directive_decision",
+    "gym_battle_started",
+    "badge_changed",
+    "blackout_detected",
+    "constraint_check",
+    "final_snapshot"
+  ],
+  "relevant_state_fields": [
+    "mode",
+    "position.map_id",
+    "position.x",
+    "position.y",
+    "party.species_name",
+    "party.level",
+    "party.hp",
+    "party.max_hp",
+    "party.status",
+    "party.moves",
+    "inventory.Potion",
+    "inventory.Super Potion",
+    "money",
+    "badges",
+    "badge_names"
+  ],
+  "evaluator_notes": [
+    "Cascade Badge detection is the clean automated v0 success signal.",
+    "Overlevel constraints are measurable from final and intermediate party levels once run logs exist."
+  ]
+}

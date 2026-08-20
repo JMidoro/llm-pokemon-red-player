@@ -1,0 +1,369 @@
+{
+  "boot_frames": 0,
+  "created_utc": "2026-06-16T13:49:43.446733+00:00",
+  "human_verified": true,
+  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\route_3_pokecenter.state",
+  "name": "route_3_pokecenter",
+  "note": "Captured during human play; needs human verification.",
+  "rom": {
+    "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
+    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
+    "size_bytes": 1048576,
+    "title": "POKEMON RED"
+  },
+  "schema": "golden_state_expected_v1",
+  "screenshot_file": null,
+  "snapshot": {
+    "badge_names": [
+      "Boulder Badge"
+    ],
+    "badges": 1,
+    "battle_type_raw": 0,
+    "facts": [
+      "Inventory contains Poke Balls.",
+      "Oak has received the Parcel.",
+      "Pokedex has been received."
+    ],
+    "inventory": [
+      {
+        "item_id": 5,
+        "item_name": "Town Map",
+        "quantity": 1
+      },
+      {
+        "item_id": 20,
+        "item_name": "Potion",
+        "quantity": 2
+      },
+      {
+        "item_id": 11,
+        "item_name": "Antidote",
+        "quantity": 1
+      },
+      {
+        "item_id": 234,
+        "item_name": "HM01",
+        "quantity": 1
+      },
+      {
+        "item_id": 4,
+        "item_name": "Poke Ball",
+        "quantity": 6
+      }
+    ],
+    "mode": "overworld",
+    "money": 2601,
+    "party": [
+      {
+        "hp": 44,
+        "level": 14,
+        "max_hp": 44,
+        "moves": [
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 10,
+            "move_name": "Scratch",
+            "pp": 35
+          },
+          {
+            "move_id": 40,
+            "move_name": "Poison Sting",
+            "pp": 35
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 1,
+        "species_id": 15,
+        "species_name": "Nidoran F",
+        "status": 0
+      },
+      {
+        "hp": 30,
+        "level": 11,
+        "max_hp": 30,
+        "moves": [
+          {
+            "move_id": 84,
+            "move_name": "ThunderShock",
+            "pp": 30
+          },
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 86,
+            "move_name": "Thunder Wave",
+            "pp": 20
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "PIKACHU",
+        "slot": 2,
+        "species_id": 84,
+        "species_name": "Pikachu",
+        "status": 0
+      },
+      {
+        "hp": 30,
+        "level": 10,
+        "max_hp": 30,
+        "moves": [
+          {
+            "move_id": 43,
+            "move_name": "Leer",
+            "pp": 30
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 30,
+            "move_name": "Horn Attack",
+            "pp": 25
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 3,
+        "species_id": 3,
+        "species_name": "Nidoran M",
+        "status": 0
+      },
+      {
+        "hp": 35,
+        "level": 10,
+        "max_hp": 35,
+        "moves": [
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 81,
+            "move_name": "String Shot",
+            "pp": 40
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "BUTTERFREE",
+        "slot": 4,
+        "species_id": 125,
+        "species_name": "Butterfree",
+        "status": 0
+      },
+      {
+        "hp": 33,
+        "level": 12,
+        "max_hp": 33,
+        "moves": [
+          {
+            "move_id": 64,
+            "move_name": "Peck",
+            "pp": 35
+          },
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 43,
+            "move_name": "Leer",
+            "pp": 30
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SPEAROW",
+        "slot": 5,
+        "species_id": 5,
+        "species_name": "Spearow",
+        "status": 0
+      },
+      {
+        "hp": 50,
+        "level": 16,
+        "max_hp": 50,
+        "moves": [
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 39,
+            "move_name": "Tail Whip",
+            "pp": 30
+          },
+          {
+            "move_id": 145,
+            "move_name": "Bubble",
+            "pp": 30
+          },
+          {
+            "move_id": 55,
+            "move_name": "Water Gun",
+            "pp": 25
+          }
+        ],
+        "nickname": "WARTORTLE",
+        "slot": 6,
+        "species_id": 179,
+        "species_name": "Wartortle",
+        "status": 0
+      }
+    ],
+    "plaintext_summary": "Mode: overworld\nLocation: Mt. Moon PokeCenter (map 0x44, x=3, y=5)\nParty:\n- 1. NIDORAN Lv14 HP 44/44 OK; moves: Growl (40 PP), Tackle (35 PP), Scratch (35 PP), Poison Sting (35 PP)\n- 2. PIKACHU Lv11 HP 30/30 OK; moves: ThunderShock (30 PP), Growl (40 PP), Thunder Wave (20 PP)\n- 3. NIDORAN Lv10 HP 30/30 OK; moves: Leer (30 PP), Tackle (35 PP), Horn Attack (25 PP)\n- 4. BUTTERFREE Lv10 HP 35/35 OK; moves: Tackle (35 PP), String Shot (40 PP)\n- 5. SPEAROW Lv12 HP 33/33 OK; moves: Peck (35 PP), Growl (40 PP), Leer (30 PP)\n- 6. WARTORTLE Lv16 HP 50/50 OK; moves: Tackle (35 PP), Tail Whip (30 PP), Bubble (30 PP), Water Gun (25 PP)\nInventory: Town Map x1, Potion x2, Antidote x1, HM01 x1, Poke Ball x6\nMoney: 2601\nBadges: Boulder Badge\nStory events:\n- Starter received: set (EVENT_GOT_STARTER @ 0xD74B bit 2)\n- First Oak's Lab rival battle resolved: set (EVENT_BATTLED_RIVAL_IN_OAKS_LAB @ 0xD74B bit 3)\n- Pokedex received: set (EVENT_GOT_POKEDEX @ 0xD74B bit 5)\n- Oak received parcel: set (EVENT_OAK_GOT_PARCEL @ 0xD74E bit 0)\n- Viridian Mart gave Oak's Parcel: set (EVENT_GOT_OAKS_PARCEL @ 0xD74E bit 1)\n- Brock defeated: set (EVENT_BEAT_BROCK @ 0xD755 bit 7)\nGoal-relevant facts:\n- Inventory contains Poke Balls.\n- Oak has received the Parcel.\n- Pokedex has been received.",
+    "position": {
+      "map_id": 68,
+      "map_name": "Mt. Moon PokeCenter",
+      "x": 3,
+      "y": 5
+    },
+    "story_event_details": [
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 2,
+        "key": "got_starter",
+        "label": "Starter received",
+        "mask": 4,
+        "mask_hex": "0x04",
+        "pret_name": "EVENT_GOT_STARTER",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": true
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 3,
+        "key": "battled_rival_in_oaks_lab",
+        "label": "First Oak's Lab rival battle resolved",
+        "mask": 8,
+        "mask_hex": "0x08",
+        "pret_name": "EVENT_BATTLED_RIVAL_IN_OAKS_LAB",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": true
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 4,
+        "key": "got_pokeballs_from_oak",
+        "label": "Oak gave Poke Balls",
+        "mask": 16,
+        "mask_hex": "0x10",
+        "pret_name": "EVENT_GOT_POKEBALLS_FROM_OAK",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 5,
+        "key": "got_pokedex",
+        "label": "Pokedex received",
+        "mask": 32,
+        "mask_hex": "0x20",
+        "pret_name": "EVENT_GOT_POKEDEX",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": true
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 6,
+        "key": "pallet_after_getting_pokeballs_2",
+        "label": "Post-Pokedex Pallet flag",
+        "mask": 64,
+        "mask_hex": "0x40",
+        "pret_name": "EVENT_PALLET_AFTER_GETTING_POKEBALLS_2",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55118,
+        "address_hex": "0xD74E",
+        "bit": 0,
+        "key": "oak_got_parcel",
+        "label": "Oak received parcel",
+        "mask": 1,
+        "mask_hex": "0x01",
+        "pret_name": "EVENT_OAK_GOT_PARCEL",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": true
+      },
+      {
+        "address": 55118,
+        "address_hex": "0xD74E",
+        "bit": 1,
+        "key": "got_oaks_parcel",
+        "label": "Viridian Mart gave Oak's Parcel",
+        "mask": 2,
+        "mask_hex": "0x02",
+        "pret_name": "EVENT_GOT_OAKS_PARCEL",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": true
+      },
+      {
+        "address": 55125,
+        "address_hex": "0xD755",
+        "bit": 7,
+        "key": "beat_brock",
+        "label": "Brock defeated",
+        "mask": 128,
+        "mask_hex": "0x80",
+        "pret_name": "EVENT_BEAT_BROCK",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": true
+      }
+    ],
+    "story_events": {
+      "battled_rival_in_oaks_lab": true,
+      "beat_brock": true,
+      "got_oaks_parcel": true,
+      "got_pokeballs_from_oak": false,
+      "got_pokedex": true,
+      "got_starter": true,
+      "oak_got_parcel": true,
+      "pallet_after_getting_pokeballs_2": false
+    },
+    "warnings": []
+  },
+  "snapshot_hash": "077525B1B866E56A9DA171889B7C7290D7643E67B5D63FA3DA760D87E405AEDA"
+}

@@ -1,0 +1,146 @@
+{
+  "boot_frames": 0,
+  "created_utc": "2026-06-16T12:14:16.745361+00:00",
+  "human_verified": true,
+  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\pallet_overworld_started.state",
+  "name": "pallet_overworld_started",
+  "note": "Captured during human play; needs human verification.",
+  "rom": {
+    "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
+    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
+    "size_bytes": 1048576,
+    "title": "POKEMON RED"
+  },
+  "schema": "golden_state_expected_v1",
+  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\pallet_overworld_started.png",
+  "snapshot": {
+    "badge_names": [],
+    "badges": 0,
+    "battle_type_raw": 0,
+    "facts": [
+      "No Poke Balls detected in inventory."
+    ],
+    "inventory": [],
+    "mode": "overworld",
+    "money": 3000,
+    "party": [],
+    "plaintext_summary": "Mode: overworld\nLocation: Pallet Town (map 0x00, x=5, y=6)\nParty: none detected\nInventory: none detected\nMoney: 3000\nBadges: none\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+    "position": {
+      "map_id": 0,
+      "map_name": "Pallet Town",
+      "x": 5,
+      "y": 6
+    },
+    "story_event_details": [
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 2,
+        "key": "got_starter",
+        "label": "Starter received",
+        "mask": 4,
+        "mask_hex": "0x04",
+        "pret_name": "EVENT_GOT_STARTER",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 3,
+        "key": "battled_rival_in_oaks_lab",
+        "label": "First Oak's Lab rival battle resolved",
+        "mask": 8,
+        "mask_hex": "0x08",
+        "pret_name": "EVENT_BATTLED_RIVAL_IN_OAKS_LAB",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 4,
+        "key": "got_pokeballs_from_oak",
+        "label": "Oak gave Poke Balls",
+        "mask": 16,
+        "mask_hex": "0x10",
+        "pret_name": "EVENT_GOT_POKEBALLS_FROM_OAK",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 5,
+        "key": "got_pokedex",
+        "label": "Pokedex received",
+        "mask": 32,
+        "mask_hex": "0x20",
+        "pret_name": "EVENT_GOT_POKEDEX",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55115,
+        "address_hex": "0xD74B",
+        "bit": 6,
+        "key": "pallet_after_getting_pokeballs_2",
+        "label": "Post-Pokedex Pallet flag",
+        "mask": 64,
+        "mask_hex": "0x40",
+        "pret_name": "EVENT_PALLET_AFTER_GETTING_POKEBALLS_2",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55118,
+        "address_hex": "0xD74E",
+        "bit": 0,
+        "key": "oak_got_parcel",
+        "label": "Oak received parcel",
+        "mask": 1,
+        "mask_hex": "0x01",
+        "pret_name": "EVENT_OAK_GOT_PARCEL",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55118,
+        "address_hex": "0xD74E",
+        "bit": 1,
+        "key": "got_oaks_parcel",
+        "label": "Viridian Mart gave Oak's Parcel",
+        "mask": 2,
+        "mask_hex": "0x02",
+        "pret_name": "EVENT_GOT_OAKS_PARCEL",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      },
+      {
+        "address": 55125,
+        "address_hex": "0xD755",
+        "bit": 7,
+        "key": "beat_brock",
+        "label": "Brock defeated",
+        "mask": 128,
+        "mask_hex": "0x80",
+        "pret_name": "EVENT_BEAT_BROCK",
+        "source": "pret/pokered constants/event_constants.asm + wEventFlags",
+        "value": false
+      }
+    ],
+    "story_events": {
+      "battled_rival_in_oaks_lab": false,
+      "beat_brock": false,
+      "got_oaks_parcel": false,
+      "got_pokeballs_from_oak": false,
+      "got_pokedex": false,
+      "got_starter": false,
+      "oak_got_parcel": false,
+      "pallet_after_getting_pokeballs_2": false
+    },
+    "warnings": []
+  },
+  "snapshot_hash": "41F15F5A692AF0B2CB06B02B287797D85FA995E31CFB9523F82BADC57BAAF1A4"
+}

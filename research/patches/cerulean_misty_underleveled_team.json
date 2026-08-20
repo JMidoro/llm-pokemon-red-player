@@ -1,0 +1,31 @@
+{
+  "description": "Cerulean Gym setup: underleveled team, no Cascade Badge, limited healing.",
+  "goal": "From inside Cerulean Gym, defeat Misty with the available underleveled team and limited healing.",
+  "operations": [
+    {
+      "type": "set_party_stats",
+      "slot": 1,
+      "level": 14,
+      "current_hp": 28,
+      "max_hp": 44,
+      "status": "ok"
+    },
+    {
+      "type": "set_party_stats",
+      "slot": 2,
+      "level": 13,
+      "current_hp": 35,
+      "max_hp": 35,
+      "status": "ok"
+    },
+    {
+      "type": "set_item_quantity",
+      "item": "Potion",
+      "quantity": 1
+    },
+    {
+      "type": "set_badges",
+      "badge_names": ["Boulder Badge"]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+# Local ROMs and legally/user-provided game assets
+*.gb
+*.gbc
+*.gba
+*.rom
+
+# Emulator saves, save states, replay artifacts, and battery-backed data
+*.sav
+*.ram
+*.srm
+*.rtc
+*.state
+*.state.*
+*.ss
+*.sgm
+*.rpl
+
+# Generated experiment artifacts
+research/artifacts/
+research/runs/
+research/replays/
+research/golden-states/local/
+research/skill-states/local/
+research/policy-states/local/
+
+# Python/local tooling cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Test-generated debug artifacts
+tests/.tmp/
+
+# Node/Next.js local tooling cache
+node_modules/
+.next/
+*.log
+*.tsbuildinfo
+
+# Local environment/config overrides
+.env
+.env.*
+!.env.example

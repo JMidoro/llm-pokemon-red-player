@@ -1,0 +1,34 @@
+{
+  "description": "Pewter Gym setup: remove backup Pokemon and leave Squirtle as the only party member.",
+  "goal": "From inside Pewter Gym, defeat Brock with only Squirtle in the party.",
+  "operations": [
+    {
+      "type": "remove_party_member",
+      "slot": 2
+    },
+    {
+      "type": "remove_party_member",
+      "slot": 2
+    },
+    {
+      "type": "remove_party_member",
+      "slot": 2
+    },
+    {
+      "type": "remove_party_member",
+      "slot": 2
+    },
+    {
+      "type": "remove_party_member",
+      "slot": 2
+    },
+    {
+      "type": "set_party_stats",
+      "slot": 1,
+      "level": 12,
+      "current_hp": 20,
+      "max_hp": 36,
+      "status": "ok"
+    }
+  ]
+}

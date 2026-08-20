@@ -1,0 +1,72 @@
+{
+  "boot_frames": 0,
+  "created_utc": "2026-06-16T12:22:49.585434+00:00",
+  "human_verified": false,
+  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\golden-states\\local\\battle_route_1_ratata.state",
+  "name": "battle_route_1_ratata",
+  "note": "Captured during human play; needs human verification.",
+  "rom": {
+    "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
+    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
+    "size_bytes": 1048576,
+    "title": "POKEMON RED"
+  },
+  "schema": "golden_state_expected_v1",
+  "snapshot": {
+    "badge_names": [],
+    "badges": 0,
+    "battle_type_raw": 1,
+    "facts": [
+      "No Poke Balls detected in inventory."
+    ],
+    "inventory": [
+      {
+        "item_id": 5,
+        "item_name": "Item 0x05",
+        "quantity": 1
+      }
+    ],
+    "mode": "battle",
+    "money": 3175,
+    "party": [
+      {
+        "hp": 24,
+        "level": 7,
+        "max_hp": 24,
+        "moves": [
+          {
+            "move_id": 33,
+            "pp": 31
+          },
+          {
+            "move_id": 39,
+            "pp": 30
+          },
+          {
+            "move_id": 0,
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "pp": 0
+          }
+        ],
+        "nickname": "SQUIRTLE",
+        "slot": 1,
+        "species_id": 177,
+        "species_name": "Species 0xB1",
+        "status": 0
+      }
+    ],
+    "plaintext_summary": "Mode: battle\nLocation: Route 1 (map 0x0C, x=13, y=22)\nParty:\n- 1. SQUIRTLE Lv7 HP 24/24 OK; moves: move 0x21 (31 PP), move 0x27 (30 PP)\nInventory: Item 0x05 x1\nMoney: 3175\nBadges: none\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+    "position": {
+      "map_id": 12,
+      "map_name": "Route 1",
+      "x": 13,
+      "y": 22
+    },
+    "warnings": []
+  },
+  "snapshot_hash": "91C40051464663A1D2152015AB41BBB606FC43F440CC5E968D8C5D76F4C77BC4"
+}

@@ -1,0 +1,34 @@
+{
+  "description": "Viridian Mart catching setup from a Viridian Mart template state: Charmander lead at low HP, no Poke Balls, enough money to buy more.",
+  "goal": "Force a purchase-before-catching flow for a Viridian Forest catching capsule.",
+  "operations": [
+    {
+      "type": "set_party_species",
+      "slot": 1,
+      "species": "Charmander"
+    },
+    {
+      "type": "set_party_stats",
+      "slot": 1,
+      "level": 8,
+      "current_hp": 3,
+      "max_hp": 26,
+      "status": "ok"
+    },
+    {
+      "type": "set_party_moves",
+      "slot": 1,
+      "moves": ["Scratch", "Growl"],
+      "pp": [35, 40]
+    },
+    {
+      "type": "set_item_quantity",
+      "item": "Poke Ball",
+      "quantity": 0
+    },
+    {
+      "type": "set_money",
+      "amount": 3000
+    }
+  ]
+}

@@ -1,0 +1,1845 @@
+{
+  "schema": "mvp_skill_promotion_manifest_v1",
+  "description": "Promotion backlog for the Phase 5 Capsule A MVP skill suite. Promotions can be memory addresses, visual classifiers, map facts, derived signals, or executor contracts that need canonical evidence before the Director can rely on them.",
+  "promotions": [
+    {
+      "id": "mode-and-ui-state-classification",
+      "title": "Mode and UI State Classification",
+      "category": "memory_and_visual",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "advance_dialogue",
+        "close_menu_or_cancel",
+        "recover_to_overworld",
+        "walk_local_direction",
+        "navigate_within_viridian_forest_region",
+        "enter_grass_search_loop",
+        "detect_wild_battle",
+        "handle_nickname_prompt",
+        "advance_battle_dialogue"
+      ],
+      "summary": "Promote the combined mode read that uses battle type, text/menu WRAM flags, text box ids, and screen evidence. Current behavior works for fixture flagging but still has known stale WRAM warning cases.",
+      "current_surface": "StateInspector exposes mode, battle_type_raw, warnings, and screen-derived classifications; most WRAM participants are source-backed, but the contract still depends on precedence rules and screen evidence.",
+      "promote_to": [
+        "canonical mode read contract",
+        "tests covering stale text/menu flags",
+        "documented precedence between WRAM and screen evidence"
+      ],
+      "needed_work": [
+        "Document which WRAM addresses participate in the mode decision.",
+        "Add regression tests for overworld with stale text/menu flags.",
+        "Promote the visual fallback as part of the inspector contract or keep it explicitly skill-local."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "C3A0-C507 screen tile buffer, CC24-CC2D menu fields, D057/D05A battle type fields, D35E/D361/D362 map and position fields."
+        },
+        {
+          "label": "PRET disassembly WRAM",
+          "url": "https://github.com/pret/pokered/blob/master/wram.asm",
+          "notes": "Use when Data Crystal is incomplete or naming/semantics need confirmation."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "recover-noop-stale-overworld",
+          "label": "Recover noop overworld with stale flags",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/recover_noop_stale_overworld.promotion-evidence.json",
+          "state_path": "research/skill-states/local/recover_to_overworld/noop_overworld.state",
+          "expected_observation": "Snapshot reports overworld with stale text/menu WRAM flags. No bottom text box. No upper menu.",
+          "notes": "Attached from existing metadata: research/skill-states/recover_to_overworld/noop_overworld.skill.json",
+          "screenshot_path": "research/skill-states/local/recover_to_overworld/noop_overworld.png"
+        },
+        {
+          "id": "advance-dialogue-before",
+          "label": "Dialogue prompt visual fallback",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/advance_dialogue_before.promotion-evidence.json",
+          "state_path": "research/skill-states/local/advance_dialogue/dialogue_success_before.state",
+          "expected_observation": "Snapshot mode remains menu while bottom text box is visible; this is the visual fallback edge case.",
+          "notes": "Attached from existing metadata: research/skill-states/advance_dialogue/dialogue_success_before.skill.json",
+          "screenshot_path": "research/skill-states/local/advance_dialogue/dialogue_success_before.png"
+        },
+        {
+          "id": "close-menu-blocked-overworld",
+          "label": "No-menu blocker with stale flags",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/close_menu_blocked_overworld.promotion-evidence.json",
+          "state_path": "research/skill-states/local/close_menu_or_cancel/blocked_no_menu.state",
+          "expected_observation": "Snapshot reports overworld with stale text/menu WRAM flags. No bottom text box. No upper menu.",
+          "notes": "Attached from existing metadata: research/skill-states/close_menu_or_cancel/blocked_no_menu.skill.json",
+          "screenshot_path": "research/skill-states/local/close_menu_or_cancel/blocked_no_menu.png"
+        },
+        {
+          "id": "mode-clean-overworld",
+          "label": "Clean overworld fixture",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/mode_clean_overworld.promotion-evidence.json",
+          "state_path": "research/golden-states/local/pallet_overworld_started.state",
+          "expected_observation": "Mode is overworld. No bottom text box. No upper menu.",
+          "notes": "Attached from existing metadata: research/golden-states/pallet_overworld_started.expected.json",
+          "screenshot_path": "research/golden-states/local/pallet_overworld_started.png"
+        },
+        {
+          "id": "mode-clean-dialogue",
+          "label": "Clean dialogue textbox fixture",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/mode_clean_dialogue.promotion-evidence.json",
+          "state_path": "research/golden-states/local/dialogue_textbox_open.state",
+          "expected_observation": "Mode is dialogue. Bottom text box is visible.",
+          "notes": "Attached from existing metadata: research/golden-states/dialogue_textbox_open.expected.json",
+          "screenshot_path": "research/golden-states/local/dialogue_textbox_open.png"
+        },
+        {
+          "id": "mode-menu-bag",
+          "label": "Bag menu fixture",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/mode_menu_bag.promotion-evidence.json",
+          "state_path": "research/golden-states/local/menu_open_bag_state.state",
+          "expected_observation": "Mode is menu. Upper menu is visible. No bottom text box.",
+          "notes": "Attached from existing metadata: research/golden-states/menu_open_bag_state.expected.json",
+          "screenshot_path": "research/golden-states/local/menu_open_bag_state.png"
+        },
+        {
+          "id": "mode-battle-action-menu",
+          "label": "Battle action menu fixture",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/mode_and_ui_state_classification/mode_battle_action_menu.promotion-evidence.json",
+          "state_path": "research/golden-states/local/brock_battle_action_menu.state",
+          "expected_observation": "Mode is battle. Battle action menu is visible.",
+          "notes": "Attached from existing metadata: research/golden-states/brock_battle_action_menu.expected.json",
+          "screenshot_path": "research/golden-states/local/brock_battle_action_menu.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T00:24:58.341Z",
+        "notes": "Evidence 'mode-battle-action-menu' attached."
+      }
+    },
+    {
+      "id": "gen1-text-menu-visual-classifiers",
+      "title": "Gen 1 Text and Menu Visual Classifiers",
+      "category": "visual_classifier",
+      "status": "candidate",
+      "priority": "p0",
+      "skill_ids": [
+        "advance_dialogue",
+        "close_menu_or_cancel",
+        "recover_to_overworld",
+        "handle_nickname_prompt",
+        "detect_stuckness"
+      ],
+      "summary": "Promote pixel/tile heuristics for bottom text boxes, upper menus, yes/no prompts, and ambiguous mixed UI states.",
+      "current_surface": "skills.visual_state identifies bottom text boxes and upper menus; battle_ui separately detects battle action/item/move/party menus.",
+      "promote_to": [
+        "visual classifier module with named fixtures",
+        "fixture tests for non-battle text/menu states",
+        "explicit uncertainty class for mixed prompt plus menu surfaces"
+      ],
+      "needed_work": [
+        "Add nickname yes/no and naming-screen fixtures.",
+        "Add tests that distinguish ordinary overworld art from dialogue boxes.",
+        "Decide whether classifiers should consume screenshots, tile maps, or both."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "C3A0-C507 screen tile buffer and C508-C5CF previous buffer support tile-based UI classifiers, but prompt semantics still require fixture validation."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "advance-start-menu-blocker",
+          "label": "Start menu is not dialogue",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/advance_dialogue/blocked_no_dialogue.skill.json",
+          "state_path": "research/skill-states/local/advance_dialogue/blocked_no_dialogue.state",
+          "screenshot_path": "research/skill-states/local/advance_dialogue/blocked_no_dialogue.png",
+          "expected_observation": "Upper menu is visible; A should not be treated as dialogue advancement."
+        },
+        {
+          "id": "advance-mixed-prompt",
+          "label": "Mixed prompt/menu uncertainty",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/advance_dialogue/uncertain_repeating_dialogue.skill.json",
+          "state_path": "research/skill-states/local/advance_dialogue/uncertain_repeating_dialogue.state",
+          "screenshot_path": "research/skill-states/local/advance_dialogue/uncertain_repeating_dialogue.png",
+          "expected_observation": "Bottom text and upper menu are both visible; skill should remain uncertain."
+        },
+        {
+          "id": "golden-dialogue-textbox",
+          "label": "Golden dialogue textbox",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/dialogue_textbox_open.expected.json",
+          "state_path": "research/golden-states/local/dialogue_textbox_open.state",
+          "screenshot_path": "research/golden-states/local/dialogue_textbox_open.png",
+          "expected_observation": "Human-verified dialogue box baseline."
+        }
+      ]
+    },
+    {
+      "id": "battle-menu-and-cursor-detection",
+      "title": "Battle Menu and Cursor Detection",
+      "category": "visual_classifier",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "attempt_catch",
+        "wild_battle_policy",
+        "use_item",
+        "switch_party_member",
+        "detect_stuckness",
+        "use_move",
+        "advance_battle_dialogue"
+      ],
+      "summary": "Promote battle UI kind and cursor reads for action, dialogue, item, move, and party menus so modular battle action skills can recover safely from submenu starts.",
+      "current_surface": "battle_ui.py detects battle action, item, move, party, and dialogue states from screenshots; battle_menu_env consumes these facts, and use_move now depends on the same cursor contract for Fight and move-menu routing.",
+      "promote_to": [
+        "canonical battle UI fact object",
+        "action mask source for battle menu skills",
+        "fixture matrix across action/menu/party/dialogue starts"
+      ],
+      "needed_work": [
+        "Add fixture tests for every battle cursor position.",
+        "Include item-list cursor and selected item index, not only top-level menu kind.",
+        "Keep battle menu cancellation separate from non-battle close_menu_or_cancel.",
+        "Extend move-menu cursor coverage to all four move slots used by use_move, including wrong-submenu recovery back to the action menu."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "CC26 current menu item, CC2B/CC2C/CC2D last cursor positions, C3A0-C507 tile buffer, and D057/D05A battle type fields are relevant."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "attempt-catch-prethrow",
+          "label": "Catch attempt prethrow state",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_before.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png",
+          "expected_observation": "Wild battle state with Poke Balls available before selecting the item."
+        },
+        {
+          "id": "policy-item-menu",
+          "label": "Policy item menu start",
+          "kind": "policy_state",
+          "metadata_path": "research/policy-states/battle_menu_throw/pikachu_fullhealth_fight.policy-state.json",
+          "state_path": "research/policy-states/local/battle_menu_throw/pikachu_fullhealth_fight.state",
+          "screenshot_path": "research/policy-states/local/battle_menu_throw/pikachu_fullhealth_fight.png",
+          "expected_observation": "Battle UI surface used by the throw-ball micro-policy."
+        },
+        {
+          "id": "battle-menu-blocked-close",
+          "label": "Battle menu must not use non-battle cancel skill",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/close_menu_or_cancel/blocked_battle_menu.skill.json",
+          "state_path": "research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.state",
+          "screenshot_path": "research/skill-states/local/close_menu_or_cancel/blocked_battle_menu.png",
+          "expected_observation": "Battle UI is blocked for close_menu_or_cancel and should route to battle policy."
+        },
+        {
+          "id": "step_01_pre_action_wild_battle",
+          "label": "pre-action_wild_battle",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_01_pre_action_wild_battle.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_pre_action_wild_battle.state",
+          "expected_observation": "Top level battle menu. Cursor is on \"Fight\" (default)",
+          "notes": "Captured for promotion step 1: Start from a pre-action wild battle",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_pre_action_wild_battle.png"
+        },
+        {
+          "id": "step_01_item_menu_ball",
+          "label": "item_menu_ball",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_01_item_menu_ball.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_item_menu_ball.state",
+          "expected_observation": "Item menu. Cursor has Pokeball selected.",
+          "notes": "Captured for promotion step 1: Start from a pre-action wild battle",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_item_menu_ball.png"
+        },
+        {
+          "id": "step_01_item_menu_non_battle_item",
+          "label": "item_menu_non-battle_item",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_01_item_menu_non_battle_item.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_item_menu_non_battle_item.state",
+          "expected_observation": "ITem menu. Cursor has a non-battle item selected (Town Map)",
+          "notes": "Captured for promotion step 1: Start from a pre-action wild battle",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_item_menu_non_battle_item.png"
+        },
+        {
+          "id": "step_01_move_menu_leer",
+          "label": "move_menu_leer",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_01_move_menu_leer.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_move_menu_leer.state",
+          "expected_observation": "Move menu. Cursor is on \"Leer\" (default).",
+          "notes": "Captured for promotion step 1: Start from a pre-action wild battle",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_move_menu_leer.png"
+        },
+        {
+          "id": "step_01_party_menu_nidoran",
+          "label": "party_menu_nidoran",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_01_party_menu_nidoran.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_party_menu_nidoran.state",
+          "expected_observation": "Move menu open. Cursor is on \"Nidoran\".",
+          "notes": "Captured for promotion step 1: Start from a pre-action wild battle",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_party_menu_nidoran.png"
+        },
+        {
+          "id": "step_01_party_menu_switch",
+          "label": "party_menu_switch",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_01_party_menu_switch.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_party_menu_switch.state",
+          "expected_observation": "Party menu open, Squirtle selected. Cursor is in party submenu on \"Switch\"",
+          "notes": "Captured for promotion step 1: Start from a pre-action wild battle",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_01_party_menu_switch.png"
+        },
+        {
+          "id": "step_03_backtracked",
+          "label": "backtracked",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/step_03_backtracked.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_03_backtracked.state",
+          "expected_observation": "Backtracking evidence proves whether the executor can recover from the wrong battle submenu.",
+          "notes": "Captured for promotion step 3: Verify item-menu backtracking",
+          "screenshot_path": "research/promotions/evidence/local/battle_menu_and_cursor_detection/step_03_backtracked.png"
+        },
+        {
+          "id": "battle_dialogue_throw_result",
+          "label": "Battle dialogue after throw result",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_menu_and_cursor_detection/battle_dialogue_throw_result.promotion-evidence.json",
+          "state_path": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.state",
+          "expected_observation": "Wild battle dialogue is visible after a throw result. The battle UI kind should be dialogue.",
+          "notes": "Attached from existing metadata: research/skill-states/attempt_catch/uncertain_throw_dialogue.skill.json",
+          "screenshot_path": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "promotion evidence capture",
+        "reviewed_at": "2026-06-24T15:33:06.361982+00:00",
+        "notes": "Evidence 'battle_dialogue_throw_result' attached."
+      }
+    },
+    {
+      "id": "battle-dialogue-advancement-contract",
+      "title": "Battle Dialogue Advancement Contract",
+      "category": "executor_contract",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "advance_battle_dialogue",
+        "attempt_catch",
+        "use_move",
+        "switch_party_member"
+      ],
+      "summary": "Promote the Director-facing contract for wild battle dialogue recovery: enable the skill only when an active wild battle is showing dialogue, then press A until the battle action menu returns or the battle ends.",
+      "current_surface": "advance_battle_dialogue gates on snapshot mode, battle_type_raw, and battle_ui.kind from screenshots. Evidence now covers catch-result dialogue, battle-intro dialogue, short move-result dialogue, action-menu blockers, and human-demonstrated dialogue-to-action-menu resolution.",
+      "promote_to": [
+        "canonical battle-dialogue skill precondition",
+        "bounded advancement executor contract",
+        "Director skill gating rule for post-turn and post-item dialogue"
+      ],
+      "needed_work": [
+        "Add trainer-battle dialogue evidence before relying on this outside wild battles.",
+        "Add post-catch nickname-prompt evidence before letting this skill advance through catch ownership prompts automatically.",
+        "Keep battle submenu recovery owned by use_move, attempt_catch, switch_party_member, and battle-menu backtracking skills; advance_battle_dialogue should remain dialogue-only."
+      ],
+      "source_refs": [
+        {
+          "label": "Local battle UI classifier",
+          "url": null,
+          "notes": "src/pokemon_player/battle_ui.py provides the promoted screenshot-derived battle_ui.kind values used by this gate."
+        },
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "D057/D05A battle type fields distinguish active battle context; C3A0-C507 screen tile buffer supports the visual dialogue/menu classifier."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "battle_dialogue_waiting_throw_result",
+          "label": "Waiting battle dialogue after throw",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/battle_dialogue_waiting_throw_result.promotion-evidence.json",
+          "state_path": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.state",
+          "expected_observation": "Wild battle dialogue is visible after a throw result. Safe next input is A. The battle UI kind should be dialogue.",
+          "notes": "Attached from existing metadata: research/skill-states/attempt_catch/uncertain_throw_dialogue.skill.json",
+          "screenshot_path": "research/skill-states/local/attempt_catch/uncertain_throw_dialogue.png"
+        },
+        {
+          "id": "battle_action_menu_blocks_dialogue_advance",
+          "label": "Battle action menu blocks dialogue advance",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/battle_action_menu_blocks_dialogue_advance.promotion-evidence.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+          "expected_observation": "Wild battle action menu is visible with no dialogue waiting. advance_battle_dialogue should be blocked because the battle UI kind is action_menu.",
+          "notes": "Attached from existing metadata: research/skill-states/attempt_catch/success_before.skill.json",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png"
+        },
+        {
+          "id": "step_01_battle_intro_dialogue_before",
+          "label": "Battle intro dialogue before advancement",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_before.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_before.state",
+          "expected_observation": "Wild battle intro dialogue is visible. Safe next input is A. The battle UI kind should be dialogue.",
+          "notes": "Captured for battle dialogue advancement: intro dialogue before bounded A advancement.",
+          "screenshot_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_before.png"
+        },
+        {
+          "id": "step_01_battle_intro_dialogue_after",
+          "label": "Battle intro dialogue resolved to action menu",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_after.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_after.state",
+          "expected_observation": "Wild battle action menu is visible after advancing intro dialogue. The battle UI kind should be action_menu.",
+          "notes": "Captured for battle dialogue advancement: intro dialogue after manual advancement yielded control.",
+          "screenshot_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_battle_intro_dialogue_after.png"
+        },
+        {
+          "id": "step_01_move_dialogue_before",
+          "label": "Move-result dialogue before advancement",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/step_01_move_dialogue_before.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_move_dialogue_before.state",
+          "expected_observation": "Wild battle move-result dialogue is visible after a move. Safe next input is A. The battle UI kind should be dialogue.",
+          "notes": "Captured for battle dialogue advancement: move-result dialogue before bounded A advancement.",
+          "screenshot_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_move_dialogue_before.png"
+        },
+        {
+          "id": "step_01_move_dialogue_after",
+          "label": "Move-result dialogue resolved to action menu",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/step_01_move_dialogue_after.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_move_dialogue_after.state",
+          "expected_observation": "Wild battle action menu is visible after advancing move-result dialogue. The battle UI kind should be action_menu.",
+          "notes": "Captured for battle dialogue advancement: move-result dialogue after manual advancement yielded control.",
+          "screenshot_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_move_dialogue_after.png"
+        },
+        {
+          "id": "step_01_step_1_attach_a_waiting_battle_dialogue_fixture_20260624t154314z",
+          "label": "Additional action-menu blocker after dialogue advancement",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_dialogue_advancement_contract/step_01_step_1_attach_a_waiting_battle_dialogue_fixture_20260624t154314z.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_step_1_attach_a_waiting_battle_dialogue_fixture_20260624t154314z.state",
+          "expected_observation": "Wild battle action menu is visible with no dialogue waiting. advance_battle_dialogue should be blocked because the battle UI kind is action_menu.",
+          "notes": "Relabeled from default capture as non-dialogue blocker evidence for battle dialogue gating.",
+          "screenshot_path": "research/promotions/evidence/local/battle_dialogue_advancement_contract/step_01_step_1_attach_a_waiting_battle_dialogue_fixture_20260624t154314z.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T15:53:45.252Z",
+        "notes": "Evidence 'step_01_step_1_attach_a_waiting_battle_dialogue_fixture_20260624t154314z' attached."
+      }
+    },
+    {
+      "id": "battle-enemy-facts",
+      "title": "Battle Enemy Species and HP Facts",
+      "category": "memory_address",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "detect_wild_battle",
+        "wild_battle_policy",
+        "attempt_catch",
+        "enter_grass_search_loop",
+        "detect_capsule_success",
+        "use_move"
+      ],
+      "summary": "Promote enemy species, enemy current HP, and enemy max HP reads for safe catch/fight decisions and target-specific capsule success.",
+      "current_surface": "Data Crystal covers the international WRAM enemy battle struct addresses; they are used experimentally by battle_menu_env but are not yet promoted into StateInspector output.",
+      "promote_to": [
+        "StateInspector enemy battle facts",
+        "tests across multiple wild battle species",
+        "battle-policy reward and failure classifiers"
+      ],
+      "needed_work": [
+        "Validate enemy current HP and max HP addresses against human-observed damage.",
+        "Identify canonical enemy species/level addresses.",
+        "Add snapshot fields for enemy battle facts."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "CFE5 enemy species, CFE6-CFE7 enemy HP, CFE8 early enemy level field, CFF3 enemy stats-struct level, CFE9 enemy status, CFF4-CFF5 enemy max HP, and D007 enemy catch rate. Promotion evidence currently validates CFF3 for the displayed enemy level."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "wild-weedle-golden",
+          "label": "Viridian Forest Weedle battle",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/viridian_forest_wild_battle_weedle.expected.json",
+          "state_path": "research/golden-states/local/viridian_forest_wild_battle_weedle.state",
+          "screenshot_path": "research/golden-states/local/viridian_forest_wild_battle_weedle.png",
+          "expected_observation": "Wild battle in Viridian Forest; enemy species should read Weedle once promoted."
+        },
+        {
+          "id": "wild-pikachu-weakened",
+          "label": "Viridian Forest weakened Pikachu",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/viridian_forest_wild_battle_pikachu_weakened.expected.json",
+          "state_path": "research/golden-states/local/viridian_forest_wild_battle_pikachu_weakened.state",
+          "screenshot_path": "research/golden-states/local/viridian_forest_wild_battle_pikachu_weakened.png",
+          "expected_observation": "Enemy HP should be lower than max and species should read Pikachu."
+        },
+        {
+          "id": "policy-kakuna",
+          "label": "Policy Kakuna battle",
+          "kind": "policy_state",
+          "metadata_path": "research/policy-states/battle_menu_throw/kakuna_fullhealth_fight.policy-state.json",
+          "state_path": "research/policy-states/local/battle_menu_throw/kakuna_fullhealth_fight.state",
+          "screenshot_path": "research/policy-states/local/battle_menu_throw/kakuna_fullhealth_fight.png",
+          "expected_observation": "Additional wild battle species for enemy fact validation."
+        },
+        {
+          "id": "step_01_l6_kakuna_full",
+          "label": "l6_kakuna_full",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_enemy_facts/step_01_l6_kakuna_full.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l6_kakuna_full.state",
+          "expected_observation": "Kakuna, Level Six, Full health",
+          "notes": "Captured for promotion step 1: Load multiple wild battle species",
+          "screenshot_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l6_kakuna_full.png"
+        },
+        {
+          "id": "step_01_l3_weedle_full",
+          "label": "l3_weedle_full",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_enemy_facts/step_01_l3_weedle_full.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_weedle_full.state",
+          "expected_observation": "Level 3, Weedle, Full Health",
+          "notes": "Captured for promotion step 1: Load multiple wild battle species",
+          "screenshot_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_weedle_full.png"
+        },
+        {
+          "id": "step_01_l3_weedle_low",
+          "label": "l3_weedle_low",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_enemy_facts/step_01_l3_weedle_low.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_weedle_low.state",
+          "expected_observation": "Level 3, Weedle, Low health",
+          "notes": "Captured for promotion step 1: Load multiple wild battle species",
+          "screenshot_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_weedle_low.png"
+        },
+        {
+          "id": "step_01_l3_pikachu_full",
+          "label": "l3_pikachu_full",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_enemy_facts/step_01_l3_pikachu_full.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_pikachu_full.state",
+          "expected_observation": "Level 3, Pikachu, Full health",
+          "notes": "Captured for promotion step 1: Load multiple wild battle species",
+          "screenshot_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_pikachu_full.png"
+        },
+        {
+          "id": "step_01_l3_pikachu_low",
+          "label": "l3_pikachu_low",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_enemy_facts/step_01_l3_pikachu_low.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_pikachu_low.state",
+          "expected_observation": "Level 3, Pikachu, Low health",
+          "notes": "Captured for promotion step 1: Load multiple wild battle species",
+          "screenshot_path": "research/promotions/evidence/local/battle_enemy_facts/step_01_l3_pikachu_low.png"
+        },
+        {
+          "id": "step_02_l6_kakuna_low",
+          "label": "l6_kakuna_low",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_enemy_facts/step_02_l6_kakuna_low.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_enemy_facts/step_02_l6_kakuna_low.state",
+          "expected_observation": "Level 6, Kakuna, Low health",
+          "notes": "Captured for promotion step 2: Collect full-health and damaged-health examples",
+          "screenshot_path": "research/promotions/evidence/local/battle_enemy_facts/step_02_l6_kakuna_low.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-23T23:13:43.692Z",
+        "notes": "Evidence 'step_02_l6_kakuna_low' attached."
+      }
+    },
+    {
+      "id": "party-inventory-and-catch-delta",
+      "title": "Party, Inventory, and Catch Delta Facts",
+      "category": "memory_address",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "attempt_catch",
+        "use_item",
+        "detect_party_changed",
+        "detect_capsule_success",
+        "detect_blackout_or_party_wipe"
+      ],
+      "summary": "Rely on verified party, inventory, HP, status, move, PP, and money fields; use before/after deltas for catch and item results.",
+      "current_surface": "address-promotion.md lists these runtime mutation/read fields as verified, and StateInspector snapshots expose them.",
+      "promote_to": [
+        "typed skill preconditions",
+        "catch result verifier",
+        "item use verifier",
+        "party-change verifier"
+      ],
+      "needed_work": [
+        "Keep party and inventory deltas in skill run reports.",
+        "Add target species checks for capsule success.",
+        "Add negative fixture for full party once PC/box handling becomes relevant."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "D163 party count, D164-D169 party species list, D16B onward party structs, D2B5-D2F6 nicknames, D31D-D346 inventory, D347-D349 money, D356 badges."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "catch-before",
+          "label": "Catch before throw",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_before.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png",
+          "expected_observation": "Poke Ball count and party signature before throw."
+        },
+        {
+          "id": "catch-after",
+          "label": "Catch after success",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_after.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_after.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_after.png",
+          "expected_observation": "Poke Ball count decreased and party count/species changed."
+        },
+        {
+          "id": "no-balls-blocker",
+          "label": "No-ball catch blocker",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/blocked_no_balls.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/blocked_no_balls.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/blocked_no_balls.png",
+          "expected_observation": "Wild battle with no Poke Balls should block attempt_catch."
+        }
+      ]
+    },
+    {
+      "id": "capsule-a-region-and-landmarks",
+      "title": "Capsule A Region and Landmark Whitelist",
+      "category": "map_surface",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "navigate_within_viridian_forest_region",
+        "enter_grass_search_loop",
+        "detect_stuckness"
+      ],
+      "summary": "Promote the allowed Capsule A region maps, landmark coordinates, and safe route endpoints for Viridian City, Route 2, and Viridian Forest.",
+      "current_surface": "Snapshots expose map id/name/x/y, but no canonical region graph or landmark catalog exists for navigation.",
+      "promote_to": [
+        "Capsule A region whitelist",
+        "landmark catalog",
+        "bounded route graph for local navigation"
+      ],
+      "needed_work": [
+        "Define the maps and coordinates that are in-bounds for Capsule A.",
+        "Identify start, gate, forest entrance, grass patch, mart, and Pokecenter landmarks.",
+        "Block navigation if a state is outside the allowed region."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "D35E current map, D361 player Y, and D362 player X are source-backed; region/landmark semantics are project-specific."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "route-2-overworld",
+          "label": "Route 2 corridor",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/route_2_overworld.expected.json",
+          "state_path": "research/golden-states/local/route_2_overworld.state",
+          "screenshot_path": "research/golden-states/local/route_2_overworld.png",
+          "expected_observation": "Allowed corridor map for reaching Viridian Forest."
+        },
+        {
+          "id": "forest-south-gate",
+          "label": "Viridian Forest south gate",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/viridian_forest_south_gate.expected.json",
+          "state_path": "research/golden-states/local/viridian_forest_south_gate.state",
+          "screenshot_path": "research/golden-states/local/viridian_forest_south_gate.png",
+          "expected_observation": "Boundary landmark between corridor and forest."
+        },
+        {
+          "id": "viridian-city-ready",
+          "label": "Viridian City with supplies",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/viridian_city_overworld_has_pokeballs_potions.expected.json",
+          "state_path": "research/golden-states/local/viridian_city_overworld_has_pokeballs_potions.state",
+          "screenshot_path": "research/golden-states/local/viridian_city_overworld_has_pokeballs_potions.png",
+          "expected_observation": "Allowed resupply/start region for Capsule A."
+        },
+        {
+          "id": "step_01_viridian_city_ready_point",
+          "label": "viridian city ready point",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_city_ready_point.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_city_ready_point.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_city_ready_point.png"
+        },
+        {
+          "id": "step_01_route_22_grass",
+          "label": "route 22 grass",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_route_22_grass.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_22_grass.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_22_grass.png"
+        },
+        {
+          "id": "step_01_route_2_corridor",
+          "label": "route_2_corridor",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_route_2_corridor.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_2_corridor.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_2_corridor.png"
+        },
+        {
+          "id": "step_01_route_2_north_exit_threshold",
+          "label": "route_2_north_exit_threshold",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_route_2_north_exit_threshold.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_2_north_exit_threshold.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_2_north_exit_threshold.png"
+        },
+        {
+          "id": "step_01_viridan_forest_south_gate_from_south",
+          "label": "viridan_forest_south_gate_from_south",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridan_forest_south_gate_from_south.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridan_forest_south_gate_from_south.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridan_forest_south_gate_from_south.png"
+        },
+        {
+          "id": "step_01_viridian_forest_south_gate_from_north",
+          "label": "viridian_forest_south_gate_from_north",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_forest_south_gate_from_north.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_south_gate_from_north.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_south_gate_from_north.png"
+        },
+        {
+          "id": "step_01_viridian_forest_grass_1",
+          "label": "viridian_forest_grass_1",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_forest_grass_1.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_grass_1.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_grass_1.png"
+        },
+        {
+          "id": "step_01_viridian_forest_grass_2",
+          "label": "viridian_forest_grass_2",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_forest_grass_2.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_grass_2.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_grass_2.png"
+        },
+        {
+          "id": "step_01_viridian_forest_north_exit",
+          "label": "viridian_forest_north_exit",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_forest_north_exit.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_north_exit.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_north_exit.png"
+        },
+        {
+          "id": "step_01_viridian_forest_north_gate_from_south",
+          "label": "viridian_forest_north_gate_from_south",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_forest_north_gate_from_south.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_north_gate_from_south.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_north_gate_from_south.png"
+        },
+        {
+          "id": "step_01_viridian_forest_north_gate_from_north",
+          "label": "viridian_forest_north_gate_from_north",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_viridian_forest_north_gate_from_north.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_north_gate_from_north.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_viridian_forest_north_gate_from_north.png"
+        },
+        {
+          "id": "step_01_route_2_north",
+          "label": "route_2_north",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_route_2_north.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_2_north.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_route_2_north.png"
+        },
+        {
+          "id": "step_01_pewter_city_start",
+          "label": "pewter_city_start",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_a_region_and_landmarks/step_01_pewter_city_start.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_pewter_city_start.state",
+          "expected_observation": "Each landmark has map id/name, x/y, screenshot, and state path.",
+          "notes": "Captured for promotion step 1: Collect boundary landmarks",
+          "screenshot_path": "research/promotions/evidence/local/capsule_a_region_and_landmarks/step_01_pewter_city_start.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T14:22:40.494Z",
+        "notes": "Evidence 'step_01_pewter_city_start' attached."
+      }
+    },
+    {
+      "id": "local-collision-and-walkability",
+      "title": "Local Collision and Walkability",
+      "category": "map_surface",
+      "status": "candidate",
+      "priority": "p0",
+      "skill_ids": [
+        "walk_local_direction",
+        "navigate_within_viridian_forest_region",
+        "enter_grass_search_loop",
+        "detect_stuckness"
+      ],
+      "summary": "Promote collision/walkability facts so a blocked local step can be explained without relying on a single human-labeled fixture coordinate.",
+      "current_surface": "walk_local_direction can verify before/after movement, but standalone blocked classification currently uses a human fixture position.",
+      "promote_to": [
+        "collision-aware local walk preflight",
+        "blocked step reason classifier",
+        "route planner obstruction handling"
+      ],
+      "needed_work": [
+        "Identify a source for map collision data or derive a local collision grid from observed states.",
+        "Record player facing direction if needed for blocked interaction effects.",
+        "Replace fixture-position blockers with map-aware blockers."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "C100-C2FF sprite data includes player sprite/facing/movement details, and D363 is used locally as player facing. Collision geometry itself is not just a WRAM scalar."
+        },
+        {
+          "label": "PRET disassembly",
+          "url": "https://github.com/pret/pokered",
+          "notes": "Likely source for map collision tables, tileset collision, and movement routines."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "walk-before",
+          "label": "One-step walk before",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/walk_local_direction/step_success_before.skill.json",
+          "state_path": "research/skill-states/local/walk_local_direction/step_success_before.state",
+          "screenshot_path": "research/skill-states/local/walk_local_direction/step_success_before.png",
+          "expected_observation": "Stable overworld with a valid left step."
+        },
+        {
+          "id": "walk-after",
+          "label": "One-step walk after",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/walk_local_direction/step_success_after.skill.json",
+          "state_path": "research/skill-states/local/walk_local_direction/step_success_after.state",
+          "screenshot_path": "research/skill-states/local/walk_local_direction/step_success_after.png",
+          "expected_observation": "Position delta is exactly one tile left."
+        },
+        {
+          "id": "walk-blocked",
+          "label": "Human-verified local blocker",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/walk_local_direction/blocked_wall_or_npc.skill.json",
+          "state_path": "research/skill-states/local/walk_local_direction/blocked_wall_or_npc.state",
+          "screenshot_path": "research/skill-states/local/walk_local_direction/blocked_wall_or_npc.png",
+          "expected_observation": "Attempted movement is blocked by local map geometry or NPC placement."
+        }
+      ]
+    },
+    {
+      "id": "grass-patch-and-encounter-search",
+      "title": "Grass Patch and Encounter Search Surface",
+      "category": "map_surface",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "enter_grass_search_loop",
+        "detect_wild_battle",
+        "navigate_within_viridian_forest_region"
+      ],
+      "summary": "Promote approved grass patch coordinates and encounter-loop boundaries so the search skill can pace without wandering out of bounds.",
+      "current_surface": "Promotion evidence defines the MVP Viridian Forest south grass patch as map 0x33, x=28..32, y=41..43, with machine checks for near/inside/blocked/wild-battle states. The executor paces horizontally inside this patch and stops when battle_type_raw indicates a wild battle.",
+      "promote_to": [
+        "approved grass patch catalog",
+        "search-loop movement pattern",
+        "transition detector from overworld search to battle"
+      ],
+      "needed_work": [
+        "Human-approve the candidate grass patch contract after reviewing the machine-checkable evidence.",
+        "Tune max search steps if repeated manual validation shows deterministic misses from approved starts.",
+        "Add additional approved patches later when Capsule A needs broader encounter coverage."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "Map and player coordinate fields are covered; wild encounter tables/grass geometry need map data and local fixtures."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "forest-grass-golden",
+          "label": "Viridian Forest grass",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/viridian_forest_grass.expected.json",
+          "state_path": "research/golden-states/local/viridian_forest_grass.state",
+          "screenshot_path": "research/golden-states/local/viridian_forest_grass.png",
+          "expected_observation": "Candidate approved grass search start."
+        },
+        {
+          "id": "forest-weedle-battle",
+          "label": "Wild battle after grass",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/viridian_forest_wild_battle_weedle.expected.json",
+          "state_path": "research/golden-states/local/viridian_forest_wild_battle_weedle.state",
+          "screenshot_path": "research/golden-states/local/viridian_forest_wild_battle_weedle.png",
+          "expected_observation": "Search loop should terminate once battle_type_raw indicates wild battle."
+        },
+        {
+          "id": "capture-needed-grass-search",
+          "label": "Executor validation from approved grass",
+          "kind": "executor_validation",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\run_skill.py enter_grass_search_loop --execution-mode headless --state-in \"research\\promotions\\evidence\\local\\grass_patch_and_encounter_search\\step_01_standing_in_viridian_approved_grass.state\" --max-grass-search-steps 240",
+          "expected_observation": "Executor should pace inside the approved grass patch and stop once a wild battle starts."
+        },
+        {
+          "id": "step_01_near_viridian_approved_grass",
+          "label": "near_viridian_approved_grass",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/grass_patch_and_encounter_search/step_01_near_viridian_approved_grass.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_near_viridian_approved_grass.state",
+          "expected_observation": "Grass start state has screenshot, map coordinates, and visible grass tiles.",
+          "notes": "Captured for promotion step 1: Load a known grass start",
+          "screenshot_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_near_viridian_approved_grass.png"
+        },
+        {
+          "id": "step_01_standing_in_viridian_approved_grass",
+          "label": "standing_in_viridian_approved_grass",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/grass_patch_and_encounter_search/step_01_standing_in_viridian_approved_grass.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_standing_in_viridian_approved_grass.state",
+          "expected_observation": "Grass start state has screenshot, map coordinates, and visible grass tiles.",
+          "notes": "Captured for promotion step 1: Load a known grass start",
+          "screenshot_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_standing_in_viridian_approved_grass.png"
+        },
+        {
+          "id": "step_01_wild_battle_in_approved_grass",
+          "label": "wild_battle_in_approved_grass",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/grass_patch_and_encounter_search/step_01_wild_battle_in_approved_grass.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_wild_battle_in_approved_grass.state",
+          "expected_observation": "At the very beginning of the encounter. Dialogue not resolved.",
+          "notes": "Captured for promotion step 1: Load a known grass start",
+          "screenshot_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_wild_battle_in_approved_grass.png"
+        },
+        {
+          "id": "step_01_blocked_not_near_grass",
+          "label": "blocked_not_near_grass",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/grass_patch_and_encounter_search/step_01_blocked_not_near_grass.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_blocked_not_near_grass.state",
+          "expected_observation": "Grass start state has screenshot, map coordinates, and visible grass tiles.",
+          "notes": "Captured for promotion step 1: Load a known grass start",
+          "screenshot_path": "research/promotions/evidence/local/grass_patch_and_encounter_search/step_01_blocked_not_near_grass.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T14:40:51.713Z",
+        "notes": ""
+      }
+    },
+    {
+      "id": "post-catch-pokedex-registration-contract",
+      "title": "Post-Catch Pokedex Registration Contract",
+      "category": "executor_contract",
+      "status": "candidate",
+      "priority": "p0",
+      "skill_ids": [
+        "resolve_battle_outcome_dialogue_bundle",
+        "handle_nickname_prompt",
+        "detect_capsule_success"
+      ],
+      "summary": "Promote the post-catch sequence between a successful throw and the nickname prompt: caught text, Pokedex data announcement, Pokedex page text, and transition into the nickname decision surface.",
+      "current_surface": "The latest director-player manual captures show a successful Pikachu catch where memory still reports battle mode while the visible UI advances through Pokedex registration and into the nickname prompt.",
+      "promote_to": [
+        "post-catch Pokedex text classifier",
+        "Pokedex-page aftermath classifier",
+        "catch-aftermath branch router",
+        "safe handoff from outcome dialogue to nickname prompt handling"
+      ],
+      "needed_work": [
+        "Add visual/tile assertions for Pokedex registration text and Pokedex page surfaces.",
+        "Confirm whether Pokedex-owned flips before or after the nickname screen closes for new species.",
+        "Teach resolve_battle_outcome_dialogue_bundle to hand off when nickname prompt or naming screen is detected."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "Battle type, party roster, party nicknames, and Pokedex seen/owned bitsets participate in the post-catch contract. The visible Pokedex page itself still needs local UI evidence."
+        },
+        {
+          "label": "Latest director-player capture cluster",
+          "url": null,
+          "notes": "Manual A-press captures from 2026-06-24T22:22Z through 2026-06-24T22:24Z show the full successful-catch aftermath path for Pikachu."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "pokedex-data-text-start",
+          "label": "Pokedex data text starts",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222251369100Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222251369100Z0000/before.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222251369100Z0000/before.png",
+          "expected_observation": "Battle-mode memory with successful catch aftermath text beginning: New Pokedex data will be added."
+        },
+        {
+          "id": "pokedex-data-text-species",
+          "label": "Pokedex data text names Pikachu",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222251369100Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222251369100Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222251369100Z0000/after.png",
+          "expected_observation": "Post-catch text has advanced to naming the caught species before opening the Pokedex page."
+        },
+        {
+          "id": "pokedex-page-description-start",
+          "label": "Pokedex page first description text",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222306317769Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222306317769Z0000/before.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222306317769Z0000/before.png",
+          "expected_observation": "Pokedex page is visible for Pikachu with the first description text page."
+        },
+        {
+          "id": "pokedex-page-description-continued",
+          "label": "Pokedex page continued description text",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222306317769Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222306317769Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222306317769Z0000/after.png",
+          "expected_observation": "Pokedex page advances to the continued description text before the nickname prompt."
+        }
+      ]
+    },
+    {
+      "id": "nickname-prompt-detector",
+      "title": "Nickname Prompt Detector",
+      "category": "visual_classifier",
+      "status": "candidate",
+      "priority": "p0",
+      "skill_ids": [
+        "handle_nickname_prompt",
+        "advance_dialogue",
+        "detect_capsule_success"
+      ],
+      "summary": "Promote yes/no nickname prompt detection and handoff into either decline or naming-keyboard execution.",
+      "current_surface": "The latest director-player manual captures include the nickname question rendering over multiple A presses, with the yes/no cursor visible before entering the naming screen.",
+      "promote_to": [
+        "nickname yes/no prompt visual detector",
+        "yes/no cursor detector",
+        "post-catch flow branch router",
+        "naming-screen handoff"
+      ],
+      "needed_work": [
+        "Add screenshot/tile assertions for the completed nickname question and yes/no menu.",
+        "Define default v0 behavior for no nickname request: decline and continue.",
+        "Route explicit nickname requests to enter_nickname_text after selecting yes."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "Name-related buffers and party nickname storage are covered. Prompt detection itself relies on local UI/tile fixtures."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "nickname-question-partial",
+          "label": "Nickname question begins rendering",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222327351155Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222327351155Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222327351155Z0000/after.png",
+          "expected_observation": "Post-catch flow has reached the nickname question text but the prompt may not be fully rendered yet."
+        },
+        {
+          "id": "nickname-question-complete",
+          "label": "Nickname yes/no prompt complete",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222337148845Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222337148845Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222337148845Z0000/after.png",
+          "expected_observation": "Nickname prompt is fully visible with yes/no menu and cursor on YES."
+        },
+        {
+          "id": "nickname-accepted-to-keyboard",
+          "label": "Accept nickname prompt enters keyboard",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222352075861Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222352075861Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222352075861Z0000/after.png",
+          "expected_observation": "Answering YES reaches the Gen 1 naming keyboard for the caught Pikachu."
+        }
+      ]
+    },
+    {
+      "id": "nickname-entry-keyboard-contract",
+      "title": "Nickname Entry Keyboard Contract",
+      "category": "executor_contract",
+      "status": "candidate",
+      "priority": "p0",
+      "skill_ids": [
+        "enter_nickname_text",
+        "handle_nickname_prompt",
+        "detect_party_changed"
+      ],
+      "summary": "Promote the Gen 1 naming keyboard contract: detect keyboard case/control row, navigate to letters, use END, and verify the caught Pokemon's party nickname after commit.",
+      "current_surface": "Manual captures show accepting the nickname prompt, toggling keyboard case, entering Mannn, selecting END, and returning to overworld with Pikachu nicknamed Mannn in party slot 6. A newer uppercase-only ABK capture identifies stable keyboard cursor fields and validates a cursor-aware executor path.",
+      "promote_to": [
+        "naming keyboard visual detector",
+        "nickname keyboard cursor and control-row navigation",
+        "nickname commit verifier",
+        "party nickname after-commit assertion"
+      ],
+      "needed_work": [
+        "Add tile/visual assertions for uppercase and lowercase naming keyboards.",
+        "Promote the uppercase keyboard graph for A-Z plus END.",
+        "Keep lowercase, symbols, backspace, and case-toggle execution deferred until explicitly needed.",
+        "Verify committed nickname against party nickname storage."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "D2B5-D2F6 party nicknames provide the after-commit verification surface. Local captures identify 0xCC25 as naming cursor column, 0xCC2A as naming cursor row, and 0xCC30 as the selected keyboard tile/control."
+        },
+        {
+          "label": "Latest director-player capture cluster",
+          "url": null,
+          "notes": "Manual A-press captures around 2026-06-24T22:23Z to 2026-06-24T22:24Z show accepted nickname flow and final committed nickname."
+        },
+        {
+          "label": "ABK nickname cursor capture cluster",
+          "url": null,
+          "notes": "Manual inputs around 2026-06-24T22:54Z to 2026-06-24T22:55Z show cursor-aware uppercase A, B, K, and END routing. Follow-up FUZZ testing confirmed a hidden selectable blank immediately to the right of Z; it must be present in the navigation graph but must not be a nickname target."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "naming-screen-uppercase",
+          "label": "Naming keyboard uppercase",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222352075861Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222352075861Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222352075861Z0000/after.png",
+          "expected_observation": "Naming screen is visible for Pikachu with uppercase keyboard and lower-case control."
+        },
+        {
+          "id": "naming-screen-lowercase",
+          "label": "Naming keyboard lowercase",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222406758564Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222406758564Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222406758564Z0000/after.png",
+          "expected_observation": "Naming keyboard has toggled case and displays the upper-case control."
+        },
+        {
+          "id": "nickname-text-entered",
+          "label": "Nickname text entered",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222428895569Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222428895569Z0000/before.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222428895569Z0000/before.png",
+          "expected_observation": "Nickname buffer contains Mannn before selecting END."
+        },
+        {
+          "id": "nickname-end-selected",
+          "label": "Nickname END selected",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222428895569Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222428895569Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222428895569Z0000/after.png",
+          "expected_observation": "Cursor has reached the END control before committing the nickname."
+        },
+        {
+          "id": "nickname-committed-overworld",
+          "label": "Nickname committed to party",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222436626817Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222436626817Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T222436626817Z0000/after.png",
+          "expected_observation": "Game returns to overworld and party slot 6 is Pikachu with nickname Mannn."
+        },
+        {
+          "id": "nickname-abk-keyboard-start",
+          "label": "ABK uppercase keyboard start",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T225434930907Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T225434930907Z0000/before.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T225434930907Z0000/before.png",
+          "expected_observation": "Naming keyboard starts on uppercase A before entering ABK."
+        },
+        {
+          "id": "nickname-abk-committed-overworld",
+          "label": "ABK nickname committed to party",
+          "kind": "manual_input",
+          "metadata_path": "research/artifacts/director-player-runs/manual_input/a-20260624T225510947904Z0000/report.json",
+          "state_path": "research/artifacts/director-player-runs/manual_input/a-20260624T225510947904Z0000/after.state",
+          "screenshot_path": "research/artifacts/director-player-runs/manual_input/a-20260624T225510947904Z0000/after.png",
+          "expected_observation": "Game returns to overworld and party slot 5 is Weedle with nickname ABK."
+        }
+      ]
+    },
+    {
+      "id": "battle-move-selection-and-result",
+      "title": "Battle Move Selection and Result Contract",
+      "category": "executor_contract",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "use_move",
+        "wild_battle_policy",
+        "advance_dialogue",
+        "detect_stuckness"
+      ],
+      "summary": "Promote the contract for executing a Director-selected move: resolve the active battler's moveset, navigate to the requested move, confirm the command, and classify the resulting turn evidence.",
+      "current_surface": "Battle menu/cursor detection is verified for several surfaces and party move snapshots exist, but move-slot ownership, PP checks, turn-result classification, and action-log emission are not promoted yet.",
+      "promote_to": [
+        "active battler moveset to move-menu slot mapping",
+        "requested move precondition checker",
+        "move selection executor result verifier",
+        "turn dialogue/result classifier",
+        "battle action transcript event schema"
+      ],
+      "needed_work": [
+        "Capture move-menu cursor evidence for slots 1-4 using an active Pokemon with four known moves.",
+        "Capture before/after demonstrations for Tackle, Tail Whip, Bubble, and Water Gun or the closest available active moveset.",
+        "Capture or attach blocked evidence for a requested move that is missing from the active moveset. 0 PP remains a supported optional blocked case once a synthetic or natural exhausted-PP state is available.",
+        "Define how much dialogue advancement is required before a use_move result is considered stable.",
+        "Add machine assertions for move PP deltas, enemy HP/status deltas, and no-damage status moves once paired before/after promotion evidence is available."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "Party move/PP fields, sent-out party index, menu cursor fields, battle type, and enemy HP/status fields participate in the move execution contract."
+        },
+        {
+          "label": "Local battle action bundle note",
+          "url": null,
+          "notes": "research/battle-action-skill-bundle.md records the Director/executor boundary for modular battle skills."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "capture-move-slot-1",
+          "label": "Capture move-menu slot 1",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-move-selection-and-result --step 2 --state-in \"<battle state path>\" --label \"move menu slot 1\" --expected-observation \"Move menu is visible and the cursor/requested move is on slot 1.\"",
+          "expected_observation": "Move menu is visible and the cursor/requested move is on slot 1."
+        },
+        {
+          "id": "capture-move-slot-2",
+          "label": "Capture move-menu slot 2",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-move-selection-and-result --step 2 --state-in \"<battle state path>\" --label \"move menu slot 2\" --expected-observation \"Move menu is visible and the cursor/requested move is on slot 2.\"",
+          "expected_observation": "Move menu is visible and the cursor/requested move is on slot 2."
+        },
+        {
+          "id": "capture-move-slot-3",
+          "label": "Capture move-menu slot 3",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-move-selection-and-result --step 2 --state-in \"<battle state path>\" --label \"move menu slot 3\" --expected-observation \"Move menu is visible and the cursor/requested move is on slot 3.\"",
+          "expected_observation": "Move menu is visible and the cursor/requested move is on slot 3."
+        },
+        {
+          "id": "capture-move-slot-4",
+          "label": "Capture move-menu slot 4",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-move-selection-and-result --step 2 --state-in \"<battle state path>\" --label \"move menu slot 4\" --expected-observation \"Move menu is visible and the cursor/requested move is on slot 4.\"",
+          "expected_observation": "Move menu is visible and the cursor/requested move is on slot 4."
+        },
+        {
+          "id": "capture-use-move-result",
+          "label": "Capture use_move before/after result",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py use_move --state-in \"<battle state path>\"",
+          "expected_observation": "Use the skill-state capture flow for action_menu_before, move-menu before states, move result after states, and blocked preconditions."
+        },
+        {
+          "id": "step_01_wortortle_active_moves_base",
+          "label": "wortortle_active_moves_base",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_move_selection_and_result/step_01_wortortle_active_moves_base.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_moves_base.state",
+          "expected_observation": "Wild battle, Wartortle active, Moves are Tackle, Tail Whip, Bubble, Water Gun. Cursor is on Tackle.",
+          "notes": "Captured for promotion step 1: Choose a battle state with a known active moveset",
+          "screenshot_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_moves_base.png"
+        },
+        {
+          "id": "step_01_wortortle_active_tailwhip",
+          "label": "wortortle_active_tailwhip",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_move_selection_and_result/step_01_wortortle_active_tailwhip.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_tailwhip.state",
+          "expected_observation": "Wortortle active. Cursor on Tail Whip. Move menu open",
+          "notes": "Captured for promotion step 1: Choose a battle state with a known active moveset",
+          "screenshot_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_tailwhip.png"
+        },
+        {
+          "id": "step_01_wortortle_active_bubble",
+          "label": "wortortle_active_bubble",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_move_selection_and_result/step_01_wortortle_active_bubble.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_bubble.state",
+          "expected_observation": "Wortortle active. Bubble selected in move menu.",
+          "notes": "Captured for promotion step 1: Choose a battle state with a known active moveset",
+          "screenshot_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_bubble.png"
+        },
+        {
+          "id": "step_01_wortortle_active_water_gun",
+          "label": "wortortle_active_water_gun",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_move_selection_and_result/step_01_wortortle_active_water_gun.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_water_gun.state",
+          "expected_observation": "Wortortle active. Water gun selected in move menu",
+          "notes": "Captured for promotion step 1: Choose a battle state with a known active moveset",
+          "screenshot_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_water_gun.png"
+        },
+        {
+          "id": "step_01_wortortle_active_tackle",
+          "label": "wortortle_active_tackle",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_move_selection_and_result/step_01_wortortle_active_tackle.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_tackle.state",
+          "expected_observation": "Wortortle active. Tackle selected in move menu",
+          "notes": "Captured for promotion step 1: Choose a battle state with a known active moveset",
+          "screenshot_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_01_wortortle_active_tackle.png"
+        },
+        {
+          "id": "step_04_blocked_requested_move_missing_hyper_beam",
+          "label": "blocked_requested_move_missing_hyper_beam",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/battle_move_selection_and_result/step_04_blocked_requested_move_missing_hyper_beam.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_04_blocked_requested_move_missing_hyper_beam.state",
+          "expected_observation": "Battle state with Wartortle active. Requested move Hyper Beam is missing from the active battler moveset; use_move should block before menu selection.",
+          "notes": "Synthetic promotion evidence using an existing human-captured battle state plus the Director request parameter Hyper Beam. This proves missing-move precondition checking without requiring an unnatural 0 PP battle capture.",
+          "screenshot_path": "research/promotions/evidence/local/battle_move_selection_and_result/step_04_blocked_requested_move_missing_hyper_beam.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T03:09:18.386Z",
+        "notes": "Evidence 'step_01_wortortle_active_tackle' attached."
+      }
+    },
+    {
+      "id": "item-use-and-bag-selection",
+      "title": "Item Use and Bag Selection",
+      "category": "executor_contract",
+      "status": "verified",
+      "priority": "p1",
+      "skill_ids": [
+        "use_item",
+        "attempt_catch",
+        "wild_battle_policy"
+      ],
+      "summary": "Promote item selection surfaces for Potion/Poke Ball use, including bag cursor/index and item-count deltas.",
+      "current_surface": "Inventory reads are verified; battle-menu throw executor can select a ball in simple cases, but general item use is not implemented.",
+      "promote_to": [
+        "bag cursor/index detector",
+        "item target/effect verifier",
+        "safe item whitelist for MVP"
+      ],
+      "needed_work": [
+        "Capture battle bag menu states with different item ordering.",
+        "Promote item menu cursor or derive it visually; current evidence proves item menu surface and inventory contents but not selected-row cursor.",
+        "Promote a paired before/after item-count delta evaluator for Poke Ball use. Potion result evidence can remain optional until we have a battle state with a damaged party member."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "D31D-D346 inventory fields plus CC2C item-screen cursor/CC26 menu selection are relevant."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "attempt-catch-no-balls",
+          "label": "No balls item-count blocker",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/blocked_no_balls.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/blocked_no_balls.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/blocked_no_balls.png",
+          "expected_observation": "Item count precondition blocks ball use."
+        },
+        {
+          "id": "attempt-catch-success-before",
+          "label": "Poke Ball use success before",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_before.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png",
+          "expected_observation": "Before successful throw: wild battle has Poke Balls available."
+        },
+        {
+          "id": "attempt-catch-success-after",
+          "label": "Poke Ball use success after",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_after.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_after.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_after.png",
+          "expected_observation": "After successful throw resolves: Poke Ball count decreased and battle has ended."
+        },
+        {
+          "id": "attempt-catch-failed-after-breakout",
+          "label": "Poke Ball use breakout after",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/failed_after_breakout.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/failed_after_breakout.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/failed_after_breakout.png",
+          "expected_observation": "After failed throw resolves: Poke Ball count decreased and battle continues."
+        },
+        {
+          "id": "step_01_battle_bag_pokeball",
+          "label": "battle_bag_pokeball",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/item_use_and_bag_selection/step_01_battle_bag_pokeball.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/item_use_and_bag_selection/step_01_battle_bag_pokeball.state",
+          "expected_observation": "In battle item menu. Town map, poke ball x4, potion x1. Cursor is on poke ball.",
+          "notes": "Captured for promotion step 1: Capture battle bag states",
+          "screenshot_path": "research/promotions/evidence/local/item_use_and_bag_selection/step_01_battle_bag_pokeball.png"
+        },
+        {
+          "id": "step_01_battle_bag_potion",
+          "label": "battle_bag_potion",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/item_use_and_bag_selection/step_01_battle_bag_potion.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/item_use_and_bag_selection/step_01_battle_bag_potion.state",
+          "expected_observation": "In battle item menu. Town map, poke ball x4, potion x1. Cursor is on potion.",
+          "notes": "Captured for promotion step 1: Capture battle bag states",
+          "screenshot_path": "research/promotions/evidence/local/item_use_and_bag_selection/step_01_battle_bag_potion.png"
+        },
+        {
+          "id": "step_01_battle_bag_town_map",
+          "label": "battle_bag_town_map",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/item_use_and_bag_selection/step_01_battle_bag_town_map.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/item_use_and_bag_selection/step_01_battle_bag_town_map.state",
+          "expected_observation": "In battle item menu. Town map, poke ball x4, potion x1. Cursor on Town Map (invalid item for battle use)",
+          "notes": "Captured for promotion step 1: Capture battle bag states",
+          "screenshot_path": "research/promotions/evidence/local/item_use_and_bag_selection/step_01_battle_bag_town_map.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T03:25:05.762Z",
+        "notes": ""
+      }
+    },
+    {
+      "id": "party-switch-and-active-battler",
+      "title": "Party Switch and Active Battler Facts",
+      "category": "memory_and_visual",
+      "status": "verified",
+      "priority": "p1",
+      "skill_ids": [
+        "switch_party_member",
+        "wild_battle_policy",
+        "detect_blackout_or_party_wipe",
+        "use_move"
+      ],
+      "summary": "Promote the party menu surface, active battler identity, active moveset ownership, and safe switch result checks.",
+      "current_surface": "Party slots, moves, HP, and status are visible in snapshots; battle party menu detection exists, but active battler, active moveset ownership, and switch result are not promoted.",
+      "promote_to": [
+        "active battler read",
+        "party menu cursor detector",
+        "switch result verifier",
+        "active moveset to battle move-menu slot mapping"
+      ],
+      "needed_work": [
+        "Capture battle party menu states with cursor on multiple slots.",
+        "Identify active battler memory field or derive from battle state.",
+        "Block switching into fainted party members.",
+        "Prove that use_move resolves requested move names against the active battler, not merely party slot 1."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "CC2B last party/Bill's PC cursor, CC2F currently sent-out party index, and party HP/status fields are relevant."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "policy-party-menu",
+          "label": "Policy party-menu start",
+          "kind": "policy_state",
+          "metadata_path": "research/policy-states/battle_menu_throw/pikachu_fullhealth_pokemon.policy-state.json",
+          "state_path": "research/policy-states/local/battle_menu_throw/pikachu_fullhealth_pokemon.state",
+          "screenshot_path": "research/policy-states/local/battle_menu_throw/pikachu_fullhealth_pokemon.png",
+          "expected_observation": "Battle party menu visual surface for switch handling."
+        },
+        {
+          "id": "party-fainted-golden",
+          "label": "Party HP/status baseline",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/1_party_fainted.expected.json",
+          "state_path": "research/golden-states/local/1_party_fainted.state",
+          "screenshot_path": "research/golden-states/local/1_party_fainted.png",
+          "expected_observation": "At least one fainted party member for switch/blackout safety checks."
+        },
+        {
+          "id": "step_01_active_battler_baseline",
+          "label": "active_battler_baseline",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/party_switch_and_active_battler/step_01_active_battler_baseline.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_active_battler_baseline.state",
+          "expected_observation": "lv3 spearow active, fighting lv4 weedle. Cursor on \"Fight\" on top level battle menu.",
+          "notes": "Captured for promotion step 1: Capture active battler baseline",
+          "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_active_battler_baseline.png"
+        },
+        {
+          "id": "step_01_pokemon_menu_open",
+          "label": "pokemon_menu_open",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/party_switch_and_active_battler/step_01_pokemon_menu_open.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_pokemon_menu_open.state",
+          "expected_observation": "Opened party menu. Cursor on Spearow (active)",
+          "notes": "Captured for promotion step 1: Capture active battler baseline",
+          "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_pokemon_menu_open.png"
+        },
+        {
+          "id": "step_01_party_menu_forced_nidoran",
+          "label": "party_menu_forced_nidoran",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.state",
+          "expected_observation": "Forced into party menu by fainted pokemon. Cursor on Nidoran F",
+          "notes": "Captured for promotion step 1: Capture active battler baseline",
+          "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_party_menu_forced_nidoran.png"
+        },
+        {
+          "id": "step_01_pokemon_menu_fainted_spearow",
+          "label": "pokemon_menu_fainted_spearow",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/party_switch_and_active_battler/step_01_pokemon_menu_fainted_spearow.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_pokemon_menu_fainted_spearow.state",
+          "expected_observation": "In party menu. Cursor selected Spearow (Fainted)",
+          "notes": "Captured for promotion step 1: Capture active battler baseline",
+          "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_pokemon_menu_fainted_spearow.png"
+        },
+        {
+          "id": "step_01_pokemon_menu_nidoran_submenu",
+          "label": "pokemon_menu_nidoran_submenu",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/party_switch_and_active_battler/step_01_pokemon_menu_nidoran_submenu.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_pokemon_menu_nidoran_submenu.state",
+          "expected_observation": "In the party menu. Cursor selected Nidoran M, and in submenu. Cursor in submenu is on \"Switch\".",
+          "notes": "Captured for promotion step 1: Capture active battler baseline",
+          "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_pokemon_menu_nidoran_submenu.png"
+        },
+        {
+          "id": "step_01_after_switch_result",
+          "label": "after_switch_result",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/party_switch_and_active_battler/step_01_after_switch_result.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_after_switch_result.state",
+          "expected_observation": "After switching to Squirtle. Weedle used attack as part of resolution.",
+          "notes": "Captured for promotion step 1: Capture active battler baseline",
+          "screenshot_path": "research/promotions/evidence/local/party_switch_and_active_battler/step_01_after_switch_result.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T02:39:32.874Z",
+        "notes": ""
+      }
+    },
+    {
+      "id": "overworld-party-reorder-contract",
+      "title": "Overworld Party Reorder Contract",
+      "category": "menu_execution",
+      "status": "needed",
+      "priority": "p1",
+      "skill_ids": [
+        "overworld_rearrange_party"
+      ],
+      "summary": "Promote the overworld Start-menu-to-party route, non-battle party submenu behavior, and before/after party-order checks needed to execute Director-requested party rearrangements.",
+      "current_surface": "Party roster and slot order are visible in snapshots. The executor is implemented with a conservative Gen 1 menu route, but the overworld Pokemon menu index, party submenu cursor, and SWITCH destination behavior need direct evidence.",
+      "promote_to": [
+        "stable overworld party-reorder precondition",
+        "overworld main menu Pokemon item route",
+        "non-battle party submenu Switch route",
+        "party-order result verifier"
+      ],
+      "needed_work": [
+        "Capture a stable overworld state with at least two party members before a requested reorder.",
+        "Capture the overworld Start menu with the Pokemon item reachable from the initial cursor.",
+        "Capture a non-battle party submenu with Switch selected or immediately reachable.",
+        "Run the executor and attach before/after states proving the target moves to the requested slot while the roster multiset remains unchanged.",
+        "Attach no-op evidence where the requested target is already in the destination slot."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "Party count and party Pokemon structures are source-backed; overworld menu cursor behavior needs local evidence."
+        },
+        {
+          "label": "PRET disassembly",
+          "url": "https://github.com/pret/pokered",
+          "notes": "Useful follow-up source for menu cursor variables and party menu state machine if local evidence exposes brittleness."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "capture-reorder-before",
+          "label": "Stable overworld reorder before",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py overworld-party-reorder-contract --step 1 --state-in \"<stable overworld state with 2+ party members>\" --label \"reorder before\" --expected-observation \"Stable overworld; party has at least two members and the requested target is not already in the destination slot.\"",
+          "expected_observation": "Before state records mode, battle_type_raw, party order, target, and intended destination slot."
+        },
+        {
+          "id": "capture-reorder-executor",
+          "label": "Executor reorder run",
+          "kind": "executor_validation",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\run_skill.py overworld_rearrange_party --state-in \"<stable overworld state with 2+ party members>\" --target \"<party slot or species>\" --destination-slot 1",
+          "expected_observation": "Executor returns to stable overworld with the same party members and the requested target in the requested slot."
+        },
+        {
+          "id": "capture-noop",
+          "label": "No-op already ordered",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\run_skill.py overworld_rearrange_party --state-in \"<state where target is already destination>\" --target 1 --destination-slot 1",
+          "expected_observation": "Skill reports a successful no-op and sends no menu inputs."
+        }
+      ]
+    },
+    {
+      "id": "blackout-party-wipe-detection",
+      "title": "Blackout and Party Wipe Detection",
+      "category": "derived_signal",
+      "status": "needed",
+      "priority": "p1",
+      "skill_ids": [
+        "detect_blackout_or_party_wipe",
+        "detect_stuckness",
+        "wild_battle_policy"
+      ],
+      "summary": "Promote derived signals for party wipe, blackout transition, and post-blackout recovery so the Director can stop or replan safely.",
+      "current_surface": "Party HP is visible, but blackout transition/state classification is not implemented.",
+      "promote_to": [
+        "all-party-fainted predicate",
+        "blackout dialogue/warp detector",
+        "failure category for unsafe battle outcomes"
+      ],
+      "needed_work": [
+        "Capture all-party-fainted battle and post-blackout states.",
+        "Distinguish one fainted member from full party wipe.",
+        "Record money/map changes after blackout if used for validation."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "Party HP/status and money/map fields are covered; blackout transition semantics need fixtures."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "one-fainted-member",
+          "label": "One party member fainted",
+          "kind": "golden_state",
+          "metadata_path": "research/golden-states/1_party_fainted.expected.json",
+          "state_path": "research/golden-states/local/1_party_fainted.state",
+          "screenshot_path": "research/golden-states/local/1_party_fainted.png",
+          "expected_observation": "Should not classify as full party wipe; only slot 1 has 0 HP."
+        },
+        {
+          "id": "capture-blackout-pending",
+          "label": "Full blackout capture still needed",
+          "kind": "pending_capture",
+          "capture_command": ".\\.venv\\Scripts\\python scripts\\capture_golden_state.py blackout_full_party_wipe",
+          "expected_observation": "Capture a full party wipe or post-blackout state for negative/terminal validation."
+        }
+      ]
+    },
+    {
+      "id": "capsule-success-target-ownership",
+      "title": "Capsule Success Target Ownership",
+      "category": "derived_signal",
+      "status": "verified",
+      "priority": "p0",
+      "skill_ids": [
+        "detect_party_changed",
+        "detect_capsule_success",
+        "handle_nickname_prompt",
+        "attempt_catch"
+      ],
+      "summary": "Promote a target-caught predicate for Capsule A. V0 success is keyed to the target species' Pokedex-owned bit, not party membership.",
+      "current_surface": "Party species/nickname/count are verified; this promotion adds target Pokedex-owned evidence for catch success. PC box contents remain deferred.",
+      "promote_to": [
+        "target species Pokedex-owned predicate",
+        "post-catch ownership detector",
+        "party/PC placement treated as diagnostic only"
+      ],
+      "needed_work": [
+        "Use Pokedex-owned as the Capsule A success source of truth in v0.",
+        "Add explicit target species fixture for Weedle/Pikachu/etc.",
+        "Promote PC box contents later if storage location becomes relevant."
+      ],
+      "source_refs": [
+        {
+          "label": "Data Crystal RAM map",
+          "url": "https://datacrystal.tcrf.net/wiki/Pok%C3%A9mon_Red_and_Blue/RAM_map",
+          "notes": "D2F7-D309 inclusive is the Pokedex-owned bitset and D30A-D31C inclusive is the seen bitset. Capsule success v0 relies on owned bits; party contents are not authoritative when the party is full."
+        }
+      ],
+      "verification_refs": [
+        {
+          "id": "catch-before-target",
+          "label": "Before catch party signature",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_before.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_before.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_before.png",
+          "expected_observation": "Party signature before target joins."
+        },
+        {
+          "id": "catch-after-target",
+          "label": "After catch party signature",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/attempt_catch/success_after.skill.json",
+          "state_path": "research/skill-states/local/attempt_catch/success_after.state",
+          "screenshot_path": "research/skill-states/local/attempt_catch/success_after.png",
+          "expected_observation": "Party signature after successful catch."
+        },
+        {
+          "id": "step_02_target_before_battle_pikachu",
+          "label": "target-before_battle_pikachu",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_success_target_ownership/step_02_target_before_battle_pikachu.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_success_target_ownership/step_02_target_before_battle_pikachu.state",
+          "expected_observation": "In a battle against un-owned (weakened) Pikachu)",
+          "notes": "Captured for promotion step 2: Attach target-after evidence",
+          "screenshot_path": "research/promotions/evidence/local/capsule_success_target_ownership/step_02_target_before_battle_pikachu.png"
+        },
+        {
+          "id": "step_02_target_after_pikachu_caught",
+          "label": "target-after_pikachu_caught",
+          "kind": "promotion_evidence",
+          "metadata_path": "research/promotions/evidence/capsule_success_target_ownership/step_02_target_after_pikachu_caught.promotion-evidence.json",
+          "state_path": "research/promotions/evidence/local/capsule_success_target_ownership/step_02_target_after_pikachu_caught.state",
+          "expected_observation": "Post-capture, after battle has resolved back to overworld. Pikachu in party/pokedex owned",
+          "notes": "Captured for promotion step 2: Attach target-after evidence",
+          "screenshot_path": "research/promotions/evidence/local/capsule_success_target_ownership/step_02_target_after_pikachu_caught.png"
+        }
+      ],
+      "review": {
+        "reviewed_by": "Joey",
+        "reviewed_at": "2026-06-24T00:36:19.897Z",
+        "notes": ""
+      }
+    },
+    {
+      "id": "director-stuckness-progress-signals",
+      "title": "Director Stuckness and Progress Signals",
+      "category": "derived_signal",
+      "status": "needed",
+      "priority": "p1",
+      "skill_ids": [
+        "detect_stuckness",
+        "navigate_within_viridian_forest_region",
+        "enter_grass_search_loop",
+        "recover_to_overworld"
+      ],
+      "summary": "Promote run-history predicates for repeated snapshots, repeated blocked moves, dialogue/menu loops, and no-progress search loops.",
+      "current_surface": "Skill run reports include traces and snapshots, but no canonical stuckness detector exists.",
+      "promote_to": [
+        "position/mode/history window",
+        "no-progress threshold",
+        "failure categories for Director replanning"
+      ],
+      "needed_work": [
+        "Define thresholds for repeated position, repeated UI mode, and repeated identical snapshot hash.",
+        "Add fixtures from failed skill-run reports.",
+        "Expose stuckness evidence in skill-chain reports."
+      ],
+      "verification_refs": [
+        {
+          "id": "recover-run-report-example",
+          "label": "Recover run report example",
+          "kind": "skill_run",
+          "metadata_path": "research/artifacts/skill-runs/recover_to_overworld",
+          "expected_observation": "Existing local run reports demonstrate trace/snapshot artifacts; select concrete failed runs as fixtures once available."
+        },
+        {
+          "id": "walk-local-blocker",
+          "label": "Blocked local movement fixture",
+          "kind": "skill_state",
+          "metadata_path": "research/skill-states/walk_local_direction/blocked_wall_or_npc.skill.json",
+          "state_path": "research/skill-states/local/walk_local_direction/blocked_wall_or_npc.state",
+          "screenshot_path": "research/skill-states/local/walk_local_direction/blocked_wall_or_npc.png",
+          "expected_observation": "Blocked movement is a primitive stuckness signal."
+        }
+      ]
+    }
+  ]
+}

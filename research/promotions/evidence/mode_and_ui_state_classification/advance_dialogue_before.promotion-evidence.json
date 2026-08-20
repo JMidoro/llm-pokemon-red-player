@@ -1,0 +1,109 @@
+{
+  "assertions": [
+    {
+      "actual_path": "snapshot.mode",
+      "description": "Inspector snapshot mode matches the expected mode contract.",
+      "expected": "menu",
+      "id": "snapshot_mode",
+      "op": "equals",
+      "source": "inspector"
+    },
+    {
+      "actual_path": "visual.ui.bottom_text_box",
+      "description": "Visual classifier identifies bottom text box presence.",
+      "expected": true,
+      "id": "visual_bottom_text_box",
+      "op": "equals",
+      "source": "human_visible"
+    }
+  ],
+  "created_utc": "2026-06-24T00:21:41.913453+00:00",
+  "evidence_id": "advance-dialogue-before",
+  "expected_observation": "Snapshot mode remains menu while bottom text box is visible; this is the visual fallback edge case.",
+  "label": "Dialogue prompt visual fallback",
+  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\advance_dialogue\\dialogue_success_before.state",
+  "note": "Attached from existing metadata: research/skill-states/advance_dialogue/dialogue_success_before.skill.json",
+  "promotion_id": "mode_and_ui_state_classification",
+  "rom": {
+    "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
+    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
+    "size_bytes": 1048576,
+    "title": "POKEMON RED"
+  },
+  "schema": "promotion_evidence_capture_v1",
+  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\skill-states\\local\\advance_dialogue\\dialogue_success_before.png",
+  "snapshot": {
+    "badge_names": [],
+    "badges": 0,
+    "battle_type_raw": 0,
+    "facts": [
+      "No Poke Balls detected in inventory."
+    ],
+    "inventory": [
+      {
+        "item_id": 5,
+        "item_name": "Town Map",
+        "quantity": 1
+      }
+    ],
+    "mode": "menu",
+    "money": 3175,
+    "party": [
+      {
+        "hp": 27,
+        "level": 8,
+        "max_hp": 27,
+        "moves": [
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 39,
+            "move_name": "Tail Whip",
+            "pp": 30
+          },
+          {
+            "move_id": 145,
+            "move_name": "Bubble",
+            "pp": 30
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SQUIRTLE",
+        "slot": 1,
+        "species_id": 177,
+        "species_name": "Squirtle",
+        "status": 0
+      }
+    ],
+    "plaintext_summary": "Mode: menu\nLocation: Viridian PokeCenter (map 0x29, x=4, y=4)\nParty:\n- 1. SQUIRTLE Lv8 HP 27/27 OK; moves: Tackle (35 PP), Tail Whip (30 PP), Bubble (30 PP)\nInventory: Town Map x1\nMoney: 3175\nBadges: none\nGoal-relevant facts:\n- No Poke Balls detected in inventory.",
+    "position": {
+      "map_id": 41,
+      "map_name": "Viridian PokeCenter",
+      "x": 4,
+      "y": 4
+    },
+    "warnings": []
+  },
+  "snapshot_hash": "433DD5400E48E49A0BAC35E8D0EFC53B0A1063BDFB372695B265CE4398B094F4",
+  "source_metadata_file": "research\\skill-states\\advance_dialogue\\dialogue_success_before.skill.json",
+  "step_number": 3,
+  "step_title": "Capture or attach stale-flag edge cases",
+  "visual": {
+    "battle_ui": {
+      "cursor": "unknown",
+      "kind": "party_menu"
+    },
+    "ui": {
+      "bottom_text_box": true,
+      "upper_menu": false
+    }
+  }
+}

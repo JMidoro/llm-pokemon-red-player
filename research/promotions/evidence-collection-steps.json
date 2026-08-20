@@ -1,0 +1,512 @@
+{
+  "schema": "promotion_evidence_collection_steps_v1",
+  "description": "Step-by-step collection guides for the Phase 5 MVP promotion backlog. The Lab UI merges these into each promotion record.",
+  "steps_by_promotion": {
+    "mode-and-ui-state-classification": [
+      {
+        "title": "Load one fixture from each expected mode",
+        "detail": "Use existing overworld, dialogue, menu, and wild battle states as the first evidence set. Prefer states that already have screenshots so the WRAM read can be compared against the visible UI.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"<state path>\"",
+        "expected_evidence": "At least one local state and screenshot for overworld, dialogue/text box, menu, and battle mode."
+      },
+      {
+        "title": "Inspect the same states offline",
+        "detail": "Run the inspector for each state and compare the reported mode, battle type, position, warnings, and plaintext summary against what is visible in the screenshot.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<state path>\"",
+        "expected_evidence": "Inspector output agrees with human-observed screen mode, or records a clear stale-flag warning."
+      },
+      {
+        "title": "Capture or attach stale-flag edge cases",
+        "detail": "If a mode relies on visual fallback or stale WRAM handling, attach that state explicitly and describe the precedence rule being proven.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py recover_to_overworld --state-in \"<edge state path>\"",
+        "expected_evidence": "Evidence refs include expected observations for stale text/menu flags, visual text boxes, and clean overworld no-op cases."
+      },
+      {
+        "title": "Promote with notes",
+        "detail": "Run promotion validation, then record review notes naming the WRAM fields and the fallback/precedence rule that the executor may rely on.",
+        "command": null,
+        "expected_evidence": "Promotion review explains which mode classifications are canonical and which remain skill-local warnings."
+      }
+    ],
+    "gen1-text-menu-visual-classifiers": [
+      {
+        "title": "Collect the visual prompt set",
+        "detail": "Attach screenshots for a bottom dialogue box, an upper menu, a battle menu, a bag/item menu, and a clean overworld screen with no prompt.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"<state path>\"",
+        "expected_evidence": "Every classifier category has a local screenshot and state path."
+      },
+      {
+        "title": "Verify classifier boundaries",
+        "detail": "For each screenshot, record the exact visual feature being promoted: bottom text box, menu frame, cursor tile, battle command grid, item list, or absence of UI chrome.",
+        "command": null,
+        "expected_evidence": "Each evidence ref has an expected observation that describes the visible UI boundary."
+      },
+      {
+        "title": "Capture ambiguous screens",
+        "detail": "If a screen could be confused with another state, such as dialogue before a battle transition or a menu with stale WRAM flags, capture it as separate evidence instead of relying on prose.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py advance_dialogue --state-in \"<ambiguous state path>\"",
+        "expected_evidence": "Ambiguous fixtures are represented as explicit evidence refs with screenshots."
+      },
+      {
+        "title": "Validate and promote",
+        "detail": "Run the promotion validation panel and promote only after every classifier state has a screenshot and a written expected observation.",
+        "command": null,
+        "expected_evidence": "Validation reports no missing screenshot or metadata paths for classifier evidence."
+      }
+    ],
+    "battle-menu-and-cursor-detection": [
+      {
+        "title": "Start from a pre-action wild battle",
+        "detail": "Load a wild battle state before a throw or move selection. Confirm the top-level battle menu is visible and the player can still input commands.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"research\\skill-states\\local\\attempt_catch\\success_before.state\"",
+        "expected_evidence": "Battle menu fixture with screenshot, state path, enemy species, and usable controls."
+      },
+      {
+        "title": "Capture cursor positions across battle surfaces",
+        "detail": "Capture states for top-level battle actions, item menu cursor on a ball, item menu cursor on a non-battle item, move menu cursor positions, and party menu if available. For use_move, prefer all four move slots across one active moveset.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-menu-and-cursor-detection --step 2 --state-in \"<battle state path>\"",
+        "expected_evidence": "Evidence distinguishes action menu, item menu, move menu, and party menu cursor semantics, including move-menu cursor positions used by use_move."
+      },
+      {
+        "title": "Verify submenu backtracking",
+        "detail": "Load item, move, or party submenu evidence and manually press B or navigate back to the battle menu, then capture the before/after states if this transition is part of the contract.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-menu-and-cursor-detection --step 3 --state-in \"<battle submenu state path>\"",
+        "expected_evidence": "Backtracking evidence proves whether modular battle executors can recover from the wrong battle submenu before selecting a Director action."
+      },
+      {
+        "title": "Promote the cursor contract",
+        "detail": "Review the evidence and explicitly note whether cursor data comes from WRAM, tiles, screenshots, or a combined read. Call out whether all move-menu slots are covered or still pending.",
+        "command": null,
+        "expected_evidence": "Review notes name the cursor source, covered battle menu states, and any remaining unsupported cursor positions."
+      }
+    ],
+    "battle-dialogue-advancement-contract": [
+      {
+        "title": "Attach a waiting battle-dialogue fixture",
+        "detail": "Start from a wild battle state where intro, turn, move-result, item-result, or catch-result dialogue is visible and the next safe input is pressing A. Existing attempt_catch throw-dialogue states are good seed evidence.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"research\\skill-states\\local\\attempt_catch\\uncertain_throw_dialogue.state\"",
+        "expected_evidence": "Evidence asserts snapshot.mode is battle, battle_type_raw is active, and visual.battle_ui.kind is dialogue."
+      },
+      {
+        "title": "Attach non-dialogue battle blockers",
+        "detail": "Load a battle action-menu, move-menu, item-menu, or party-menu state where no dialogue is waiting. This proves the skill gate does not expose advance_battle_dialogue when the Director should choose a battle action or a menu-specific recovery skill instead.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"research\\skill-states\\local\\attempt_catch\\success_before.state\"",
+        "expected_evidence": "Evidence asserts visual.battle_ui.kind is action_menu, move_menu, item_menu, or party_menu and the skill should be blocked."
+      },
+      {
+        "title": "Attach resolved battle control after dialogue advancement",
+        "detail": "From a waiting dialogue fixture, advance manually or run advance_battle_dialogue and capture the resulting state/report. The final state should be action_menu, a clean battle-end state, or a clearly reported unexpected UI.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py advance_battle_dialogue --state-in \"research\\skill-states\\local\\attempt_catch\\uncertain_throw_dialogue.state\"",
+        "expected_evidence": "Evidence proves bounded A advancement yielded control to action_menu or battle end without selecting a strategic battle action."
+      },
+      {
+        "title": "Review scope before promotion",
+        "detail": "Keep the contract scoped to wild battle dialogue until trainer-battle and post-catch nickname-prompt edge cases are separately evidenced. The Director should still use menu-specific skills for battle submenus.",
+        "command": null,
+        "expected_evidence": "Review notes name supported battle types and known blocked/uncertain UI outcomes."
+      }
+    ],
+    "battle-enemy-facts": [
+      {
+        "title": "Load multiple wild battle species",
+        "detail": "Use existing Weedle, Pikachu, Kakuna, or other wild battle states so the enemy species and level reads are not validated against only one monster.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<wild battle state path>\"",
+        "expected_evidence": "At least two species have state, screenshot, and inspector output."
+      },
+      {
+        "title": "Collect full-health and damaged-health examples",
+        "detail": "Capture one battle state before damage and one after enemy HP has visibly changed. Avoid only using KO states because the HP boundary matters.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py detect_wild_battle --state-in \"<wild battle state path>\"",
+        "expected_evidence": "Before/after HP evidence lets current HP and max HP addresses be checked independently."
+      },
+      {
+        "title": "Cross-check with visible battle text",
+        "detail": "Where the screen text or sprite identity makes the species obvious, record that observation in the evidence note instead of relying only on the memory read.",
+        "command": null,
+        "expected_evidence": "Expected observation names the visible species and whether HP is full, damaged, or unknown from screen alone."
+      },
+      {
+        "title": "Promote only source-backed fields",
+        "detail": "Run validation and promote species, level, current HP, max HP, status, and catch rate separately if confidence differs by field.",
+        "command": null,
+        "expected_evidence": "Review notes list which enemy fields are promoted and which still need fixture coverage."
+      }
+    ],
+    "party-inventory-and-catch-delta": [
+      {
+        "title": "Load catch before and after fixtures",
+        "detail": "Use the approved attempt_catch success_before and success_after states to compare party count, party species, inventory counts, and Pokedex-owned facts.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"research\\skill-states\\local\\attempt_catch\\success_before.state\"",
+        "expected_evidence": "Before state records party and Pokeball count immediately before catch resolution."
+      },
+      {
+        "title": "Attach no-ball and failed-catch blockers",
+        "detail": "Add evidence for a wild battle with no Pokeballs and, where available, a failed throw where the party does not gain the target.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<no balls or failed catch state path>\"",
+        "expected_evidence": "Negative evidence proves the delta logic does not treat any battle exit as a catch."
+      },
+      {
+        "title": "Verify inventory and party deltas",
+        "detail": "Compare snapshots before and after the throw. Confirm Pokeball count changes only after dialogue resolves, and confirm party/Pokedex ownership changes only after a successful catch.",
+        "command": null,
+        "expected_evidence": "Evidence notes describe exact before/after deltas."
+      },
+      {
+        "title": "Keep verified status current",
+        "detail": "If new item or party manipulation code changes the inspector, rerun validation and refresh evidence notes before continuing to rely on this as verified.",
+        "command": null,
+        "expected_evidence": "Promotion remains verified with current metadata paths and screenshots."
+      }
+    ],
+    "capsule-a-region-and-landmarks": [
+      {
+        "title": "Collect boundary landmarks",
+        "detail": "Attach states at the Viridian City ready point, Route 2 corridor, Viridian Forest south gate, forest grass, and any map transition used by the Capsule A navigation skills.",
+        "command": ".\\.venv\\Scripts\\python scripts\\capture_golden_state.py",
+        "expected_evidence": "Each landmark has map id/name, x/y, screenshot, and state path."
+      },
+      {
+        "title": "Load each landmark for human verification",
+        "detail": "Open every landmark state in the player and confirm the visible location matches the map name and coordinate role described in the evidence.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"<landmark state path>\"",
+        "expected_evidence": "Evidence notes distinguish corridors, gates, city exits, grass patches, and safe reset points."
+      },
+      {
+        "title": "Document allowed and blocked regions",
+        "detail": "Record which map ids are inside Capsule A and which nearby maps should be rejected by the navigation skills for now.",
+        "command": null,
+        "expected_evidence": "Review notes include the allowed region whitelist and any explicit no-go boundaries."
+      },
+      {
+        "title": "Promote the region graph",
+        "detail": "Run validation and promote only after every required endpoint has a state, screenshot, and expected observation.",
+        "command": null,
+        "expected_evidence": "No missing local files for landmark evidence."
+      }
+    ],
+    "local-collision-and-walkability": [
+      {
+        "title": "Capture valid step pairs",
+        "detail": "For each important Capsule A surface, capture before and after states for at least one legal step. The expected observation should name direction and coordinate delta.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py walk_local_direction --state-in \"<overworld state path>\"",
+        "expected_evidence": "Before/after pairs demonstrate legal movement in overworld controls."
+      },
+      {
+        "title": "Capture blocked step examples",
+        "detail": "Capture states where the player faces a wall, tree, sign, NPC, or other obstacle and a step attempt should not move the player.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py walk_local_direction --state-in \"<blocked overworld state path>\"",
+        "expected_evidence": "Blocked evidence shows unchanged map/x/y after input."
+      },
+      {
+        "title": "Inspect coordinates before promotion",
+        "detail": "Run the inspector on each pair and make sure the coordinate and map reads match the human-observed movement result.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<captured state path>\"",
+        "expected_evidence": "Coordinate evidence supports the walkability decision without relying only on screenshots."
+      },
+      {
+        "title": "Scope the contract tightly",
+        "detail": "Promote only local walkability for known Capsule A maps until a full map collision source or generated collision grid is approved.",
+        "command": null,
+        "expected_evidence": "Review notes state which maps and obstacle classes are covered."
+      }
+    ],
+    "grass-patch-and-encounter-search": [
+      {
+        "title": "Load a known grass start",
+        "detail": "Start from Viridian Forest grass or another approved Capsule A grass patch and confirm the player can walk in grass without immediate UI blockers.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_state.py \"research\\golden-states\\local\\viridian_forest_grass.state\"",
+        "expected_evidence": "Grass start state has screenshot, map coordinates, and visible grass tiles."
+      },
+      {
+        "title": "Capture search loop outcomes",
+        "detail": "Capture at least one state before searching, one after several grass steps with no battle, and one after a wild battle triggers.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py enter_grass_search_loop --state-in \"research\\golden-states\\local\\viridian_forest_grass.state\"",
+        "expected_evidence": "Evidence covers no-encounter continuation and encounter success."
+      },
+      {
+        "title": "Record pacing and safety assumptions",
+        "detail": "Note whether the search pattern is random, deterministic, bounded by step count, or bounded by repeated-position/stuckness checks.",
+        "command": null,
+        "expected_evidence": "Review notes explain when the Director should retry, replan, or stop searching."
+      },
+      {
+        "title": "Promote the patch geometry",
+        "detail": "Attach any missing grass-edge states and run validation before marking the surface as candidate or verified.",
+        "command": null,
+        "expected_evidence": "The promotion has local states for usable grass and a clear encounter-trigger result."
+      }
+    ],
+    "post-catch-pokedex-registration-contract": [
+      {
+        "title": "Start from a catchable wild battle",
+        "detail": "Load a state immediately before a likely successful catch, or use the latest manual capture cluster as the evidence source. The important surface starts after the ball succeeds but before the nickname prompt.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py attempt_catch --state-in \"research\\skill-states\\local\\attempt_catch\\success_before.state\"",
+        "expected_evidence": "A successful catch enters post-catch dialogue while memory may still report battle mode."
+      },
+      {
+        "title": "Capture Pokedex registration text",
+        "detail": "Advance one prompt at a time after the successful catch and capture the text that announces new Pokedex data for the caught species.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py post-catch-pokedex-registration-contract --step 2 --state-in \"<post-catch dialogue state>\" --label \"pokedex data text\" --expected-observation \"New Pokedex data text is visible after catch success.\"",
+        "expected_evidence": "Screenshot shows the caught species Pokedex-data text and the state report still records the relevant battle/catch facts."
+      },
+      {
+        "title": "Capture Pokedex page text",
+        "detail": "Continue through the registration sequence and capture the Pokedex page text before it hands off to the nickname question.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py post-catch-pokedex-registration-contract --step 3 --state-in \"<pokedex registration state>\" --label \"pokedex page text\" --expected-observation \"Pokedex page for the caught species is visible before the nickname prompt.\"",
+        "expected_evidence": "Screenshots show the Pokedex page surface and prove this is distinct from ordinary battle dialogue."
+      },
+      {
+        "title": "Verify handoff to nickname prompt",
+        "detail": "Advance until the nickname yes/no question appears and attach that state to the nickname prompt detector promotion as the branch boundary.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py nickname-prompt-detector --step 2 --state-in \"<pokedex page state>\" --label \"nickname prompt after pokedex\" --expected-observation \"Nickname yes/no prompt is visible after Pokedex registration.\"",
+        "expected_evidence": "The post-catch registration promotion has a clean endpoint and the nickname prompt promotion has a clean starting point."
+      }
+    ],
+    "nickname-prompt-detector": [
+      {
+        "title": "Reach a successful catch result",
+        "detail": "Load a successful catch-after state or manually execute attempt_catch until the post-catch dialogue reaches the nickname question. The latest Pikachu capture cluster already provides candidate evidence for the YES branch.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py attempt_catch --state-in \"research\\skill-states\\local\\attempt_catch\\success_before.state\"",
+        "expected_evidence": "A catch success state that can lead to the nickname prompt."
+      },
+      {
+        "title": "Capture the prompt itself",
+        "detail": "Capture the exact screen where the game asks whether to nickname the caught Pokemon, with the cursor position visible.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py handle_nickname_prompt --state-in \"<catch success state path>\"",
+        "expected_evidence": "Prompt screenshot clearly shows the nickname yes/no question."
+      },
+      {
+        "title": "Capture decline or accept branch",
+        "detail": "For default v0 behavior, decline the nickname and capture the recovery state. For explicit nickname requests, answer yes and capture the naming keyboard handoff.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py handle_nickname_prompt --state-in \"<nickname prompt state path>\"",
+        "expected_evidence": "After state proves either safe decline/recovery or the accepted handoff to the naming keyboard."
+      },
+      {
+        "title": "Record v0 naming policy",
+        "detail": "Before promotion, note that v0 defaults to declining nicknames unless the Director explicitly requests a nickname string.",
+        "command": null,
+        "expected_evidence": "Review notes define the default nickname behavior."
+      }
+    ],
+    "nickname-entry-keyboard-contract": [
+      {
+        "title": "Start on the naming keyboard",
+        "detail": "Use a nickname prompt state, answer YES, and capture the first naming keyboard screen before entering letters.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py nickname-entry-keyboard-contract --step 1 --state-in \"<nickname prompt state path>\" --label \"naming screen initial\" --expected-observation \"Naming keyboard is visible for the caught Pokemon before entering letters.\"",
+        "expected_evidence": "Screenshot shows the nickname buffer, keyboard, and control row."
+      },
+      {
+        "title": "Capture keyboard case/control behavior",
+        "detail": "Move to the case-toggle control, select it, and capture both the before and after surfaces so the executor can model uppercase/lowercase routing.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py nickname-entry-keyboard-contract --step 2 --state-in \"<naming screen state>\" --label \"case toggle\" --expected-observation \"Keyboard case changed and the control row label changed accordingly.\"",
+        "expected_evidence": "Evidence proves the keyboard graph includes case toggling, not just letters."
+      },
+      {
+        "title": "Capture text entry",
+        "detail": "Enter a short safe nickname, then capture the screen before committing with END. Include the intended nickname in the expected observation.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py nickname-entry-keyboard-contract --step 3 --state-in \"<naming screen state>\" --label \"nickname text entered\" --expected-observation \"Nickname buffer contains <nickname> before selecting END.\"",
+        "expected_evidence": "Screenshot shows the typed nickname and enough cursor context to route to END."
+      },
+      {
+        "title": "Commit and verify party nickname",
+        "detail": "Select END, let the game return to overworld or the next stable state, and verify the party nickname field for the caught Pokemon.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py nickname-entry-keyboard-contract --step 4 --state-in \"<nickname text entered state>\" --label \"nickname committed\" --expected-observation \"Caught Pokemon has nickname <nickname> in party data after END.\"",
+        "expected_evidence": "Machine-readable party nickname assertion matches the visible nickname request."
+      }
+    ],
+    "item-use-and-bag-selection": [
+      {
+        "title": "Capture battle bag states",
+        "detail": "From a wild battle, use the unified promotion evidence capture flow to capture the battle bag opened with visible Poke Ball, Potion, and non-battle item entries. Label each capture with the item believed to be selected. Current machine assertions prove battle item-menu surface plus item names and quantities; exact selected-row cursor remains a separate promotion need.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py item-use-and-bag-selection --step 1 --state-in \"<wild battle state path>\"",
+        "expected_evidence": "Bag evidence includes item names, quantities, selected-item labels, and screenshots. Machine checks should prove battle mode, item-menu surface, and inventory contents."
+      },
+      {
+        "title": "Capture no-ball and invalid-item cases",
+        "detail": "Attach states where no Pokeballs are present and where a non-battle item such as Town Map is visible in the battle item menu. The Oak/not-now dialogue is useful but optional for v0 if the item whitelist already marks the selected item invalid.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py item-use-and-bag-selection --step 2 --state-in \"<battle bag or no-balls battle state path>\"",
+        "expected_evidence": "Negative evidence distinguishes no available ball from wrong-item selection."
+      },
+      {
+        "title": "Verify item counts after dialogue resolves",
+        "detail": "Compare before/after snapshots only after the throw result dialogue completes, since ball count may not decrement immediately on the throw animation. Potion result evidence is optional until a damaged-party battle state is available.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<after throw state path>\"",
+        "expected_evidence": "Evidence notes name the ball count before and after resolution."
+      },
+      {
+        "title": "Promote selection rules",
+        "detail": "Record the v0 priority for ball selection, such as Pokeball first unless a stronger ball policy is intentionally added.",
+        "command": null,
+        "expected_evidence": "Review notes define supported ball types and fallback behavior."
+      }
+    ],
+    "party-switch-and-active-battler": [
+      {
+        "title": "Capture active battler baseline",
+        "detail": "Start in battle and inspect the active party member, HP, status, and moves before opening the party menu.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<battle state path>\"",
+        "expected_evidence": "Baseline evidence identifies the active battler and party slot."
+      },
+      {
+        "title": "Capture party menu selection states",
+        "detail": "Open the party menu during battle and capture cursor positions on a switchable member, a fainted member, and the current active member if possible.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture.py --state-in \"<battle state path>\"",
+        "expected_evidence": "Party menu screenshots show cursor and member viability."
+      },
+      {
+        "title": "Capture after-switch result",
+        "detail": "Complete a valid switch and capture the resulting battle state after dialogue resolves enough to identify the new active battler.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture.py --state-in \"<party menu state path>\"",
+        "expected_evidence": "Before/after evidence proves the active battler changed as expected."
+      },
+      {
+        "title": "Promote only proven switch cases",
+        "detail": "Do not promote general party switching until fainted-member, current-member, and viable-member results are separately evidenced.",
+        "command": null,
+        "expected_evidence": "Review notes describe which switch outcomes are canonical."
+      }
+    ],
+    "overworld-party-reorder-contract": [
+      {
+        "title": "Start from stable overworld with a reorder target",
+        "detail": "Load a stable overworld state where the party has at least two Pokemon and your intended target is not already in the destination slot. Record the intended request in the evidence note, such as \"move Squirtle to slot 1\".",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py overworld-party-reorder-contract --step 1 --state-in \"<stable overworld state with 2+ party members>\" --label \"reorder before\" --expected-observation \"Stable overworld; intended target and destination are documented; party order is visible in inspector output.\"",
+        "expected_evidence": "Evidence contains a state, screenshot, mode=battle_type_raw=0 overworld facts, current party order, target, and destination slot."
+      },
+      {
+        "title": "Capture the overworld menu route",
+        "detail": "From the same starting state, press Start and capture the main menu before selecting Pokemon. Then open the Pokemon party menu and capture the party list. This proves whether the executor's Start, Down, A route reaches the right menu.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py overworld-party-reorder-contract --step 2 --state-in \"<same stable overworld state>\" --label \"overworld pokemon menu route\" --expected-observation \"Start menu and non-battle party menu are reachable from the stable overworld state.\"",
+        "expected_evidence": "Screenshots show the Start menu route to Pokemon and the non-battle party menu surface."
+      },
+      {
+        "title": "Capture the Switch submenu surface",
+        "detail": "In the non-battle party menu, select the target Pokemon and capture the submenu with Switch selected or one move away from selected. This proves the submenu ordering used by the executor.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py overworld-party-reorder-contract --step 3 --state-in \"<party menu or overworld state>\" --label \"party switch submenu\" --expected-observation \"Target Pokemon submenu exposes Switch and the cursor relationship is documented.\"",
+        "expected_evidence": "Evidence names the visible submenu options and whether Switch is initially selected or reached by one Down input."
+      },
+      {
+        "title": "Run the executor and attach the result",
+        "detail": "Run the typed skill from the original before state using the exact target and destination. Attach the generated report or after state as evidence, then inspect the after state to confirm the same roster exists in the new order.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py overworld_rearrange_party --state-in \"<stable overworld state with 2+ party members>\" --target \"<party slot or species>\" --destination-slot 1",
+        "expected_evidence": "The result report says succeeded, the after state is stable overworld, the target is in the destination slot, and the party roster multiset is unchanged."
+      },
+      {
+        "title": "Attach no-op and blocker evidence",
+        "detail": "Run or capture one state where the requested target is already in the destination slot, plus one wrong-mode state such as battle or dialogue. These prove the skill can satisfy already-true requests and refuse unsafe contexts.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py overworld_rearrange_party --state-in \"<already ordered overworld state>\" --target 1 --destination-slot 1",
+        "expected_evidence": "No-op evidence reports succeeded with no inputs; blocker evidence reports stable overworld is required."
+      }
+    ],
+    "blackout-party-wipe-detection": [
+      {
+        "title": "Attach non-terminal fainted examples",
+        "detail": "Use states where one party member is fainted but at least one Pokemon remains usable, so wipe detection does not trigger too early.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<one fainted member state path>\"",
+        "expected_evidence": "Evidence shows party HP/status with at least one viable member."
+      },
+      {
+        "title": "Capture full wipe or post-blackout state",
+        "detail": "If practical, play to a full party wipe and capture the state before blackout dialogue resolves or immediately after recovery at the healing location.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py recover_to_overworld --state-in \"<danger battle state path>\"",
+        "expected_evidence": "Terminal evidence identifies full party wipe, recovery location, and any money/map changes."
+      },
+      {
+        "title": "Record recovery semantics",
+        "detail": "Write down whether the skill should treat blackout as terminal, recoverable, or Director-level replanning for the current phase.",
+        "command": null,
+        "expected_evidence": "Review notes define the v0 behavior after wipe detection."
+      },
+      {
+        "title": "Validate only after negative and positive examples exist",
+        "detail": "Keep this promotion as needed until it has both non-terminal fainted-party evidence and full-wipe or post-blackout evidence.",
+        "command": null,
+        "expected_evidence": "Promotion validation shows attached positive and negative fixtures."
+      }
+    ],
+    "capsule-success-target-ownership": [
+      {
+        "title": "Attach target-before evidence",
+        "detail": "Load a Capsule A state where the target Pokemon is not owned, then inspect Pokedex-owned facts. Party membership is useful context but is not the v0 source of truth.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<target before state path>\"",
+        "expected_evidence": "Before evidence proves the target is not already owned."
+      },
+      {
+        "title": "Attach target-after evidence",
+        "detail": "Use an approved catch-success state where the target appears in Pokedex-owned data after dialogue resolves. The Pokemon may be in party or PC storage.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<target after state path>\"",
+        "expected_evidence": "After evidence proves the target was acquired."
+      },
+      {
+        "title": "Decide the success source of truth",
+        "detail": "Record that Capsule A success is determined by the target species' Pokedex-owned bit in v0. Party and future PC box checks are diagnostic placement data.",
+        "command": null,
+        "expected_evidence": "Review notes state that Pokedex-owned is the ownership rule used by the Director."
+      },
+      {
+        "title": "Promote after delta validation",
+        "detail": "Run validation and compare before/after evidence so success is not inferred solely from a battle ending.",
+        "command": null,
+        "expected_evidence": "Promotion has paired before/after target ownership evidence."
+      }
+    ],
+    "director-stuckness-progress-signals": [
+      {
+        "title": "Collect successful progress reports",
+        "detail": "Run a short skill or skill-chain that changes map/position/mode in the intended direction and save the resulting report as positive progress evidence.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py walk_local_direction --state-in \"<overworld state path>\"",
+        "expected_evidence": "Report shows a position, mode, or objective-relevant state change."
+      },
+      {
+        "title": "Collect blocked-repeat reports",
+        "detail": "Run or capture repeated blocked movement, repeated menu recovery, or repeated identical snapshot hash cases that should count as stuckness.",
+        "command": ".\\.venv\\Scripts\\python scripts\\run_skill.py walk_local_direction --state-in \"<blocked overworld state path>\"",
+        "expected_evidence": "Report demonstrates repeated no-progress behavior."
+      },
+      {
+        "title": "Define thresholds",
+        "detail": "Choose conservative v0 thresholds for repeated position, repeated UI mode, repeated snapshot hash, and repeated skill failure before the Director replans.",
+        "command": null,
+        "expected_evidence": "Review notes list the thresholds and which signals are warnings versus abort conditions."
+      },
+      {
+        "title": "Attach reports and validate",
+        "detail": "Attach the run reports or representative states to the promotion, then validate that reviewers can reopen the states and understand the stuckness signal.",
+        "command": null,
+        "expected_evidence": "Promotion evidence includes both progress and stuckness examples."
+      }
+    ],
+    "battle-move-selection-and-result": [
+      {
+        "title": "Choose a battle state with a known active moveset",
+        "detail": "Start from a battle where the active Pokemon's move list is visible in the inspector. For MVP, a Squirtle with Tackle, Tail Whip, Bubble, and Water Gun is ideal because it exercises four move slots.",
+        "command": ".\\.venv\\Scripts\\python scripts\\inspect_state.py \"<battle state path>\"",
+        "expected_evidence": "Inspector output identifies active battle mode, active Pokemon context if available, party moves, PP, enemy species, and enemy HP/status."
+      },
+      {
+        "title": "Capture move-menu cursor slots",
+        "detail": "Run the unified promotion evidence player, open Fight, place the cursor on each move slot, press Z, and label each capture with the slot and visible move name.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-move-selection-and-result --step 2 --state-in \"<battle state path>\"",
+        "expected_evidence": "Four captures prove move-menu slot/cursor detection. Labels should include phrases like move menu slot 1, move menu slot 2, move menu slot 3, or move menu slot 4 so assertions can be inferred."
+      },
+      {
+        "title": "Capture successful move executions",
+        "detail": "Using skill-state capture for use_move, capture before/action-menu or move-menu states and after states for the selected moves. Let dialogue advance far enough that PP, enemy HP/status, or visible result text can be interpreted.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_skill_state.py use_move --state-in \"<battle state path>\"",
+        "expected_evidence": "use_move states demonstrate that a named Director-selected move can be initiated and classified after the turn progresses."
+      },
+      {
+        "title": "Capture blocked move preconditions",
+        "detail": "For v0, attach one battle state plus a requested move that is absent from the active moveset, such as Hyper Beam or Water Gun before the active Pokemon has learned it. This proves the executor can block before menu selection when the Director asks for an unavailable move. A 0 PP state is supported by the assertion contract but can remain deferred until we have a synthetic state edit or a natural capture.",
+        "command": ".\\.venv\\Scripts\\python scripts\\play_and_capture_promotion_evidence.py battle-move-selection-and-result --step 4 --state-in \"<battle state path>\" --label \"blocked requested move missing Hyper Beam\" --expected-observation \"Battle state with the active Pokemon lacking Hyper Beam. Requested move Hyper Beam is missing from the active battler moveset; use_move should block before menu selection.\"",
+        "expected_evidence": "Blocked evidence proves the executor checks the requested move against active moves before pressing A. Optional 0 PP evidence should prove the same pre-action block for exhausted moves."
+      },
+      {
+        "title": "Promote the action transcript shape",
+        "detail": "Before marking candidate, write review notes describing the minimal battle action event emitted after use_move, including requested move, selected slot, PP delta, enemy HP/status delta, and unresolved-dialogue uncertainty.",
+        "command": null,
+        "expected_evidence": "Review notes define the use_move result fields the Director can reason over after execution."
+      }
+    ]
+  }
+}

@@ -1,0 +1,693 @@
+{
+  "assertions": [
+    {
+      "actual_path": "snapshot.mode",
+      "description": "State is a battle state.",
+      "expected": "battle",
+      "id": "mode_is_battle",
+      "op": "equals",
+      "source": "human_visible"
+    },
+    {
+      "actual_path": "visual.battle_ui.kind",
+      "description": "Visual classifier identifies the expected battle UI surface.",
+      "expected": "party_menu",
+      "id": "battle_ui_kind",
+      "op": "equals",
+      "source": "human_visible"
+    },
+    {
+      "actual_path": "snapshot.active_party_member.species_name",
+      "description": "Active battler species matches the human-visible switch/baseline evidence.",
+      "expected": "Spearow",
+      "id": "active_party_species",
+      "op": "equals",
+      "source": "active_party_index"
+    },
+    {
+      "actual_path": "derived.party_by_species.spearow.species_name",
+      "description": "Party contains the human-visible Pokemon Spearow.",
+      "expected": "Spearow",
+      "id": "party_contains_spearow",
+      "op": "equals",
+      "source": "party_struct"
+    }
+  ],
+  "created_utc": "2026-06-24T02:16:11.864617+00:00",
+  "derived": {
+    "active_party_slot": 1,
+    "active_species": "Spearow",
+    "party_by_slot": {
+      "slot_1": {
+        "hp": 15,
+        "level": 3,
+        "max_hp": 15,
+        "moves": [
+          {
+            "move_id": 64,
+            "move_name": "Peck",
+            "pp": 35
+          },
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SPEAROW",
+        "slot": 1,
+        "species_id": 5,
+        "species_name": "Spearow",
+        "status": 0
+      },
+      "slot_2": {
+        "hp": 29,
+        "level": 9,
+        "max_hp": 29,
+        "moves": [
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 39,
+            "move_name": "Tail Whip",
+            "pp": 30
+          },
+          {
+            "move_id": 145,
+            "move_name": "Bubble",
+            "pp": 30
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SQUIRTLE",
+        "slot": 2,
+        "species_id": 177,
+        "species_name": "Squirtle",
+        "status": 0
+      },
+      "slot_3": {
+        "hp": 32,
+        "level": 9,
+        "max_hp": 32,
+        "moves": [
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 10,
+            "move_name": "Scratch",
+            "pp": 35
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 3,
+        "species_id": 15,
+        "species_name": "Nidoran F",
+        "status": 0
+      },
+      "slot_4": {
+        "hp": 24,
+        "level": 7,
+        "max_hp": 24,
+        "moves": [
+          {
+            "move_id": 43,
+            "move_name": "Leer",
+            "pp": 30
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 4,
+        "species_id": 3,
+        "species_name": "Nidoran M",
+        "status": 0
+      }
+    },
+    "party_by_species": {
+      "nidoran_f": {
+        "hp": 32,
+        "level": 9,
+        "max_hp": 32,
+        "moves": [
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 10,
+            "move_name": "Scratch",
+            "pp": 35
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 3,
+        "species_id": 15,
+        "species_name": "Nidoran F",
+        "status": 0
+      },
+      "nidoran_m": {
+        "hp": 24,
+        "level": 7,
+        "max_hp": 24,
+        "moves": [
+          {
+            "move_id": 43,
+            "move_name": "Leer",
+            "pp": 30
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 4,
+        "species_id": 3,
+        "species_name": "Nidoran M",
+        "status": 0
+      },
+      "spearow": {
+        "hp": 15,
+        "level": 3,
+        "max_hp": 15,
+        "moves": [
+          {
+            "move_id": 64,
+            "move_name": "Peck",
+            "pp": 35
+          },
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SPEAROW",
+        "slot": 1,
+        "species_id": 5,
+        "species_name": "Spearow",
+        "status": 0
+      },
+      "squirtle": {
+        "hp": 29,
+        "level": 9,
+        "max_hp": 29,
+        "moves": [
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 39,
+            "move_name": "Tail Whip",
+            "pp": 30
+          },
+          {
+            "move_id": 145,
+            "move_name": "Bubble",
+            "pp": 30
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SQUIRTLE",
+        "slot": 2,
+        "species_id": 177,
+        "species_name": "Squirtle",
+        "status": 0
+      }
+    }
+  },
+  "evidence_id": "step_01_pokemon_menu_open",
+  "expected_observation": "Opened party menu. Cursor on Spearow (active)",
+  "label": "pokemon_menu_open",
+  "local_state_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\party_switch_and_active_battler\\step_01_pokemon_menu_open.state",
+  "note": "Captured for promotion step 1: Capture active battler baseline",
+  "pokedex": {
+    "by_dex_number": {
+      "1": {
+        "dex_number": 1,
+        "owned": false,
+        "seen": true,
+        "species_id": 153,
+        "species_name": "Bulbasaur"
+      },
+      "10": {
+        "dex_number": 10,
+        "owned": false,
+        "seen": false,
+        "species_id": 123,
+        "species_name": "Caterpie"
+      },
+      "12": {
+        "dex_number": 12,
+        "owned": false,
+        "seen": false,
+        "species_id": 125,
+        "species_name": "Butterfree"
+      },
+      "121": {
+        "dex_number": 121,
+        "owned": false,
+        "seen": false,
+        "species_id": 152,
+        "species_name": "Starmie"
+      },
+      "13": {
+        "dex_number": 13,
+        "owned": false,
+        "seen": true,
+        "species_id": 112,
+        "species_name": "Weedle"
+      },
+      "14": {
+        "dex_number": 14,
+        "owned": false,
+        "seen": false,
+        "species_id": 113,
+        "species_name": "Kakuna"
+      },
+      "16": {
+        "dex_number": 16,
+        "owned": false,
+        "seen": true,
+        "species_id": 36,
+        "species_name": "Pidgey"
+      },
+      "19": {
+        "dex_number": 19,
+        "owned": false,
+        "seen": true,
+        "species_id": 165,
+        "species_name": "Rattata"
+      },
+      "21": {
+        "dex_number": 21,
+        "owned": true,
+        "seen": true,
+        "species_id": 5,
+        "species_name": "Spearow"
+      },
+      "25": {
+        "dex_number": 25,
+        "owned": false,
+        "seen": false,
+        "species_id": 84,
+        "species_name": "Pikachu"
+      },
+      "29": {
+        "dex_number": 29,
+        "owned": true,
+        "seen": true,
+        "species_id": 15,
+        "species_name": "Nidoran F"
+      },
+      "32": {
+        "dex_number": 32,
+        "owned": true,
+        "seen": true,
+        "species_id": 3,
+        "species_name": "Nidoran M"
+      },
+      "4": {
+        "dex_number": 4,
+        "owned": false,
+        "seen": false,
+        "species_id": 176,
+        "species_name": "Charmander"
+      },
+      "7": {
+        "dex_number": 7,
+        "owned": true,
+        "seen": true,
+        "species_id": 177,
+        "species_name": "Squirtle"
+      },
+      "8": {
+        "dex_number": 8,
+        "owned": false,
+        "seen": false,
+        "species_id": 179,
+        "species_name": "Wartortle"
+      },
+      "95": {
+        "dex_number": 95,
+        "owned": false,
+        "seen": false,
+        "species_id": 34,
+        "species_name": "Onix"
+      }
+    },
+    "flag_bit_order": "least_significant_bit_first",
+    "owned_bytes_hex": "40 00 10 90 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "owned_dex_numbers": [
+      7,
+      21,
+      29,
+      32
+    ],
+    "owned_species": [
+      "Squirtle",
+      "Spearow",
+      "Nidoran F",
+      "Nidoran M"
+    ],
+    "seen_bytes_hex": "41 90 14 90 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "seen_dex_numbers": [
+      1,
+      7,
+      13,
+      16,
+      19,
+      21,
+      29,
+      32
+    ],
+    "seen_species": [
+      "Bulbasaur",
+      "Squirtle",
+      "Weedle",
+      "Pidgey",
+      "Rattata",
+      "Spearow",
+      "Nidoran F",
+      "Nidoran M"
+    ]
+  },
+  "promotion_id": "party_switch_and_active_battler",
+  "rom": {
+    "md5": "3D45C1EE9ABD5738DF46D2BDDA8B57DC",
+    "path": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\PokemonRed.gb",
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B",
+    "size_bytes": 1048576,
+    "title": "POKEMON RED"
+  },
+  "schema": "promotion_evidence_capture_v1",
+  "screenshot_file": "C:\\Users\\Joey\\Documents\\Pokemon Player\\research\\promotions\\evidence\\local\\party_switch_and_active_battler\\step_01_pokemon_menu_open.png",
+  "snapshot": {
+    "active_party_member": {
+      "hp": 15,
+      "level": 3,
+      "max_hp": 15,
+      "moves": [
+        {
+          "move_id": 64,
+          "move_name": "Peck",
+          "pp": 35
+        },
+        {
+          "move_id": 45,
+          "move_name": "Growl",
+          "pp": 40
+        },
+        {
+          "move_id": 0,
+          "move_name": "No Move",
+          "pp": 0
+        },
+        {
+          "move_id": 0,
+          "move_name": "No Move",
+          "pp": 0
+        }
+      ],
+      "nickname": "SPEAROW",
+      "slot": 1,
+      "species_id": 5,
+      "species_name": "Spearow",
+      "status": 0
+    },
+    "active_party_slot": 1,
+    "badge_names": [],
+    "badges": 0,
+    "battle_type_raw": 1,
+    "enemy": {
+      "catch_rate": 255,
+      "hp": 17,
+      "level": 4,
+      "max_hp": 17,
+      "species_id": 112,
+      "species_name": "Weedle",
+      "status": 0
+    },
+    "facts": [
+      "Player is in Viridian Forest.",
+      "Inventory contains Poke Balls."
+    ],
+    "inventory": [
+      {
+        "item_id": 5,
+        "item_name": "Town Map",
+        "quantity": 1
+      },
+      {
+        "item_id": 4,
+        "item_name": "Poke Ball",
+        "quantity": 5
+      },
+      {
+        "item_id": 11,
+        "item_name": "Antidote",
+        "quantity": 3
+      },
+      {
+        "item_id": 20,
+        "item_name": "Potion",
+        "quantity": 1
+      }
+    ],
+    "mode": "battle",
+    "money": 875,
+    "party": [
+      {
+        "hp": 15,
+        "level": 3,
+        "max_hp": 15,
+        "moves": [
+          {
+            "move_id": 64,
+            "move_name": "Peck",
+            "pp": 35
+          },
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SPEAROW",
+        "slot": 1,
+        "species_id": 5,
+        "species_name": "Spearow",
+        "status": 0
+      },
+      {
+        "hp": 29,
+        "level": 9,
+        "max_hp": 29,
+        "moves": [
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 39,
+            "move_name": "Tail Whip",
+            "pp": 30
+          },
+          {
+            "move_id": 145,
+            "move_name": "Bubble",
+            "pp": 30
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "SQUIRTLE",
+        "slot": 2,
+        "species_id": 177,
+        "species_name": "Squirtle",
+        "status": 0
+      },
+      {
+        "hp": 32,
+        "level": 9,
+        "max_hp": 32,
+        "moves": [
+          {
+            "move_id": 45,
+            "move_name": "Growl",
+            "pp": 40
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 10,
+            "move_name": "Scratch",
+            "pp": 35
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 3,
+        "species_id": 15,
+        "species_name": "Nidoran F",
+        "status": 0
+      },
+      {
+        "hp": 24,
+        "level": 7,
+        "max_hp": 24,
+        "moves": [
+          {
+            "move_id": 43,
+            "move_name": "Leer",
+            "pp": 30
+          },
+          {
+            "move_id": 33,
+            "move_name": "Tackle",
+            "pp": 35
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          },
+          {
+            "move_id": 0,
+            "move_name": "No Move",
+            "pp": 0
+          }
+        ],
+        "nickname": "NIDORAN",
+        "slot": 4,
+        "species_id": 3,
+        "species_name": "Nidoran M",
+        "status": 0
+      }
+    ],
+    "plaintext_summary": "Mode: battle\nLocation: Viridian Forest (map 0x33, x=1, y=43)\nParty:\n- 1. SPEAROW Lv3 HP 15/15 OK; moves: Peck (35 PP), Growl (40 PP)\n- 2. SQUIRTLE Lv9 HP 29/29 OK; moves: Tackle (35 PP), Tail Whip (30 PP), Bubble (30 PP)\n- 3. NIDORAN Lv9 HP 32/32 OK; moves: Growl (40 PP), Tackle (35 PP), Scratch (35 PP)\n- 4. NIDORAN Lv7 HP 24/24 OK; moves: Leer (30 PP), Tackle (35 PP)\nInventory: Town Map x1, Poke Ball x5, Antidote x3, Potion x1\nEnemy: Weedle Lv4 HP 17/17 OK; catch rate 255\nActive battler: Spearow (party slot 1)\nMoney: 875\nBadges: none\nGoal-relevant facts:\n- Player is in Viridian Forest.\n- Inventory contains Poke Balls.",
+    "position": {
+      "map_id": 51,
+      "map_name": "Viridian Forest",
+      "x": 1,
+      "y": 43
+    },
+    "warnings": []
+  },
+  "snapshot_hash": "736F103F83DC3BA9829C22E5524926D027E2D158E04182A41C147CDA3C7F653F",
+  "step_number": 1,
+  "step_title": "Capture active battler baseline",
+  "visual": {
+    "battle_ui": {
+      "cursor": "unknown",
+      "kind": "party_menu"
+    },
+    "ui": {
+      "bottom_text_box": true,
+      "upper_menu": false
+    }
+  }
+}
