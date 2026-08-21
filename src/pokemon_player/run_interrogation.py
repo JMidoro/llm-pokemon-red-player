@@ -147,6 +147,18 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
         )
         fallback_taken.append("continue_provisionally_and_queue_skill_gap_review")
 
+    stop_reason = str(finish.get("stopReason") or "")
+    if stop_reason in {"operator_stop_after_action", "operator_emergency_stop"}:
+        return _checkpoint(
+            verdict="healthy_needs_review",
+            confidence="high",
+            continue_recommended=False,
+            summary="Run stopped at a safe operator-requested checkpoint.",
+            evidence=evidence + [f"operator_stop={stop_reason}"],
+            review_items=review_items,
+            fallback_taken=fallback_taken,
+        )
+
     if failure_category == "action_budget_exhausted" or finish.get("status") == "checkpoint":
         verdict = "provisional_continue" if review_items else "healthy_continue"
         confidence = "medium" if review_items else "high"

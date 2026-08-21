@@ -314,6 +314,11 @@ export type DirectorPlayerStatus = {
   schema: "director_player_status_v1";
   running: boolean;
   busy: boolean;
+  control: {
+    state: "running" | "paused" | "stopped_after_action" | "emergency_stopped";
+    stopAfterAction: boolean;
+  };
+  diagnosticMode: boolean;
   startedUtc: string;
   session: {
     id: string;

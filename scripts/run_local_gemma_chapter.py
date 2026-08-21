@@ -24,6 +24,7 @@ from pokemon_player import memory_map as mm  # noqa: E402
 from pokemon_player.pyboy_lab import ButtonInput, load_state, open_emulator, save_screenshot, save_state, snapshot  # noqa: E402
 from pokemon_player.rom import RomFingerprint, fingerprint_rom  # noqa: E402
 from pokemon_player.run_interrogation import interrogate_run_report  # noqa: E402
+from pokemon_player.operations import OperationsPaths, OperationsRunControl, OperationsStore  # noqa: E402
 from pokemon_player.skill_execution import (  # noqa: E402
     SkillRunArtifact,
     execute_advance_battle_dialogue,
@@ -57,6 +58,7 @@ DEFAULT_STATE = ROOT / "research" / "golden-states" / "local" / "pallet_overworl
 DEFAULT_BASE_URL = "http://127.0.0.1:1234/v1"
 DEFAULT_MODEL = "google/gemma-4-e4b"
 DEFAULT_VIDEO_OUTPUT_DIR = Path("D:/Dropbox")
+DEFAULT_OPERATIONS_DIR = ROOT / "research" / "artifacts" / "operations"
 DEFAULT_GOAL = (
     "Progress through Pokemon Red's early-game chapters from the current seed, including the prologue if starting from a clean boot. "
     "At every action, follow the current chapterDirection objective and choose one enabled local skill "
@@ -939,6 +941,22 @@ def artifact_result_dict(artifact: SkillRunArtifact | dict[str, Any]) -> dict[st
     }
 
 
+def operator_finish(signal: str) -> dict[str, Any]:
+    labels = {
+        "stop_after_action": "Operator requested a stop after the completed action.",
+        "emergency_stop": "Operator requested an emergency stop; the run stopped at the next safe action boundary.",
+    }
+    if signal not in labels:
+        raise ValueError(f"Unsupported operator stop signal: {signal}")
+    return {
+        "status": "checkpoint",
+        "success": False,
+        "summary": labels[signal],
+        "failureCategory": None,
+        "stopReason": f"operator_{signal}",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a local Gemma/LM Studio unattended chapter attempt.")
     parser.add_argument("--rom", default=str(DEFAULT_ROM))
@@ -980,6 +998,16 @@ def main() -> int:
         help="Directory where the final run video is copied. Defaults to D:/Dropbox.",
     )
     parser.add_argument("--video-fps", type=int, default=2)
+    parser.add_argument(
+        "--operations-dir",
+        default=str(DEFAULT_OPERATIONS_DIR),
+        help="Durable local control and heartbeat directory for the Operations page.",
+    )
+    parser.add_argument(
+        "--no-operations-control",
+        action="store_true",
+        help="Disable Operations pause/stop control and active-run heartbeat for diagnostics.",
+    )
     args = parser.parse_args()
 
     api_token = resolve_api_token(args.api_token)
@@ -996,6 +1024,25 @@ def main() -> int:
     history: list[dict[str, Any]] = []
     requests: list[dict[str, Any]] = []
     chapter_timeline: list[dict[str, Any]] = []
+    operations_control: OperationsRunControl | None = None
+    if not args.no_operations_control:
+        operations_dir = Path(args.operations_dir)
+        if not operations_dir.is_absolute():
+            operations_dir = ROOT / operations_dir
+        operations_store = OperationsStore(
+            OperationsPaths(
+                state_dir=operations_dir.resolve(),
+                report_root=(ROOT / "research" / "artifacts" / "local-gemma-chapter-runs").resolve(),
+                dropbox_root=Path(args.video_output_dir).resolve() if args.video_output_dir else None,
+            )
+        )
+        operations_control = OperationsRunControl(operations_store, run_id)
+        operations_control.begin(
+            status="starting",
+            actionCount=0,
+            model=args.model,
+            goal=args.goal,
+        )
 
     clean_ram_path = run_dir / "fresh-start-clean.ram"
     if args.fresh_start:
@@ -1013,6 +1060,11 @@ def main() -> int:
             load_state(pyboy, state_in)
             pyboy.tick(60, args.render)
         for action_index in range(1, args.max_actions + 1):
+            if operations_control:
+                signal = operations_control.boundary()
+                if signal != "continue":
+                    finish = operator_finish(signal)
+                    break
             screenshot_path, current_state_path, snapshot_dict = save_current_artifacts(
                 pyboy,
                 run_dir,
@@ -1034,6 +1086,23 @@ def main() -> int:
                 history,
             )
             chapter_timeline.append({"action": action_index, **chapter_direction.to_dict()})
+            if operations_control:
+                operations_control.update(
+                    status="running",
+                    actionCount=len(history),
+                    model=args.model,
+                    goal=args.goal,
+                    chapter={
+                        "id": chapter_direction.chapter_id,
+                        "title": chapter_direction.title,
+                        "objective": chapter_direction.objective,
+                        "success": chapter_direction.success,
+                    },
+                    snapshot=snapshot_dict,
+                    screenshotPath=str(screenshot_path),
+                    lastDecision=(history[-1] if history else None),
+                    lastSkillResult=(history[-1].get("result") if history else None),
+                )
             if chapter_direction.success:
                 finish = {
                     "status": "completed",
@@ -1071,6 +1140,11 @@ def main() -> int:
                 "temperature": args.temperature,
                 "max_tokens": args.max_tokens,
             }
+            if operations_control:
+                signal = operations_control.boundary()
+                if signal != "continue":
+                    finish = operator_finish(signal)
+                    break
             try:
                 response = call_lmstudio(
                     args.base_url,
@@ -1099,6 +1173,20 @@ def main() -> int:
                 }
                 break
             selected = selected_tool_from_response(response)
+            if operations_control:
+                operations_control.update(
+                    status="executing_action",
+                    actionCount=len(history),
+                    lastDecision={
+                        "action": action_index,
+                        "tool": selected.get("name"),
+                        "arguments": selected.get("arguments") if isinstance(selected.get("arguments"), dict) else {},
+                    },
+                )
+                signal = operations_control.boundary()
+                if signal != "continue":
+                    finish = operator_finish(signal)
+                    break
             requests.append(
                 {
                     "action": action_index,
@@ -1140,6 +1228,17 @@ def main() -> int:
                         },
                     }
                 )
+                if operations_control:
+                    operations_control.update(
+                        status="running",
+                        actionCount=len(history),
+                        lastDecision=history[-1],
+                        lastSkillResult=history[-1]["result"],
+                    )
+                    signal = operations_control.boundary(after_action=True)
+                    if signal != "continue":
+                        finish = operator_finish(signal)
+                        break
                 continue
             if selected.get("name") != "execute_skill":
                 finish = {
@@ -1172,6 +1271,17 @@ def main() -> int:
                         },
                     }
                 )
+                if operations_control:
+                    operations_control.update(
+                        status="running",
+                        actionCount=len(history),
+                        lastDecision=history[-1],
+                        lastSkillResult=history[-1]["result"],
+                    )
+                    signal = operations_control.boundary(after_action=True)
+                    if signal != "continue":
+                        finish = operator_finish(signal)
+                        break
                 continue
 
             try:
@@ -1214,6 +1324,17 @@ def main() -> int:
                     "result": result,
                 }
             )
+            if operations_control:
+                operations_control.update(
+                    status="running",
+                    actionCount=len(history),
+                    lastDecision=history[-1],
+                    lastSkillResult=result,
+                )
+                signal = operations_control.boundary(after_action=True)
+                if signal != "continue":
+                    finish = operator_finish(signal)
+                    break
         else:
             finish = {
                 "status": "checkpoint",
@@ -1263,6 +1384,15 @@ def main() -> int:
     report_path = run_dir / "report.json"
     (run_dir / "checkpoint.json").write_text(json.dumps(report["checkpoint"], indent=2), encoding="utf-8")
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    if operations_control:
+        operations_control.update(
+            status="checkpoint",
+            actionCount=len(history),
+            screenshotPath=str(final_screenshot),
+            snapshot=final_snapshot,
+            checkpoint=report["checkpoint"],
+            finish=finish,
+        )
     print(
         json.dumps(
             {

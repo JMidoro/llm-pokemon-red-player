@@ -120,6 +120,8 @@ def test_literal_button_press_skill_does_not_capture_artifacts(monkeypatch, tmp_
     player.cached_status = None
     player.event_seq = 0
     player.event_log_path = tmp_path / "events.jsonl"
+    player.diagnostic_mode = False
+    player.stop_after_action_latched = False
 
     trace_calls = []
 
@@ -141,6 +143,35 @@ def test_literal_button_press_skill_does_not_capture_artifacts(monkeypatch, tmp_
     assert player.last_result["reportPath"] is None
     assert player.last_result["warnings"] == []
     assert status["lastResult"]["summary"] == "Pressed A once."
+
+
+def test_manual_input_requires_explicit_diagnostic_mode(tmp_path: Path) -> None:
+    player = DirectorPlayer.__new__(DirectorPlayer)
+    player.config = SimpleNamespace(operations_control_path=None)
+    player.diagnostic_mode = False
+    player.stop_after_action_latched = False
+
+    try:
+        player._manual_input("a")
+    except PermissionError as exc:
+        assert "diagnostic capture mode" in str(exc)
+    else:
+        raise AssertionError("Raw input must be rejected outside diagnostic mode")
+
+
+def test_operations_pause_blocks_director_game_actions(tmp_path: Path) -> None:
+    control_path = tmp_path / "control.json"
+    control_path.write_text(json.dumps({"state": "paused", "stopAfterAction": False}), encoding="utf-8")
+    player = DirectorPlayer.__new__(DirectorPlayer)
+    player.config = SimpleNamespace(operations_control_path=control_path)
+    player.stop_after_action_latched = False
+
+    try:
+        player._assert_game_action_allowed()
+    except RuntimeError as exc:
+        assert "paused" in str(exc)
+    else:
+        raise AssertionError("Paused Operations state must block Director actions")
 
 
 def test_director_availability_prioritizes_battle_dialogue_recovery() -> None:
