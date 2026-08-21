@@ -61,6 +61,16 @@ def _existing_pokemon_id(
             and record.get("familyId") == member_family
         ):
             return str(pokemon_id)
+    # A full-party capture has no party nickname/slot evidence until it is withdrawn. The
+    # evolutionary-family clause normally makes this candidate unique; only join it when the
+    # ledger has exactly one non-party record in the family so identity is never guessed.
+    non_party_candidates = [
+        str(pokemon_id)
+        for pokemon_id, record in ledger.state["pokemon"].items()
+        if record.get("location") != "party" and record.get("familyId") == member_family
+    ]
+    if len(non_party_candidates) == 1:
+        return non_party_candidates[0]
     return None
 
 
@@ -92,7 +102,6 @@ def _capture_success(
     active: dict[str, Any],
     snapshot: dict[str, Any],
     previous_owned: set[int],
-    known_families: set[str],
 ) -> bool:
     dex = active.get("speciesDex")
     if isinstance(dex, int) and dex in (_owned(snapshot) - previous_owned):
@@ -100,7 +109,7 @@ def _capture_success(
     family = active.get("familyId")
     return (
         family is not None
-        and str(family) not in known_families
+        and not bool(active.get("historicalFamilyKnown"))
         and any(_member_family(member) == family for member in _party(snapshot))
     )
 
@@ -179,7 +188,6 @@ def reconcile_snapshot(
             active,
             snapshot,
             previous_owned,
-            {str(value) for value in ledger.state.get("knownFamilies", [])},
         )
         consumes = bool(active.get("consumesArea")) and (
             caught or bool(ruleset.encounter.get("failedEligibleEncounterConsumesArea"))
@@ -212,6 +220,7 @@ def reconcile_snapshot(
             "speciesDex": assessment.get("speciesDex"),
             "familyId": assessment.get("familyId"),
             "duplicate": assessment.get("duplicate"),
+            "historicalFamilyKnown": assessment.get("historicalFamilyKnown"),
             "eligible": assessment.get("eligible"),
             "consumesArea": assessment.get("consumesArea"),
             "reason": assessment.get("reason"),
@@ -226,6 +235,7 @@ def reconcile_snapshot(
         )
 
     action_skill = str((last_action or {}).get("skillId") or "")
+    observed_pokemon_ids: set[str] = set()
     for member in _party(snapshot):
         pokemon_id = _existing_pokemon_id(ledger, member)
         member_dex = species_dex_number(member.get("species_id"))
@@ -306,6 +316,7 @@ def reconcile_snapshot(
                     source="checkpoint_reconciliation",
                 )
             )
+        observed_pokemon_ids.add(pokemon_id)
         record = ledger.state["pokemon"].get(pokemon_id, {})
         if int(member.get("hp") or 0) <= 0 and record.get("status") != "dead":
             appended.append(
@@ -321,6 +332,22 @@ def reconcile_snapshot(
                     source="checkpoint_reconciliation",
                 )
             )
+
+    for pokemon_id, record in list(ledger.state["pokemon"].items()):
+        if record.get("location") != "party" or pokemon_id in observed_pokemon_ids:
+            continue
+        appended.append(
+            ledger.append(
+                "pokemon_observed",
+                {
+                    "pokemonId": pokemon_id,
+                    "location": "not_in_party",
+                    "slot": None,
+                },
+                evidence=("absent_from_checkpoint_party",),
+                source="checkpoint_reconciliation",
+            )
+        )
 
     registered_dex = {
         int(record["speciesDex"])

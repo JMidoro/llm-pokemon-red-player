@@ -35,6 +35,7 @@ def initial_lineage_state(ruleset: NuzlockeRuleset) -> dict[str, Any]:
         "encounters": {},
         "activeEncounter": None,
         "pokemon": {},
+        "knownSpecies": [],
         "knownFamilies": [],
         "deaths": [],
         "badges": [],
@@ -86,6 +87,9 @@ def apply_event(state: dict[str, Any], event: dict[str, Any]) -> None:
         record.setdefault("status", "alive")
         state["pokemon"][pokemon_id] = record
         family = record.get("familyId")
+        species_dex = record.get("speciesDex")
+        if isinstance(species_dex, int):
+            state["knownSpecies"] = _sorted_unique((*state["knownSpecies"], species_dex))
         if family:
             state["knownFamilies"] = _sorted_unique((*state["knownFamilies"], str(family)))
     elif event_type == "pokemon_observed":
@@ -93,6 +97,14 @@ def apply_event(state: dict[str, Any], event: dict[str, Any]) -> None:
         if pokemon_id in state["pokemon"]:
             state["pokemon"][pokemon_id].update(deepcopy(data))
             state["pokemon"][pokemon_id]["lastObservedSequence"] = sequence
+            species_dex = data.get("speciesDex")
+            family = data.get("familyId")
+            if isinstance(species_dex, int):
+                state["knownSpecies"] = _sorted_unique((*state["knownSpecies"], species_dex))
+            if family:
+                state["knownFamilies"] = _sorted_unique(
+                    (*state["knownFamilies"], str(family))
+                )
     elif event_type == "death_registered":
         pokemon_id = str(data.get("pokemonId") or "")
         if pokemon_id in state["pokemon"]:
@@ -151,8 +163,13 @@ class NuzlockeLedger:
         self._load_or_create()
 
     def _load_or_create(self) -> None:
+        ledger_exists = self.path.exists()
         existing = read_json(self.path)
         if existing is None:
+            if ledger_exists:
+                raise ValueError(
+                    f"Existing Nuzlocke ledger is unreadable or malformed: {self.path}"
+                )
             self._persist()
             return
         if existing.get("schema") != LEDGER_SCHEMA:

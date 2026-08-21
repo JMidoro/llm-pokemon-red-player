@@ -43,9 +43,18 @@ type NuzlockeSummary = {
     version: number;
     enabled: boolean;
     battleStyle: string;
+    battleItemsAllowed: boolean;
     duplicateClause: string;
+    duplicateRemainsAfterDeath: boolean;
+    failedEncounterConsumesArea: boolean;
+    giftConsumesArea: boolean;
+    staticConsumesArea: boolean;
+    shinyException: boolean;
     nicknameRequired: boolean;
+    levelCapMode: string;
     blackout: string;
+    blackoutRestartsLineage: boolean;
+    manualReset: string;
   };
   activeEncounter?: {
     areaId?: string;
@@ -386,6 +395,15 @@ export default function OperationsDashboard() {
               </div>
               <p>
                 {label(run.nuzlocke.ruleset.battleStyle)} battle style · {label(run.nuzlocke.ruleset.duplicateClause)} duplicate clause · {run.nuzlocke.ruleset.nicknameRequired ? "Nicknames required" : "Nicknames optional"}
+              </p>
+              <p>
+                {run.nuzlocke.ruleset.failedEncounterConsumesArea ? "Failed first encounters consume the area" : "Failed encounters do not consume the area"} · {run.nuzlocke.ruleset.giftConsumesArea ? "Gifts consume the area" : "Gifts are independent"} · {run.nuzlocke.ruleset.staticConsumesArea ? "Statics consume the area" : "Statics are independent"}
+              </p>
+              <p>
+                {run.nuzlocke.ruleset.battleItemsAllowed ? "Battle items allowed" : "Battle items restricted"} · {label(run.nuzlocke.ruleset.levelCapMode)} level caps · {run.nuzlocke.ruleset.shinyException ? "Shiny exception enabled" : "Shiny exception inactive"}
+              </p>
+              <p>
+                Blackout: {label(run.nuzlocke.ruleset.blackout)}{run.nuzlocke.ruleset.blackoutRestartsLineage ? " and start a new lineage" : ""} · Reset: {label(run.nuzlocke.ruleset.manualReset)}
               </p>
               <div className="operations-facts">
                 <div><span>Deaths</span><strong>{run.nuzlocke.deaths.length}</strong></div>

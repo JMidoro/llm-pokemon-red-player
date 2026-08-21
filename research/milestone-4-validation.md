@@ -12,25 +12,25 @@ The implementation preserves the Director's discretion over tactics, party order
 
 ## Deterministic contract gate
 
-Run: `research/artifacts/nuzlocke-contract-evaluations/milestone-4-final-gate/evaluation-summary.json`
+Run: `research/artifacts/nuzlocke-contract-evaluations/milestone-4-completion-audit/evaluation-summary.json`
 
 - 7 of 7 replay fixtures passed.
 - Every fixture rebuilt an identical derived lineage state and state digest from its event stream.
 - The fixtures cover a catch, failed first encounter, evolutionary-family duplicate, gift and static independence, death and blackout, full-party transfer to the box, and an HM exception.
 - The evaluator records `inference.used=false`, with no provider or model.
 
-The automated suite passed with 381 tests and 50 local-artifact tests deselected. Ruff passed for `src`, `scripts`, and `tests`. The Operations UI passed TypeScript checking and a production Next.js Webpack build. The default Turbopack builder cannot follow the worktree's intentionally shared `node_modules` junction, so the production build was verified through Next.js's supported `--webpack` path.
+The automated suite passed with 391 tests and 50 local-artifact tests deselected. Ruff passed for `src`, `scripts`, and `tests`, and repository metadata/secret/path validation passed. The Operations UI passed TypeScript checking and a production Next.js Webpack build. The default Turbopack builder cannot follow the worktree's intentionally shared `node_modules` junction, so the production build was verified through Next.js's supported `--webpack` path.
 
 ## Captured and real-emulator evidence
 
 The test `test_captured_pikachu_artifacts_reconcile_without_new_gameplay_collection` replays the tracked before/after Pikachu capture evidence and verifies the Viridian Forest encounter and ownership change without requesting a new gameplay artifact.
 
-Run: `research/artifacts/milestone-4-runtime-smoke-final/m4-runtime-smoke-final/report.json`
+Run: `research/artifacts/milestone-4-runtime-smoke-audit/m4-runtime-smoke-audit/report.json`
 
 - A real PyBoy segment loaded the preserved post-Pikachu state and executed one deterministic replay decision through the canonical runner.
 - The checkpoint was `healthy_continue`; the stop reason was the one-action inspection budget, not a failure.
 - The configured Set battle style was present in RAM (`options_raw=3`) and in the final snapshot.
-- The ledger persisted 21 events, the existing fainted Nidoran M death, and an active eligible Viridian Forest Weedle encounter.
+- The ledger persisted 21 events, five historical species/families, the existing fainted Nidoran M death, and an active eligible Viridian Forest Weedle encounter.
 - Usage was zero tokens and zero estimated cost. No local or hosted player inference was contacted.
 
 ## Guard and configuration coverage
@@ -38,13 +38,16 @@ Run: `research/artifacts/milestone-4-runtime-smoke-final/m4-runtime-smoke-final/
 Automated integration coverage verifies that the runtime:
 
 - blocks an illegal extra catch, evolutionary-family duplicate catch, empty or declined nickname, forbidden reset, dead-Pokemon battle use, HM-carrier battle use, and raw-input bypass before emulator input;
+- proves with a sentinel executor that a blocked guard cannot invoke the emulator input boundary;
 - treats level-cap and HM party-position guidance as advisory rather than scripted strategy;
+- honors species-only/family duplicate modes, the duplicate-after-death switch, unrestricted encounters, failed-encounter consumption, shiny exceptions, gift/static consumption, battle-item restrictions, nickname/reset/blackout alternatives, Set/Shift style, and each HM-exception switch through configuration;
 - distinguishes an overworld static encounter by configured object location, preventing an ordinary wild Power Plant Voltorb from being misclassified;
+- reconciles a captured static Pokemon without consuming the default area's wild opportunity;
 - does not report a fled duplicate-family encounter as a successful capture;
-- detects full-party captures through Pokedex ownership flags and records them in the box;
+- detects full-party captures through Pokedex ownership flags, records them in the box, and preserves their identity when later withdrawn;
 - applies only the battle-style bit when enforcing Set mode;
 - exposes sanitized rules, encounter use, deaths, exceptions, next eligible areas, advisories, and guard decisions to both the Director and Operations UI;
-- rejects ledger tampering, non-contiguous event streams, lineage mismatch, and ruleset-digest mismatch on reopen.
+- refuses to replace a malformed ledger and rejects derived-state tampering, non-contiguous event streams, lineage mismatch, and ruleset-digest mismatch on reopen.
 
 ## Source-backed game data
 

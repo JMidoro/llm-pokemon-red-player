@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from pokemon_player.nuzlocke_data import canonical_area, family_id, species_dex_number
 from pokemon_player.nuzlocke_ledger import NuzlockeLedger
@@ -14,6 +14,9 @@ HARD_RULE_VIOLATION = "hard_rule_violation"
 STRATEGIC_RISK = "strategic_risk"
 MODEL_MISTAKE = "model_mistake"
 COMPLIANT = "compliant"
+BATTLE_ITEM_SKILLS = frozenset(
+    {"battle_use_item", "use_battle_item", "use_inventory_item", "use_item"}
+)
 
 
 def _normalize_name(value: Any) -> str:
@@ -41,6 +44,36 @@ def _family_for_species(species_id: Any, dex_number: Any = None) -> str | None:
 def _is_wild_battle(snapshot: dict[str, Any]) -> bool:
     # Pokemon Red uses wIsInBattle=1 for wild battles and 2 for trainer battles.
     return snapshot.get("mode") == "battle" and snapshot.get("battle_type_raw") == 1 and bool(_enemy(snapshot))
+
+
+def _is_duplicate(
+    ruleset: NuzlockeRuleset,
+    state: dict[str, Any],
+    *,
+    dex_number: int | None,
+    current_family: str | None,
+) -> bool:
+    clause = str(ruleset.encounter.get("duplicateClause") or "none")
+    if clause == "none":
+        return False
+    remains_after_death = bool(ruleset.encounter.get("duplicateRemainsAfterDeath"))
+    if remains_after_death:
+        if clause == "species":
+            return dex_number is not None and dex_number in state.get("knownSpecies", [])
+        return bool(current_family and current_family in state.get("knownFamilies", []))
+    living = [
+        record
+        for record in state.get("pokemon", {}).values()
+        if isinstance(record, dict) and record.get("status") != "dead"
+    ]
+    if clause == "species":
+        return dex_number is not None and any(
+            record.get("speciesDex") == dex_number for record in living
+        )
+    return bool(
+        current_family
+        and any(record.get("familyId") == current_family for record in living)
+    )
 
 
 def _matches_static_rule(
@@ -122,12 +155,20 @@ def encounter_assessment(
         else "wild"
     )
     consumed = bool(area and area["id"] in state.get("encounters", {}))
-    duplicate = bool(
-        current_family
-        and ruleset.encounter.get("duplicateClause") != "none"
-        and current_family in state.get("knownFamilies", [])
+    duplicate = _is_duplicate(
+        ruleset,
+        state,
+        dex_number=dex_number,
+        current_family=current_family,
     )
-    consumes_area = source == "wild"
+    historical_family_known = bool(
+        current_family and current_family in state.get("knownFamilies", [])
+    )
+    shiny = bool(enemy.get("shiny") or enemy.get("is_shiny"))
+    shiny_exception = shiny and bool(ruleset.encounter.get("shinyException"))
+    consumes_area = source == "wild" and bool(
+        ruleset.encounter.get("firstEligibleWildPerArea")
+    )
     if source == "static":
         consumes_area = bool(ruleset.encounter.get("staticConsumesArea"))
     eligible = ruleset.enabled and _is_wild_battle(snapshot)
@@ -137,6 +178,9 @@ def encounter_assessment(
     elif not _is_wild_battle(snapshot):
         eligible = False
         reason = "not_a_confirmed_wild_battle"
+    elif shiny_exception:
+        consumes_area = False
+        reason = "shiny_exception_independent_of_area"
     elif source == "wild" and duplicate:
         eligible = False
         consumes_area = False
@@ -146,6 +190,8 @@ def encounter_assessment(
         reason = "area_encounter_already_consumed"
     elif source == "static":
         reason = "static_encounter_independent_of_area"
+    elif not ruleset.encounter.get("firstEligibleWildPerArea"):
+        reason = "wild_encounters_not_limited_by_area"
     return {
         "area": area,
         "source": source,
@@ -154,6 +200,9 @@ def encounter_assessment(
         "speciesDex": dex_number,
         "familyId": current_family,
         "duplicate": duplicate,
+        "historicalFamilyKnown": historical_family_known,
+        "shiny": shiny,
+        "shinyExceptionApplied": shiny_exception,
         "areaConsumed": consumed,
         "eligible": eligible,
         "consumesArea": consumes_area,
@@ -243,6 +292,17 @@ def assess_action(
             "raw_input_bypasses_rules",
             "Raw controller input is disabled because it can bypass semantic legality guards.",
         )
+    if (
+        skill_id in BATTLE_ITEM_SKILLS
+        and snapshot.get("mode") == "battle"
+        and not ruleset.raw.get("battle", {}).get("itemsAllowed")
+    ):
+        return PolicyDecision(
+            False,
+            HARD_RULE_VIOLATION,
+            "battle_items_restricted",
+            "The active ruleset does not allow combat items during battle.",
+        )
     if skill_id == "attempt_catch":
         assessment = encounter_assessment(ruleset, state, snapshot)
         if not _is_wild_battle(snapshot):
@@ -252,7 +312,11 @@ def assess_action(
                 "catch_without_wild_battle",
                 "The catch intention has no confirmed wild encounter; the skill may reject it.",
             )
-        if assessment["duplicate"] and enforcement.get("blockIllegalCapture", True):
+        if (
+            assessment["duplicate"]
+            and not assessment["shinyExceptionApplied"]
+            and enforcement.get("blockIllegalCapture", True)
+        ):
             return PolicyDecision(
                 False,
                 HARD_RULE_VIOLATION,
@@ -260,7 +324,13 @@ def assess_action(
                 "This evolutionary family is already owned; the duplicate does not consume the area.",
                 (f"family={assessment['familyId']}",),
             )
-        if assessment["areaConsumed"] and assessment["source"] == "wild" and enforcement.get("blockIllegalCapture", True):
+        if (
+            assessment["areaConsumed"]
+            and assessment["source"] == "wild"
+            and assessment["consumesArea"]
+            and not assessment["shinyExceptionApplied"]
+            and enforcement.get("blockIllegalCapture", True)
+        ):
             area = assessment.get("area") or {}
             return PolicyDecision(
                 False,
@@ -426,12 +496,17 @@ def filter_skill_availability(
         )
         # Argument-dependent skills remain visible and are checked again after the Director fills
         # their arguments. Catch legality is fully knowable at availability time.
-        if not decision.allowed and skill_id in {"attempt_catch", "literal_button_press"}:
+        if not decision.allowed and skill_id in {
+            "attempt_catch",
+            "literal_button_press",
+            *BATTLE_ITEM_SKILLS,
+        }:
             decisions.append({"skillId": skill_id, **decision.to_dict()})
             continue
         if nickname_flow and skill_id in {
             "advance_dialogue",
             "advance_battle_dialogue",
+            "close_menu_or_cancel",
             "resolve_battle_outcome_dialogue_bundle",
         }:
             decisions.append(
@@ -538,6 +613,34 @@ def record_guard_decision(
     )
 
 
+def execute_guarded_skill(
+    ruleset: NuzlockeRuleset,
+    ledger: NuzlockeLedger,
+    snapshot: dict[str, Any],
+    *,
+    skill_id: str,
+    args: dict[str, Any],
+    action_index: int | None,
+    executor: Callable[[], Any],
+) -> Any:
+    decision = assess_action(
+        ruleset,
+        ledger.state,
+        snapshot,
+        skill_id=skill_id,
+        args=args,
+    )
+    record_guard_decision(
+        ledger,
+        decision,
+        skill_id=skill_id,
+        action_index=action_index,
+    )
+    if not decision.allowed:
+        return blocked_skill_result(skill_id, decision)
+    return executor()
+
+
 def authorize_hm_softlock_exception(
     ledger: NuzlockeLedger,
     ruleset: NuzlockeRuleset,
@@ -547,12 +650,24 @@ def authorize_hm_softlock_exception(
     move: str,
     reason: str,
     required_progression: bool,
+    living_legal_options_exhausted: bool,
 ) -> dict[str, Any]:
     policy = ruleset.raw.get("hmSoftlock", {})
     if kind not in {"dead_field_only_carrier", "out_of_encounter_utility_capture"}:
         raise ValueError("Unsupported HM softlock exception kind.")
-    if policy.get("requiredProgressionOnly") and not required_progression:
+    if kind == "dead_field_only_carrier" and not policy.get("allowDeadFieldOnlyCarrier"):
+        raise ValueError("The active ruleset does not allow a dead field-only HM carrier.")
+    if (
+        kind == "out_of_encounter_utility_capture"
+        and not policy.get("allowOutOfEncounterUtilityCapture")
+    ):
+        raise ValueError("The active ruleset does not allow an out-of-encounter utility capture.")
+    if not required_progression and (
+        policy.get("requiredProgressionOnly") or not policy.get("optionalMovesQualify")
+    ):
         raise ValueError("HM exceptions are limited to required progression.")
+    if policy.get("livingLegalFirst") and not living_legal_options_exhausted:
+        raise ValueError("A living legal HM option must be exhausted before an exception.")
     if not str(reason).strip():
         raise ValueError("HM exceptions require a recorded reason.")
     event = ledger.append(
@@ -563,12 +678,16 @@ def authorize_hm_softlock_exception(
             "move": move,
             "reason": reason,
             "requiredProgression": required_progression,
-            "fieldUseOnly": True,
-            "intentionalBattleAllowed": False,
+            "fieldUseOnly": bool(policy.get("intentionalBattleDisallowed")),
+            "intentionalBattleAllowed": not bool(policy.get("intentionalBattleDisallowed")),
             "placeAtBack": bool(policy.get("placeAtBack")),
             "removeAtNextPc": bool(policy.get("removeAtNextPc")),
         },
-        evidence=("living_legal_options_exhausted",),
+        evidence=(
+            "living_legal_options_exhausted"
+            if living_legal_options_exhausted
+            else "ruleset_allows_direct_exception",
+        ),
         source="hm_softlock_policy",
     )
     return event

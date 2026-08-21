@@ -31,12 +31,10 @@ from pokemon_player.durable_io import atomic_write_json, require_safe_component 
 from pokemon_player.operations import OperationsPaths, OperationsRunControl, OperationsStore  # noqa: E402
 from pokemon_player.nuzlocke_ledger import NuzlockeLedger  # noqa: E402
 from pokemon_player.nuzlocke_policy import (  # noqa: E402
-    assess_action,
-    blocked_skill_result,
     director_rules_context,
+    execute_guarded_skill,
     filter_skill_availability,
     public_lineage_context,
-    record_guard_decision,
 )
 from pokemon_player.nuzlocke_reconciliation import reconcile_snapshot  # noqa: E402
 from pokemon_player.nuzlocke_rules import load_ruleset  # noqa: E402
@@ -461,34 +459,29 @@ def main(
                     snapshot_dict,
                     history,
                 )
-                policy_decision = assess_action(
+                artifact = execute_guarded_skill(
                     ruleset,
-                    nuzlocke_ledger.state,
+                    nuzlocke_ledger,
                     snapshot_dict,
                     skill_id=skill_id,
                     args=skill_args,
-                )
-                record_guard_decision(
-                    nuzlocke_ledger,
-                    policy_decision,
-                    skill_id=skill_id,
                     action_index=action_index,
+                    executor=lambda: support.execute_local_skill(
+                        pyboy,
+                        skill_id=skill_id,
+                        args=skill_args,
+                        state_in=current_state_path,
+                        rom=rom,
+                        run_root=skill_run_root,
+                        render=args.render,
+                    ),
                 )
-                if not policy_decision.allowed:
-                    result = blocked_skill_result(skill_id, policy_decision)
+                if isinstance(artifact, dict) and artifact.get("policyDecision"):
+                    result = artifact
                     selected_artifact.update(
                         {"skillId": skill_id, "args": skill_args, "result": result}
                     )
                     return result
-                artifact = support.execute_local_skill(
-                    pyboy,
-                    skill_id=skill_id,
-                    args=skill_args,
-                    state_in=current_state_path,
-                    rom=rom,
-                    run_root=skill_run_root,
-                    render=args.render,
-                )
                 result = support.artifact_result_dict(artifact)
                 selected_artifact.update({"skillId": skill_id, "args": skill_args, "result": result})
                 after_snapshot = snapshot_to_dict(snapshot(pyboy))
