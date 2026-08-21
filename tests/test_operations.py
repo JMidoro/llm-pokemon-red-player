@@ -305,3 +305,141 @@ def test_artifact_resolver_rejects_traversal_and_outside_screenshot(tmp_path: Pa
         pass
     else:
         raise AssertionError("Outside screenshot must be rejected")
+
+
+def test_snapshot_exposes_sanitized_durable_supervisor_status(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    supervisor_root = tmp_path / "segment-supervisor"
+    lineage = supervisor_root / "lineages" / "early-game"
+    (lineage / "review-queue").mkdir(parents=True)
+    (lineage / "failures").mkdir()
+    store.paths.supervisor_root = supervisor_root
+    (lineage / "state.json").write_text(
+        json.dumps(
+            {
+                "schema": "segment_supervisor_state_v1",
+                "state": "running",
+                "reason": "segment_process_started",
+                "currentSegment": "segment-000003-a1",
+                "updatedUtc": "2026-08-20T12:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (lineage / "heartbeat.json").write_text(
+        json.dumps({"updatedEpoch": time.time()}),
+        encoding="utf-8",
+    )
+    (lineage / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "segment_lineage_manifest_v1",
+                "nextSequence": 4,
+                "lastSafeState": {"path": "F:\\private\\safe.state"},
+                "segments": [
+                    {
+                        "segmentId": "segment-000002-a1",
+                        "verdict": "healthy_continue",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (lineage / "review-queue" / "review.json").write_text(
+        json.dumps(
+            {
+                "id": "review-1",
+                "status": "queued",
+                "segmentId": "segment-000002-a1",
+                "kind": "literal_button_overuse",
+                "summary": "Convert repeated inputs into a semantic skill.",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (lineage / "failures" / "failure.json").write_text(
+        json.dumps(
+            {
+                "segmentId": "segment-000001-a1",
+                "createdUtc": "2026-08-20T11:00:00+00:00",
+                "checkpoint": {"verdict": "stalled_loop", "summary": "No progress."},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    snapshot = store.snapshot()
+    encoded = json.dumps(snapshot)
+
+    assert snapshot["supervisor"]["state"] == "running"
+    assert snapshot["supervisor"]["segmentCount"] == 1
+    assert snapshot["capabilities"]["supervisorConnected"] is True
+    assert snapshot["reviewQueue"][0]["title"] == "literal_button_overuse"
+    assert snapshot["failures"][0]["category"] == "stalled_loop"
+    assert "F:\\private" not in encoded
+    assert "lastSafeState" not in encoded
+
+
+def test_supervisor_segment_reports_use_private_stable_artifact_ids(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    supervisor_root = tmp_path / "segment-supervisor"
+    lineage = supervisor_root / "lineages" / "early-game"
+    segment = lineage / "segments" / "segment-000001-a1"
+    segment.mkdir(parents=True)
+    store.paths.supervisor_root = supervisor_root
+    screenshot = segment / "final.png"
+    screenshot.write_bytes(b"png")
+    final_state = segment / "final.state"
+    final_state.write_bytes(b"state")
+    report = {
+        "schema": "director_segment_run_v1",
+        "createdUtc": "2026-08-20T12:00:00+00:00",
+        "model": "ignored-legacy-field",
+        "provider": {"provider": "replay", "model": "deterministic-replay"},
+        "goal": "Advance safely.",
+        "finish": {"status": "checkpoint", "summary": "Budget checkpoint."},
+        "history": [],
+        "chapterTimeline": [],
+        "finalScreenshot": str(screenshot),
+        "finalState": str(final_state),
+        "finalSnapshot": {
+            "mode": "overworld",
+            "position": {"map_name": "Pallet Town", "x": 5, "y": 6},
+        },
+        "checkpoint": {
+            "verdict": "healthy_continue",
+            "confidence": "high",
+            "continueRecommended": True,
+            "summary": "Safe.",
+            "reviewItems": [],
+        },
+    }
+    (segment / "report.json").write_text(json.dumps(report), encoding="utf-8")
+    (lineage / "state.json").write_text(
+        json.dumps({"state": "idle", "reason": "continuation_approved"}),
+        encoding="utf-8",
+    )
+    (lineage / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "segment_lineage_manifest_v1",
+                "nextSequence": 2,
+                "segments": [
+                    {
+                        "segmentId": segment.name,
+                        "verdict": "healthy_continue",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    snapshot = store.snapshot()
+    run = next(item for item in snapshot["runHistory"] if item.get("source") == "segment_supervisor")
+
+    assert run["id"].startswith("sv-")
+    assert run["sourceSegmentId"] == segment.name
+    assert store.artifact_path(run["id"], "screenshot")[0] == screenshot
+    assert store.summary_payload(run["id"])["checkpoint"]["verdict"] == "healthy_continue"

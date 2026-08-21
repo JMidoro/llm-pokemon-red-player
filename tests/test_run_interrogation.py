@@ -171,3 +171,65 @@ def test_repeated_blocked_results_are_stalled_loop() -> None:
 
     assert checkpoint["verdict"] == "stalled_loop"
     assert checkpoint["continueRecommended"] is False
+
+
+def test_repeated_state_hash_without_progress_is_stalled_loop() -> None:
+    report = base_report()
+    report["history"] = [
+        {
+            "action": index,
+            "skillId": "observe_checkpoint",
+            "result": {"status": "succeeded", "summary": "Observed."},
+        }
+        for index in range(1, 6)
+    ]
+    report["progressObservations"] = [
+        {
+            "action": index,
+            "stateHash": "unchanged",
+            "chapterId": "chapter_7_level_for_brock",
+            "position": {"map_id": 0x0D, "x": 7, "y": 2},
+            "party": [{"species_id": 0xB1, "level": 8, "hp": 14}],
+            "inventory": [],
+            "money": 3000,
+        }
+        for index in range(1, 6)
+    ]
+
+    checkpoint = interrogate_run_report(report)
+
+    assert checkpoint["verdict"] == "stalled_loop"
+    assert "loop_reason=repeated_state_hash_without_progress" in checkpoint["evidence"]
+
+
+def test_repeated_interpretation_warning_is_a_state_gap() -> None:
+    report = base_report()
+    report["history"] = [
+        {
+            "action": index,
+            "skillId": "advance_dialogue",
+            "result": {
+                "status": "blocked",
+                "summary": "Unknown screen.",
+                "warnings": ["unclassified_visual_state"],
+            },
+        }
+        for index in range(1, 4)
+    ]
+
+    checkpoint = interrogate_run_report(report)
+
+    assert checkpoint["verdict"] == "state_interpretation_gap"
+    assert checkpoint["continueRecommended"] is False
+
+
+def test_previous_checkpoint_deltas_are_recorded_as_progress() -> None:
+    previous = base_report()
+    report = base_report()
+    report["finalSnapshot"]["position"]["x"] = 8
+    report["finalSnapshot"]["party"][0]["hp"] = 16
+
+    checkpoint = interrogate_run_report(report, previous_report=previous)
+
+    assert "position_changes=1" in checkpoint["evidence"]
+    assert "resource_changes=1" in checkpoint["evidence"]

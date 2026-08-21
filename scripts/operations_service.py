@@ -132,6 +132,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--director-url", default="http://127.0.0.1:8765")
     parser.add_argument("--director-report-root", default="research/artifacts/llm-director-runs")
     parser.add_argument("--director-status-dir", default="research/artifacts/director-player")
+    parser.add_argument("--supervisor-root", default="research/artifacts/segment-supervisor")
     return parser.parse_args()
 
 
@@ -147,6 +148,7 @@ def main() -> int:
             dropbox_root=dropbox_root,
             director_report_root=(ROOT / args.director_report_root).resolve(),
             director_status_dir=(ROOT / args.director_status_dir).resolve(),
+            supervisor_root=(ROOT / args.supervisor_root).resolve(),
         ),
         director_url=args.director_url,
     )

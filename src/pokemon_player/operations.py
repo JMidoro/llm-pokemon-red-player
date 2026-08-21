@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -274,10 +275,11 @@ def report_summary(report: dict[str, Any], run_id: str, *, video_available: bool
             "summary": safe_text(checkpoint.get("summary") or finish.get("summary") or "Run needs attention.", limit=500),
         }
     created = safe_text(report.get("createdUtc") or "", limit=50)
+    provider = report.get("provider") if isinstance(report.get("provider"), dict) else {}
     return {
         "id": run_id,
         "createdUtc": created,
-        "model": safe_text(report.get("model") or "Unknown model", limit=120),
+        "model": safe_text(report.get("model") or provider.get("model") or "Unknown model", limit=120),
         "status": safe_text(finish.get("status") or "unknown", limit=40),
         "finishSummary": safe_text(finish.get("summary") or "No finish summary.", limit=500),
         "actionCount": len(history),
@@ -402,6 +404,7 @@ class OperationsPaths:
     dropbox_root: Path | None = None
     director_report_root: Path | None = None
     director_status_dir: Path | None = None
+    supervisor_root: Path | None = None
 
     @property
     def control(self) -> Path:
@@ -430,6 +433,8 @@ class OperationsStore:
         self._lock = threading.RLock()
         self._report_cache: dict[str, tuple[tuple[int, int, int | None], dict[str, Any]]] = {}
         self._director_report_cache: dict[str, tuple[tuple[int, int], dict[str, Any]]] = {}
+        self._supervisor_report_cache: dict[str, tuple[tuple[int, int], dict[str, Any]]] = {}
+        self._supervisor_report_dirs: dict[str, Path] = {}
         self._snapshot_cache: dict[str, Any] | None = None
         self._snapshot_cache_at = 0.0
         self.paths.state_dir.mkdir(parents=True, exist_ok=True)
@@ -607,6 +612,76 @@ class OperationsStore:
                 break
         return summaries
 
+    def supervisor_report_summaries(self, limit: int = 25) -> list[dict[str, Any]]:
+        root = self.paths.supervisor_root
+        lineages_root = root / "lineages" if root else None
+        if not lineages_root or not lineages_root.is_dir():
+            return []
+        candidates: list[tuple[int, str, str, Path]] = []
+        self._supervisor_report_dirs = {}
+        for lineage_dir in lineages_root.iterdir():
+            if not lineage_dir.is_dir() or not SAFE_RUN_ID.fullmatch(lineage_dir.name):
+                continue
+            segments_dir = lineage_dir / "segments"
+            if not segments_dir.is_dir():
+                continue
+            for segment_dir in segments_dir.iterdir():
+                if not segment_dir.is_dir() or not SAFE_RUN_ID.fullmatch(segment_dir.name):
+                    continue
+                public_id = self._supervisor_public_run_id(lineage_dir.name, segment_dir.name)
+                self._supervisor_report_dirs[public_id] = segment_dir
+                report_path = segment_dir / "report.json"
+                try:
+                    modified = report_path.stat().st_mtime_ns
+                except OSError:
+                    continue
+                candidates.append((modified, public_id, lineage_dir.name, segment_dir))
+        summaries: list[dict[str, Any]] = []
+        for _, public_id, lineage_id, segment_dir in sorted(candidates, reverse=True):
+            report_path = segment_dir / "report.json"
+            try:
+                report_stat = report_path.stat()
+            except OSError:
+                continue
+            signature = (report_stat.st_mtime_ns, report_stat.st_size)
+            cached = self._supervisor_report_cache.get(public_id)
+            if cached and cached[0] == signature:
+                summaries.append(cached[1])
+            else:
+                report = read_json(report_path)
+                if not report:
+                    continue
+                summary = report_summary(
+                    report,
+                    public_id,
+                    video_available=(segment_dir / "segment.mp4").is_file(),
+                )
+                summary.update(
+                    {
+                        "source": "segment_supervisor",
+                        "sourceSegmentId": segment_dir.name,
+                        "lineageId": safe_text(lineage_id, limit=80),
+                    }
+                )
+                self._supervisor_report_cache[public_id] = (signature, summary)
+                summaries.append(summary)
+            if len(summaries) >= limit:
+                break
+        return summaries
+
+    @staticmethod
+    def _supervisor_public_run_id(lineage_id: str, segment_id: str) -> str:
+        lineage_hash = hashlib.sha256(lineage_id.encode("utf-8")).hexdigest()[:10]
+        return f"sv-{lineage_hash}-{segment_id}"
+
+    def _supervisor_run_dir(self, run_id: str) -> Path | None:
+        directory = self._supervisor_report_dirs.get(run_id)
+        if directory and directory.is_dir():
+            return directory
+        self.supervisor_report_summaries()
+        directory = self._supervisor_report_dirs.get(run_id)
+        return directory if directory and directory.is_dir() else None
+
     def _director_health(self) -> tuple[dict[str, Any], dict[str, Any] | None]:
         request = Request(f"{self.director_url}/status", headers={"accept": "application/json"})
         try:
@@ -633,13 +708,29 @@ class OperationsStore:
 
     def _active_public(self, active: dict[str, Any], reports: list[dict[str, Any]]) -> dict[str, Any]:
         run_id = str(active["runId"])
-        matching = next((report for report in reports if report["id"] == run_id), None)
+        matching = next(
+            (
+                report
+                for report in reports
+                if report["id"] == run_id or report.get("sourceSegmentId") == run_id
+            ),
+            None,
+        )
+        mapped_id = next(
+            (
+                public_id
+                for public_id, directory in self._supervisor_report_dirs.items()
+                if directory.name == run_id
+            ),
+            None,
+        )
+        public_run_id = str(matching.get("id")) if matching else (mapped_id or run_id)
         snapshot = active.get("snapshot") if isinstance(active.get("snapshot"), dict) else {}
         chapter = active.get("chapter") if isinstance(active.get("chapter"), dict) else {}
         last_decision = active.get("lastDecision") if isinstance(active.get("lastDecision"), dict) else None
         last_result = active.get("lastSkillResult") if isinstance(active.get("lastSkillResult"), dict) else None
         return {
-            "id": run_id,
+            "id": public_run_id,
             "createdUtc": safe_text(active.get("startedUtc") or "", limit=50),
             "updatedUtc": safe_text(active.get("updatedUtc") or "", limit=50),
             "heartbeatAgeSeconds": active.get("heartbeatAgeSeconds"),
@@ -665,7 +756,7 @@ class OperationsStore:
             "failure": matching.get("failure") if matching else None,
             "reviewItems": matching.get("reviewItems", []) if matching else [],
             "artifacts": {
-                "screenshot": f"/api/operations/artifacts/{run_id}/screenshot",
+                "screenshot": f"/api/operations/artifacts/{public_run_id}/screenshot",
                 "summary": matching.get("artifacts", {}).get("summary") if matching else None,
                 "video": matching.get("artifacts", {}).get("video") if matching else None,
             },
@@ -736,15 +827,133 @@ class OperationsStore:
             "dropbox": {"status": "not_available", "playable": False},
         }
 
+    def _supervisor_public(
+        self,
+    ) -> tuple[dict[str, Any], dict[str, Any] | None, list[dict[str, Any]], list[dict[str, Any]]]:
+        root = self.paths.supervisor_root
+        lineages_root = root / "lineages" if root else None
+        if not lineages_root or not lineages_root.is_dir():
+            return (
+                {
+                    "id": "supervisor",
+                    "label": "Segment supervisor",
+                    "status": "idle",
+                    "detail": "No lineage has started",
+                },
+                None,
+                [],
+                [],
+            )
+        candidates: list[tuple[int, Path, dict[str, Any]]] = []
+        for directory in lineages_root.iterdir():
+            if not directory.is_dir() or not SAFE_RUN_ID.fullmatch(directory.name):
+                continue
+            state_path = directory / "state.json"
+            state = read_json(state_path)
+            if not state:
+                continue
+            try:
+                modified = state_path.stat().st_mtime_ns
+            except OSError:
+                modified = 0
+            candidates.append((modified, directory, state))
+        if not candidates:
+            return (
+                {
+                    "id": "supervisor",
+                    "label": "Segment supervisor",
+                    "status": "idle",
+                    "detail": "No durable state available",
+                },
+                None,
+                [],
+                [],
+            )
+        _, directory, state = max(candidates, key=lambda item: item[0])
+        heartbeat = read_json(directory / "heartbeat.json") or {}
+        manifest = read_json(directory / "manifest.json") or {}
+        try:
+            heartbeat_age = max(time.time() - float(heartbeat.get("updatedEpoch")), 0.0)
+        except (TypeError, ValueError):
+            heartbeat_age = self.active_stale_seconds + 1
+        supervisor_state = safe_text(state.get("state") or "idle", limit=40)
+        connected_state = supervisor_state in {"idle", "starting", "running", "checkpointing", "paused"}
+        stale = connected_state and (
+            heartbeat_age > self.active_stale_seconds
+        )
+        connected = connected_state and not stale
+        segments = manifest.get("segments") if isinstance(manifest.get("segments"), list) else []
+        latest_segment = segments[-1] if segments and isinstance(segments[-1], dict) else {}
+        public = {
+            "lineageId": safe_text(directory.name, limit=80),
+            "state": "stale" if stale else supervisor_state,
+            "reason": safe_text(state.get("reason") or "No reason recorded", limit=160),
+            "currentSegment": safe_text(state.get("currentSegment") or "", limit=80) or None,
+            "heartbeatAgeSeconds": round(heartbeat_age, 1),
+            "stale": stale,
+            "connected": connected,
+            "segmentCount": len(segments),
+            "nextSequence": int(manifest.get("nextSequence") or 1),
+            "latestVerdict": safe_text(latest_segment.get("verdict") or "", limit=60) or None,
+            "updatedUtc": safe_text(state.get("updatedUtc") or "", limit=50),
+        }
+        reviews: list[dict[str, Any]] = []
+        review_dir = directory / "review-queue"
+        if review_dir.is_dir():
+            for path in sorted(review_dir.glob("*.json"), reverse=True)[:30]:
+                item = read_json(path)
+                if not item or item.get("status") != "queued":
+                    continue
+                reviews.append(
+                    {
+                        "id": safe_text(item.get("id") or path.stem, limit=120),
+                        "runId": safe_text(item.get("segmentId") or directory.name, limit=100),
+                        "title": safe_text(item.get("kind") or "Supervisor review", limit=160),
+                        "detail": safe_text(item.get("summary") or "Review queued.", limit=500),
+                        "severity": "review",
+                    }
+                )
+        failures: list[dict[str, Any]] = []
+        failure_dir = directory / "failures"
+        if failure_dir.is_dir():
+            for path in sorted(failure_dir.glob("*.json"), reverse=True)[:20]:
+                item = read_json(path)
+                if not item:
+                    continue
+                checkpoint = (
+                    item.get("checkpoint") if isinstance(item.get("checkpoint"), dict) else {}
+                )
+                failures.append(
+                    {
+                        "runId": safe_text(item.get("segmentId") or directory.name, limit=100),
+                        "category": safe_text(checkpoint.get("verdict") or "supervisor_failure", limit=100),
+                        "summary": safe_text(checkpoint.get("summary") or "Supervisor failure.", limit=500),
+                        "createdUtc": safe_text(item.get("createdUtc") or "", limit=50),
+                    }
+                )
+        service_status = "stale" if stale else ("online" if connected else supervisor_state)
+        return (
+            {
+                "id": "supervisor",
+                "label": "Segment supervisor",
+                "status": service_status,
+                "detail": safe_text(state.get("reason") or supervisor_state, limit=120),
+            },
+            public,
+            reviews,
+            failures,
+        )
+
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             now = time.monotonic()
             if self._snapshot_cache is not None and now - self._snapshot_cache_at < 1.5:
                 return self._snapshot_cache
             local_reports = self.report_summaries()
+            supervisor_reports = self.supervisor_report_summaries()
             director_reports = self.director_report_summaries()
             reports = sorted(
-                [*local_reports[:15], *director_reports[:10]],
+                [*local_reports[:10], *supervisor_reports[:15], *director_reports[:10]],
                 key=lambda report: str(report.get("createdUtc") or ""),
                 reverse=True,
             )
@@ -753,33 +962,45 @@ class OperationsStore:
                 active.get("stale")
                 or str(active.get("status") or "")
                 in {"checkpoint", "completed", "failed", "stopped_after_action", "emergency_stopped"}
-            ) and any(report["id"] == active.get("runId") for report in reports):
+            ) and any(
+                report["id"] == active.get("runId")
+                or report.get("sourceSegmentId") == active.get("runId")
+                for report in reports
+            ):
                 active = None
             director_service, director_payload = self._director_health()
+            supervisor_service, supervisor, supervisor_reviews, supervisor_failures = (
+                self._supervisor_public()
+            )
             dropbox_ready = bool(self.paths.dropbox_root and self.paths.dropbox_root.exists())
             latest_director = director_reports[0] if director_reports else None
             if active:
-                current = self._active_public(active, local_reports)
+                current = self._active_public(active, [*supervisor_reports, *local_reports])
             elif director_payload:
                 current = self._director_public(director_payload, latest_director)
             else:
                 current = reports[0] if reports else None
             if current and active is None and director_payload is None:
                 current = {**current, "status": "checkpoint"}
-            reviews = [item for report in reports for item in report.get("reviewItems", [])][:30]
-            failures = [
+            reviews = (
+                supervisor_reviews
+                + [item for report in reports for item in report.get("reviewItems", [])]
+            )[:30]
+            failures = (supervisor_failures + [
                 {"runId": report["id"], **report["failure"], "createdUtc": report["createdUtc"]}
                 for report in reports
                 if report.get("failure")
-            ][:20]
+            ])[:20]
             director_online = director_payload is not None
             self._snapshot_cache = {
                 "schema": "operations_snapshot_v1",
                 "generatedUtc": utc_now(),
                 "connection": "online",
                 "control": self.public_control(self.read_control()),
+                "supervisor": supervisor,
                 "services": [
                     {"id": "operations", "label": "Operations service", "status": "online", "detail": "Healthy"},
+                    supervisor_service,
                     director_service,
                     {
                         "id": "runner",
@@ -802,6 +1023,7 @@ class OperationsStore:
                 "capabilities": {
                     "controls": sorted(CONTROL_ACTIONS),
                     "directorConnected": director_online,
+                    "supervisorConnected": bool(supervisor and supervisor.get("connected")),
                     "rawButtonsExposed": False,
                 },
             }
@@ -811,6 +1033,31 @@ class OperationsStore:
     def artifact_path(self, run_id: str, kind: str) -> tuple[Path, str, str]:
         if not SAFE_RUN_ID.fullmatch(run_id):
             raise FileNotFoundError("Unknown run")
+        supervisor_dir = self._supervisor_run_dir(run_id)
+        if supervisor_dir:
+            if kind == "video":
+                video = supervisor_dir / "segment.mp4"
+                if not video.is_file():
+                    raise FileNotFoundError("Video is not available")
+                return video, "video/mp4", f"{run_id}.mp4"
+            if kind == "summary":
+                raise ValueError("summary is generated JSON, not a file")
+            if kind != "screenshot":
+                raise FileNotFoundError("Unknown artifact")
+            active = self._active()
+            raw = active.get("screenshotPath") if active and active.get("runId") == supervisor_dir.name else None
+            candidate = Path(str(raw)).resolve() if raw else None
+            if not candidate or not candidate.is_file():
+                report = read_json(supervisor_dir / "report.json") or {}
+                report_raw = report.get("finalScreenshot")
+                candidate = Path(str(report_raw)).resolve() if report_raw else supervisor_dir / "final.png"
+            try:
+                candidate.relative_to(supervisor_dir.resolve())
+            except ValueError as exc:
+                raise FileNotFoundError("Artifact is outside the segment") from exc
+            if not candidate.is_file():
+                raise FileNotFoundError("Screenshot is not available")
+            return candidate, "image/png", f"{run_id}.png"
         if run_id == "live-director" and kind == "screenshot" and self.paths.director_status_dir:
             candidate = (self.paths.director_status_dir / "current.png").resolve()
             if candidate.parent != self.paths.director_status_dir.resolve() or not candidate.is_file():
@@ -848,6 +1095,23 @@ class OperationsStore:
     def summary_payload(self, run_id: str) -> dict[str, Any]:
         if not SAFE_RUN_ID.fullmatch(run_id):
             raise FileNotFoundError("Unknown run")
+        supervisor_dir = self._supervisor_run_dir(run_id)
+        if supervisor_dir:
+            report = read_json(supervisor_dir / "report.json")
+            if not report:
+                raise FileNotFoundError("Unknown run")
+            summary = report_summary(
+                report,
+                run_id,
+                video_available=(supervisor_dir / "segment.mp4").is_file(),
+            )
+            summary.update(
+                {
+                    "source": "segment_supervisor",
+                    "sourceSegmentId": supervisor_dir.name,
+                }
+            )
+            return summary
         if run_id.startswith("director-") and self.paths.director_report_root:
             directory_name = run_id.removeprefix("director-")
             if not SAFE_RUN_ID.fullmatch(directory_name):

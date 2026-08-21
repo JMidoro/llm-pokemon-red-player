@@ -531,13 +531,15 @@ def render_video_artifact(
     try:
         shutil.copy2(local_video, dropbox_video)
         result["dropboxPath"] = str(dropbox_video)
+        result["bundlePath"] = str(local_video)
         result["bytes"] = dropbox_video.stat().st_size if dropbox_video.exists() else None
     except OSError as exc:
         result["warnings"].append(f"Rendered video locally but could not copy it to {output_dir}: {exc}")
         result["localVideoPath"] = str(local_video)
         cleanup_video_temp(frame_dir=frame_dir, local_video=None, result=result)
         return result
-    cleanup_video_temp(frame_dir=frame_dir, local_video=local_video, result=result)
+    cleanup_video_temp(frame_dir=frame_dir, local_video=None, result=result)
+    result["localVideoCleaned"] = False
     return result
 
 

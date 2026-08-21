@@ -27,6 +27,8 @@ from pokemon_player.director_player import promoted_signals, skill_availability 
 from pokemon_player.director_provider_factory import canonical_provider_id, make_provider  # noqa: E402
 from pokemon_player.director_reporting import build_director_report  # noqa: E402
 from pokemon_player.director_runtime import DirectorRuntime  # noqa: E402
+from pokemon_player.durable_io import atomic_write_json, require_safe_component  # noqa: E402
+from pokemon_player.operations import OperationsPaths, OperationsRunControl, OperationsStore  # noqa: E402
 from pokemon_player.pyboy_lab import load_state, open_emulator, save_state, snapshot  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 from pokemon_player.run_interrogation import interrogate_run_report  # noqa: E402
@@ -39,6 +41,7 @@ DEFAULT_GOAL = (
     "chapterDirection objective and choose one enabled semantic skill that serves it."
 )
 DEFAULT_LOCAL_MODEL = "google/gemma-4-e4b"
+DEFAULT_OPERATIONS_DIR = ROOT / "research" / "artifacts" / "operations"
 
 
 def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentParser:
@@ -67,6 +70,11 @@ def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentPars
         default=None,
         help="Optional artifact root; defaults to research/artifacts/chapter-segment-runs.",
     )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional deterministic run id used by the durable segment supervisor.",
+    )
     parser.add_argument("--max-actions", type=int, default=100)
     parser.add_argument("--temperature", type=float, default=0.1)
     parser.add_argument("--max-tokens", type=int, default=2048)
@@ -78,7 +86,78 @@ def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentPars
     parser.add_argument("--no-video", action="store_true")
     parser.add_argument("--video-output-dir", default=str(support.DEFAULT_VIDEO_OUTPUT_DIR))
     parser.add_argument("--video-fps", type=int, default=2)
+    parser.add_argument(
+        "--operations-dir",
+        default=str(DEFAULT_OPERATIONS_DIR),
+        help="Durable local pause/stop control and active-run heartbeat directory.",
+    )
+    parser.add_argument(
+        "--no-operations-control",
+        action="store_true",
+        help="Disable Operations controls for isolated diagnostics.",
+    )
     return parser
+
+
+def operator_finish(signal: str) -> JsonObject:
+    labels = {
+        "stop_after_action": "Operator requested a stop after the completed action.",
+        "emergency_stop": (
+            "Operator requested an emergency stop at the next safe action boundary."
+        ),
+    }
+    if signal not in labels:
+        raise ValueError(f"Unsupported operator stop signal: {signal}")
+    return {
+        "status": "checkpoint",
+        "success": False,
+        "summary": labels[signal],
+        "failureCategory": None,
+        "stopReason": f"operator_{signal}",
+    }
+
+
+def progress_observation(
+    *,
+    action: int,
+    state_hash: str,
+    chapter: JsonObject,
+    snapshot_dict: JsonObject,
+) -> JsonObject:
+    party = snapshot_dict.get("party") if isinstance(snapshot_dict.get("party"), list) else []
+    inventory = (
+        snapshot_dict.get("inventory")
+        if isinstance(snapshot_dict.get("inventory"), list)
+        else []
+    )
+    return {
+        "action": action,
+        "stateHash": state_hash,
+        "chapterId": chapter.get("chapterId"),
+        "chapterSuccess": bool(chapter.get("success")),
+        "mode": snapshot_dict.get("mode"),
+        "position": snapshot_dict.get("position"),
+        "money": snapshot_dict.get("money"),
+        "badges": snapshot_dict.get("badge_names") or [],
+        "party": [
+            {
+                "speciesId": member.get("species_id"),
+                "level": member.get("level"),
+                "hp": member.get("hp"),
+                "status": member.get("status"),
+            }
+            for member in party
+            if isinstance(member, dict)
+        ],
+        "inventory": [
+            {
+                "itemId": item.get("item_id"),
+                "quantity": item.get("quantity"),
+            }
+            for item in inventory
+            if isinstance(item, dict)
+        ],
+    }
 
 
 def main(
@@ -105,8 +184,11 @@ def main(
         if args.run_root
         else ROOT / "research" / "artifacts" / "chapter-segment-runs"
     )
-    run_dir = run_root / support.timestamp()
-    run_id = run_dir.name
+    run_id = require_safe_component(args.run_id, label="run id") if args.run_id else support.timestamp()
+    run_dir = run_root / run_id
+    existing = [item for item in run_dir.iterdir() if item.name != "manifest.json"] if run_dir.exists() else []
+    if existing:
+        raise FileExistsError(f"Run directory already contains segment artifacts: {run_dir}")
     run_dir.mkdir(parents=True, exist_ok=True)
     skill_run_root = run_dir / "skill-runs"
     video_frame_dir = run_dir / "video-frames"
@@ -117,6 +199,29 @@ def main(
     director_requests: list[DirectorRequest] = []
     ticks: list[DirectorTickResult] = []
     chapter_timeline: list[JsonObject] = []
+    progress_observations: list[JsonObject] = []
+    operations_control: OperationsRunControl | None = None
+    if not args.no_operations_control:
+        operations_dir = Path(args.operations_dir)
+        if not operations_dir.is_absolute():
+            operations_dir = ROOT / operations_dir
+        operations_store = OperationsStore(
+            OperationsPaths(
+                state_dir=operations_dir.resolve(),
+                report_root=run_root.resolve(),
+                dropbox_root=(
+                    Path(args.video_output_dir).resolve() if args.video_output_dir else None
+                ),
+            )
+        )
+        operations_control = OperationsRunControl(operations_store, run_id)
+        operations_control.begin(
+            status="starting",
+            actionCount=0,
+            model=model,
+            provider=provider_id,
+            goal=args.goal,
+        )
     clean_ram_path = run_dir / "fresh-start-clean.ram"
 
     if args.fresh_start:
@@ -143,6 +248,11 @@ def main(
             pyboy.tick(60, args.render)
 
         for action_index in range(1, args.max_actions + 1):
+            if operations_control:
+                signal = operations_control.boundary()
+                if signal != "continue":
+                    finish = operator_finish(signal)
+                    break
             screenshot_path, current_state_path, snapshot_dict = support.save_current_artifacts(
                 pyboy,
                 run_dir,
@@ -165,7 +275,35 @@ def main(
                 chapter_direction,
                 history,
             )
-            chapter_timeline.append({"action": action_index, **chapter_direction.to_dict()})
+            chapter_dict = chapter_direction.to_dict()
+            chapter_timeline.append({"action": action_index, **chapter_dict})
+            current_state_hash = snapshot_hash(snapshot(pyboy))
+            progress_observations.append(
+                progress_observation(
+                    action=action_index,
+                    state_hash=current_state_hash,
+                    chapter=chapter_dict,
+                    snapshot_dict=snapshot_dict,
+                )
+            )
+            if operations_control:
+                operations_control.update(
+                    status="running",
+                    actionCount=len(history),
+                    model=model,
+                    provider=provider_id,
+                    goal=args.goal,
+                    chapter={
+                        "id": chapter_direction.chapter_id,
+                        "title": chapter_direction.title,
+                        "objective": chapter_direction.objective,
+                        "success": chapter_direction.success,
+                    },
+                    snapshot=snapshot_dict,
+                    screenshotPath=str(screenshot_path),
+                    lastDecision=(history[-1] if history else None),
+                    lastSkillResult=(history[-1].get("result") if history else None),
+                )
             if chapter_direction.success:
                 finish = {
                     "status": "completed",
@@ -187,7 +325,7 @@ def main(
                 "kind": "saved_emulator_state",
                 "statePath": str(current_state_path),
                 "screenshotPath": str(screenshot_path),
-                "snapshotHash": snapshot_hash(snapshot(pyboy)),
+                "snapshotHash": current_state_hash,
                 "actionStarted": False,
             }
             request = DirectorRequest(
@@ -267,6 +405,25 @@ def main(
             tick_result = runtime.run_tick(request, executor=execute)
             ticks.append(tick_result)
             decision = tick_result.decision
+            if operations_control:
+                operations_control.update(
+                    status="executing_action" if tick_result.execution else "requesting_model",
+                    actionCount=len(history),
+                    lastDecision={
+                        "action": action_index,
+                        "skillId": (
+                            decision.tool_call.arguments.get("skillId")
+                            if decision.tool_call
+                            else None
+                        ),
+                        "args": decision.tool_call.arguments if decision.tool_call else {},
+                        "plaintextReasoning": (
+                            decision.tool_call.arguments.get("plaintextReasoning")
+                            if decision.tool_call
+                            else decision.assistant_message
+                        ),
+                    },
+                )
             if decision.error:
                 finish = {
                     "status": "stopped",
@@ -321,6 +478,17 @@ def main(
                         },
                     }
                 )
+                if operations_control:
+                    operations_control.update(
+                        status="running",
+                        actionCount=len(history),
+                        lastDecision=history[-1],
+                        lastSkillResult=history[-1]["result"],
+                    )
+                    signal = operations_control.boundary(after_action=True)
+                    if signal != "continue":
+                        finish = operator_finish(signal)
+                        break
                 continue
             if selected_artifact:
                 history.append(
@@ -336,6 +504,17 @@ def main(
                         "result": selected_artifact["result"],
                     }
                 )
+                if operations_control:
+                    operations_control.update(
+                        status="running",
+                        actionCount=len(history),
+                        lastDecision=history[-1],
+                        lastSkillResult=history[-1]["result"],
+                    )
+                    signal = operations_control.boundary(after_action=True)
+                    if signal != "continue":
+                        finish = operator_finish(signal)
+                        break
         else:
             finish = {
                 "status": "checkpoint",
@@ -393,6 +572,7 @@ def main(
             "freshStart": bool(args.fresh_start),
             "maxActions": args.max_actions,
             "chapterTimeline": chapter_timeline,
+            "progressObservations": progress_observations,
         },
     )
     report.update(
@@ -401,6 +581,7 @@ def main(
             "freshStart": bool(args.fresh_start),
             "maxActions": args.max_actions,
             "chapterTimeline": chapter_timeline,
+            "progressObservations": progress_observations,
             "video": video_artifact,
             "pathingFrameWarnings": pathing_frame_warnings,
             "finalScreenshot": str(final_screenshot),
@@ -409,11 +590,19 @@ def main(
         }
     )
     report["checkpoint"] = interrogate_run_report(report)
-    (run_dir / "checkpoint.json").write_text(
-        json.dumps(report["checkpoint"], indent=2),
-        encoding="utf-8",
-    )
-    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    atomic_write_json(run_dir / "checkpoint.json", report["checkpoint"])
+    atomic_write_json(report_path, report)
+    if operations_control:
+        operations_control.update(
+            status="checkpoint",
+            actionCount=len(history),
+            provider=provider_id,
+            model=model,
+            screenshotPath=str(final_screenshot),
+            snapshot=final_snapshot,
+            checkpoint=report["checkpoint"],
+            finish=finish,
+        )
     print(
         json.dumps(
             {

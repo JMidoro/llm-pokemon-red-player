@@ -2,6 +2,8 @@
 
 The Operations page is the private, read-mostly surface for supervising unattended Pokemon Player work. It deliberately does not expose the broader lab, raw model requests, ROM/save paths, credentials, or arbitrary local files.
 
+With Milestone 3, the same page also reads the newest durable segment-supervisor lineage. Supervisor state, heartbeat, segment count, latest verdict, deferred reviews, quarantined failures, and hashed segment bundles remain visible between bounded runs and across supervisor restarts.
+
 ## Start and stop
 
 From the project root:
@@ -73,6 +75,8 @@ Milestone 1 phone acceptance passed on 2026-08-20 using an authenticated iPhone 
 - **Resume** clears pause and any queued stop-after-action request.
 - **Stop after action** lets the current bounded action finish and then saves a checkpoint.
 - **Emergency stop** prevents the next action from starting and saves at the earliest safe action boundary.
+
+When the durable supervisor is active, **Pause** keeps its process alive and waiting until **Resume**. **Stop after action** and **Emergency stop** end the current segment at a safe boundary, register its final checkpoint, and stop automatic continuation. Restarting the supervisor with the same lineage id recovers from the manifest; it never requires the phone session to remain open.
 
 Control state lives in a local durable file, not in the browser session. Closing the browser, losing phone service, or restarting the UI therefore does not resume, stop, or corrupt the run.
 

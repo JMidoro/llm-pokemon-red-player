@@ -87,18 +87,38 @@ type ReviewItem = {
   severity: string;
 };
 
+type SupervisorSummary = {
+  lineageId: string;
+  state: string;
+  reason: string;
+  currentSegment?: string | null;
+  heartbeatAgeSeconds: number;
+  stale: boolean;
+  connected: boolean;
+  segmentCount: number;
+  nextSequence: number;
+  latestVerdict?: string | null;
+  updatedUtc: string;
+};
+
 type OperationsSnapshot = {
   schema: "operations_snapshot_v1";
   generatedUtc: string;
   connection: "online";
   control: { state: string; stopAfterAction: boolean; updatedUtc: string; revision: number };
+  supervisor: SupervisorSummary | null;
   services: Array<{ id: string; label: string; status: string; detail: string }>;
   currentRun: RunSummary | null;
   runHistory: RunSummary[];
   failures: Array<{ runId: string; category: string; summary: string; createdUtc: string }>;
   reviewQueue: ReviewItem[];
   audit: Array<{ createdUtc: string; action: string; source: string; resultingState: string }>;
-  capabilities: { controls: ControlAction[]; directorConnected: boolean; rawButtonsExposed: false };
+  capabilities: {
+    controls: ControlAction[];
+    directorConnected: boolean;
+    supervisorConnected: boolean;
+    rawButtonsExposed: false;
+  };
 };
 
 const CONTROL_LABELS: Record<ControlAction, string> = {
@@ -196,8 +216,9 @@ export default function OperationsDashboard() {
 
   const run = snapshot?.currentRun ?? null;
   const control = snapshot?.control;
+  const supervisor = snapshot?.supervisor ?? null;
   const activeRun = Boolean(run && ["starting", "running", "executing_action", "paused"].includes(run.status));
-  const canControl = activeRun || Boolean(snapshot?.capabilities.directorConnected);
+  const canControl = activeRun || Boolean(snapshot?.capabilities.directorConnected || snapshot?.capabilities.supervisorConnected);
   const location = run?.position ? `${run.position.map}${run.position.x !== undefined ? ` · ${run.position.x}, ${run.position.y}` : ""}` : "Unknown";
   const generatedAge = useMemo(() => {
     if (!snapshot?.generatedUtc) return null;
@@ -235,15 +256,16 @@ export default function OperationsDashboard() {
           <div className="operations-section-heading">
             <div>
               <p className="eyebrow">Current run</p>
-              <h2 id="current-run-heading">{run?.chapter.title ?? "Waiting for the launcher"}</h2>
+              <h2 id="current-run-heading">{run?.chapter.title ?? (supervisor ? `Lineage ${supervisor.lineageId}` : "Waiting for the launcher")}</h2>
             </div>
-            <span className={`operations-chip ${statusClass(control?.state ?? run?.status ?? "idle")}`}>
-              {label(control?.state ?? run?.status ?? "idle")}
+            <span className={`operations-chip ${statusClass(supervisor?.state ?? control?.state ?? run?.status ?? "idle")}`}>
+              {label(supervisor?.state ?? control?.state ?? run?.status ?? "idle")}
             </span>
           </div>
           <p className="operations-goal">{run?.chapter.objective ?? "Start the local services to see the active chapter and Director goal."}</p>
           <div className="operations-facts">
             <div><span>Location</span><strong>{run ? location : "Not running"}</strong></div>
+            <div><span>Segments</span><strong>{supervisor?.segmentCount ?? "—"}</strong></div>
             <div><span>Checkpoint</span><strong>{run?.checkpoint ? label(run.checkpoint.verdict) : "No checkpoint yet"}</strong></div>
             <div><span>Actions</span><strong>{run ? run.actionCount : "—"}</strong></div>
             <div><span>Model</span><strong>{run?.model ?? "Not connected"}</strong></div>
