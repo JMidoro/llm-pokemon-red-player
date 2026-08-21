@@ -29,10 +29,22 @@ from pokemon_player.director_reporting import build_director_report  # noqa: E40
 from pokemon_player.director_runtime import DirectorRuntime  # noqa: E402
 from pokemon_player.durable_io import atomic_write_json, require_safe_component  # noqa: E402
 from pokemon_player.operations import OperationsPaths, OperationsRunControl, OperationsStore  # noqa: E402
+from pokemon_player.nuzlocke_ledger import NuzlockeLedger  # noqa: E402
+from pokemon_player.nuzlocke_policy import (  # noqa: E402
+    assess_action,
+    blocked_skill_result,
+    director_rules_context,
+    filter_skill_availability,
+    public_lineage_context,
+    record_guard_decision,
+)
+from pokemon_player.nuzlocke_reconciliation import reconcile_snapshot  # noqa: E402
+from pokemon_player.nuzlocke_rules import load_ruleset  # noqa: E402
+from pokemon_player.nuzlocke_runtime import apply_configured_battle_style  # noqa: E402
 from pokemon_player.pyboy_lab import load_state, open_emulator, save_state, snapshot  # noqa: E402
 from pokemon_player.rom import fingerprint_rom  # noqa: E402
 from pokemon_player.run_interrogation import interrogate_run_report  # noqa: E402
-from pokemon_player.snapshot_io import snapshot_hash  # noqa: E402
+from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict  # noqa: E402
 
 
 DEFAULT_GOAL = (
@@ -42,6 +54,7 @@ DEFAULT_GOAL = (
 )
 DEFAULT_LOCAL_MODEL = "google/gemma-4-e4b"
 DEFAULT_OPERATIONS_DIR = ROOT / "research" / "artifacts" / "operations"
+DEFAULT_RULESET = ROOT / "research" / "rulesets" / "stream-nuzlocke-v1.json"
 
 
 def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentParser:
@@ -95,6 +108,21 @@ def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentPars
         "--no-operations-control",
         action="store_true",
         help="Disable Operations controls for isolated diagnostics.",
+    )
+    parser.add_argument(
+        "--ruleset",
+        default=str(DEFAULT_RULESET),
+        help="Versioned run rules. Use standard-run-v1.json to disable Nuzlocke enforcement.",
+    )
+    parser.add_argument(
+        "--nuzlocke-ledger",
+        default=None,
+        help="Durable lineage ledger path; defaults inside this isolated run directory.",
+    )
+    parser.add_argument(
+        "--lineage-id",
+        default=None,
+        help="Durable lineage id supplied by the segment supervisor.",
     )
     return parser
 
@@ -190,6 +218,18 @@ def main(
     if existing:
         raise FileExistsError(f"Run directory already contains segment artifacts: {run_dir}")
     run_dir.mkdir(parents=True, exist_ok=True)
+    ruleset_path = Path(args.ruleset)
+    if not ruleset_path.is_absolute():
+        ruleset_path = ROOT / ruleset_path
+    ruleset = load_ruleset(ruleset_path)
+    lineage_id = require_safe_component(
+        args.lineage_id or run_id,
+        label="lineage id",
+    )
+    ledger_path = Path(args.nuzlocke_ledger) if args.nuzlocke_ledger else run_dir / "nuzlocke" / "ledger.json"
+    if not ledger_path.is_absolute():
+        ledger_path = ROOT / ledger_path
+    nuzlocke_ledger = NuzlockeLedger(ledger_path, ruleset, lineage_id=lineage_id)
     skill_run_root = run_dir / "skill-runs"
     video_frame_dir = run_dir / "video-frames"
     video_frame_index = 1
@@ -221,6 +261,7 @@ def main(
             model=model,
             provider=provider_id,
             goal=args.goal,
+            nuzlocke=public_lineage_context(ruleset, nuzlocke_ledger),
         )
     clean_ram_path = run_dir / "fresh-start-clean.ram"
 
@@ -246,6 +287,17 @@ def main(
         else:
             load_state(pyboy, state_in)
             pyboy.tick(60, args.render)
+        battle_style_configuration = apply_configured_battle_style(pyboy.memory, ruleset)
+        if battle_style_configuration["changed"]:
+            nuzlocke_ledger.append(
+                "runtime_configuration_applied",
+                {
+                    "kind": "battle_style",
+                    **battle_style_configuration,
+                },
+                evidence=("ruleset_battle_style",),
+                source="non_strategic_runtime_configuration",
+            )
 
         for action_index in range(1, args.max_actions + 1):
             if operations_control:
@@ -258,12 +310,30 @@ def main(
                 run_dir,
                 f"action_{action_index:03d}_before",
             )
+            current_state_hash = snapshot_hash(snapshot(pyboy))
+            reconcile_snapshot(
+                nuzlocke_ledger,
+                ruleset,
+                snapshot_dict,
+                checkpoint_id=f"{run_id}:action:{action_index}:before",
+                snapshot_hash=current_state_hash,
+                last_action=history[-1] if history else None,
+            )
             if not args.no_video:
                 video_frame_index = support.append_video_frame(
                     screenshot_path,
                     video_frame_dir,
                     video_frame_index,
                 )
+            if nuzlocke_ledger.state["gameOver"]:
+                finish = {
+                    "status": "game_over",
+                    "success": False,
+                    "summary": "The active Nuzlocke lineage ended in a blackout.",
+                    "failureCategory": "nuzlocke_blackout",
+                    "stopReason": "nuzlocke_game_over",
+                }
+                break
             signals = promoted_signals(snapshot_dict, screenshot_path)
             chapter_direction = current_chapter_goal(snapshot_dict)
             available = support.enabled_supported_skills(
@@ -275,9 +345,20 @@ def main(
                 chapter_direction,
                 history,
             )
+            available, nuzlocke_availability_decisions = filter_skill_availability(
+                ruleset,
+                nuzlocke_ledger.state,
+                snapshot_dict,
+                available,
+            )
+            nuzlocke_context = director_rules_context(
+                ruleset,
+                nuzlocke_ledger,
+                snapshot_dict,
+                availability_decisions=nuzlocke_availability_decisions,
+            )
             chapter_dict = chapter_direction.to_dict()
             chapter_timeline.append({"action": action_index, **chapter_dict})
-            current_state_hash = snapshot_hash(snapshot(pyboy))
             progress_observations.append(
                 progress_observation(
                     action=action_index,
@@ -303,6 +384,11 @@ def main(
                     screenshotPath=str(screenshot_path),
                     lastDecision=(history[-1] if history else None),
                     lastSkillResult=(history[-1].get("result") if history else None),
+                    nuzlocke=public_lineage_context(
+                        ruleset,
+                        nuzlocke_ledger,
+                        snapshot_dict,
+                    ),
                 )
             if chapter_direction.success:
                 finish = {
@@ -340,6 +426,7 @@ def main(
                     "snapshot": support.compact_snapshot(snapshot_dict),
                     "signals": signals,
                     "skillPolicy": skill_policy_notes,
+                    "nuzlocke": nuzlocke_context,
                 },
                 action_history=tuple(history),
                 screenshot_path=None if args.no_image else screenshot_path,
@@ -374,6 +461,25 @@ def main(
                     snapshot_dict,
                     history,
                 )
+                policy_decision = assess_action(
+                    ruleset,
+                    nuzlocke_ledger.state,
+                    snapshot_dict,
+                    skill_id=skill_id,
+                    args=skill_args,
+                )
+                record_guard_decision(
+                    nuzlocke_ledger,
+                    policy_decision,
+                    skill_id=skill_id,
+                    action_index=action_index,
+                )
+                if not policy_decision.allowed:
+                    result = blocked_skill_result(skill_id, policy_decision)
+                    selected_artifact.update(
+                        {"skillId": skill_id, "args": skill_args, "result": result}
+                    )
+                    return result
                 artifact = support.execute_local_skill(
                     pyboy,
                     skill_id=skill_id,
@@ -385,6 +491,15 @@ def main(
                 )
                 result = support.artifact_result_dict(artifact)
                 selected_artifact.update({"skillId": skill_id, "args": skill_args, "result": result})
+                after_snapshot = snapshot_to_dict(snapshot(pyboy))
+                reconcile_snapshot(
+                    nuzlocke_ledger,
+                    ruleset,
+                    after_snapshot,
+                    checkpoint_id=f"{run_id}:action:{action_index}:after",
+                    snapshot_hash=snapshot_hash(snapshot(pyboy)),
+                    last_action={"skillId": skill_id, "args": skill_args, "result": result},
+                )
                 if not args.no_video:
                     video_frame_index = support.append_skill_trace_video_frames(
                         artifact,
@@ -484,6 +599,11 @@ def main(
                         actionCount=len(history),
                         lastDecision=history[-1],
                         lastSkillResult=history[-1]["result"],
+                        nuzlocke=public_lineage_context(
+                            ruleset,
+                            nuzlocke_ledger,
+                            snapshot_to_dict(snapshot(pyboy)),
+                        ),
                     )
                     signal = operations_control.boundary(after_action=True)
                     if signal != "continue":
@@ -529,6 +649,14 @@ def main(
             run_dir,
             "final",
         )
+        reconcile_snapshot(
+            nuzlocke_ledger,
+            ruleset,
+            final_snapshot,
+            checkpoint_id=f"{run_id}:final",
+            snapshot_hash=snapshot_hash(snapshot(pyboy)),
+            last_action=history[-1] if history else None,
+        )
         if not args.no_video:
             video_frame_index = support.append_video_frame(
                 final_screenshot,
@@ -573,6 +701,7 @@ def main(
             "maxActions": args.max_actions,
             "chapterTimeline": chapter_timeline,
             "progressObservations": progress_observations,
+            "nuzlocke": public_lineage_context(ruleset, nuzlocke_ledger, final_snapshot),
         },
     )
     report.update(
@@ -587,6 +716,7 @@ def main(
             "finalScreenshot": str(final_screenshot),
             "finalState": str(final_state),
             "finalSnapshot": final_snapshot,
+            "nuzlocke": public_lineage_context(ruleset, nuzlocke_ledger, final_snapshot),
         }
     )
     report["checkpoint"] = interrogate_run_report(report)
@@ -602,6 +732,7 @@ def main(
             snapshot=final_snapshot,
             checkpoint=report["checkpoint"],
             finish=finish,
+            nuzlocke=public_lineage_context(ruleset, nuzlocke_ledger, final_snapshot),
         )
     print(
         json.dumps(

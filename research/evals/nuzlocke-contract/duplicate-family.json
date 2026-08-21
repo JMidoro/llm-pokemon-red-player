@@ -1,0 +1,9 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "duplicate-family",
+  "events": [
+    {"type": "pokemon_registered", "data": {"pokemonId": "bug-001", "speciesDex": 13, "familyId": "dex-family-013", "status": "dead", "location": "box"}},
+    {"type": "encounter_resolved", "data": {"areaId": "viridian-forest", "source": "wild", "outcome": "duplicate_skipped", "speciesDex": 14, "familyId": "dex-family-013", "consumesArea": false}}
+  ],
+  "expect": {"consumedAreas": [], "livingCount": 0, "deathCount": 0, "gameOver": false, "exceptionCount": 0, "knownFamilies": ["dex-family-013"]}
+}

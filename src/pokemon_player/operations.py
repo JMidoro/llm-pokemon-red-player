@@ -309,6 +309,9 @@ def report_summary(report: dict[str, Any], run_id: str, *, video_available: bool
             "status": "ready_in_dropbox_folder" if video_available else "not_available",
             "playable": video_available,
         },
+        "nuzlocke": sanitized_value(
+            report.get("nuzlocke") if isinstance(report.get("nuzlocke"), dict) else None
+        ),
     }
 
 
@@ -761,6 +764,11 @@ class OperationsStore:
                 "video": matching.get("artifacts", {}).get("video") if matching else None,
             },
             "dropbox": matching.get("dropbox") if matching else {"status": "not_available", "playable": False},
+            "nuzlocke": sanitized_value(
+                active.get("nuzlocke")
+                if isinstance(active.get("nuzlocke"), dict)
+                else (matching.get("nuzlocke") if matching else None)
+            ),
         }
 
     @staticmethod

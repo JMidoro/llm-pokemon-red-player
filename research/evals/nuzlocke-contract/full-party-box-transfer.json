@@ -1,0 +1,9 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "full-party-box-transfer",
+  "events": [
+    {"type": "encounter_resolved", "data": {"areaId": "viridian-forest", "source": "wild", "outcome": "caught", "speciesDex": 25, "familyId": "dex-family-025", "consumesArea": true}},
+    {"type": "pokemon_registered", "data": {"pokemonId": "dex-025-007", "speciesDex": 25, "familyId": "dex-family-025", "provenance": "capture", "status": "alive", "location": "box"}}
+  ],
+  "expect": {"consumedAreas": ["viridian-forest"], "livingCount": 1, "deathCount": 0, "gameOver": false, "exceptionCount": 0, "boxedDexNumbers": [25]}
+}

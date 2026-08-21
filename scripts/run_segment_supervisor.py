@@ -59,6 +59,11 @@ def parse_args() -> argparse.Namespace:
         default="research/artifacts/operations",
     )
     parser.add_argument(
+        "--ruleset",
+        default="research/rulesets/stream-nuzlocke-v1.json",
+        help="Versioned ruleset shared by every segment in this lineage.",
+    )
+    parser.add_argument(
         "--require-review-before-provisional",
         action="store_true",
         help="Queue provisional checkpoints but do not continue them automatically.",
@@ -95,6 +100,14 @@ def main() -> int:
         no_video=args.no_video,
         video_output_dir=resolve_project_path(args.video_output_dir),
         operations_dir=operations_dir,
+        extra_args=(
+            "--ruleset",
+            str(resolve_project_path(args.ruleset)),
+            "--nuzlocke-ledger",
+            str(paths.lineage_root / "nuzlocke" / "ledger.json"),
+            "--lineage-id",
+            args.lineage_id,
+        ),
     )
     supervisor = DurableSegmentSupervisor(
         SupervisorConfig(

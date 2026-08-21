@@ -1,0 +1,8 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "hm-exception",
+  "events": [
+    {"type": "exception_recorded", "data": {"kind": "required_hm_field_carrier", "summary": "Dead Pokemon used outside battle for required progression.", "intentionalBattleAllowed": false, "removeAtNextPc": true}}
+  ],
+  "expect": {"consumedAreas": [], "livingCount": 0, "deathCount": 0, "gameOver": false, "exceptionCount": 1}
+}

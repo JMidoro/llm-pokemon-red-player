@@ -1,0 +1,53 @@
+{
+  "schema": "pokemon_player_ruleset_v1",
+  "id": "standard-run",
+  "version": 1,
+  "enabled": false,
+  "encounter": {
+    "firstEligibleWildPerArea": false,
+    "failedEligibleEncounterConsumesArea": false,
+    "duplicateClause": "none",
+    "duplicateRemainsAfterDeath": false,
+    "giftConsumesArea": false,
+    "staticConsumesArea": false,
+    "shinyException": false
+  },
+  "nickname": {
+    "required": false
+  },
+  "levelCaps": {
+    "mode": "disabled",
+    "badgeAceLevels": []
+  },
+  "battle": {
+    "style": "shift",
+    "itemsAllowed": true
+  },
+  "blackout": {
+    "behavior": "continue",
+    "restartLineage": false
+  },
+  "reset": {
+    "manual": "allowed"
+  },
+  "hmSoftlock": {
+    "requiredProgressionOnly": false,
+    "livingLegalFirst": true,
+    "allowDeadFieldOnlyCarrier": false,
+    "allowOutOfEncounterUtilityCapture": false,
+    "intentionalBattleDisallowed": false,
+    "placeAtBack": false,
+    "removeAtNextPc": false,
+    "optionalMovesQualify": false
+  },
+  "enforcement": {
+    "blockIllegalCapture": false,
+    "blockDeadBattleUse": false,
+    "blockNicknameRefusal": false,
+    "blockForbiddenReset": false,
+    "blockRawInputBypass": false
+  },
+  "staticEncounters": [],
+  "giftEncounters": [],
+  "areaAliases": {}
+}
