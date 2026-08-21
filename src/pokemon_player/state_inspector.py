@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from pokemon_player import memory_map as mm
+from pokemon_player.pokedex import read_pokedex
+from pokemon_player.nuzlocke_runtime import battle_style_from_options
 from pokemon_player.state_model import (
     BattleEnemy,
     GameMode,
@@ -31,6 +33,10 @@ class MemoryReader:
     def u16be(self, address: int) -> int:
         high, low = self.bytes(address, 2)
         return (high << 8) | low
+
+    @property
+    def memory(self) -> object:
+        return self._memory
 
 
 def decode_bcd(bytes_: Sequence[int]) -> int:
@@ -77,6 +83,8 @@ class StateInspector:
         )
 
         party = self._read_party(warnings)
+        pokedex = read_pokedex(self.reader.memory)
+        options_raw = self.reader.u8(mm.OPTIONS)
 
         return GameSnapshot(
             mode=mode,
@@ -85,10 +93,14 @@ class StateInspector:
             inventory=self._read_inventory(warnings),
             money=self._read_money(warnings),
             badges=self.reader.u8(mm.BADGES),
+            options_raw=options_raw,
+            battle_style=battle_style_from_options(options_raw),
             battle_type_raw=battle_type,
             active_party_slot=self._read_active_party_slot(battle_type, len(party), warnings),
             enemy=self._read_enemy() if battle_type else None,
             story_events=self._read_story_events(),
+            pokedex_owned_dex_numbers=tuple(pokedex["owned_dex_numbers"]),
+            pokedex_seen_dex_numbers=tuple(pokedex["seen_dex_numbers"]),
             warnings=tuple(warnings),
         )
 

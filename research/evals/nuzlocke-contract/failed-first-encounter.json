@@ -1,0 +1,8 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "failed-first-encounter",
+  "events": [
+    {"type": "encounter_resolved", "data": {"areaId": "route-2", "source": "wild", "outcome": "failed", "speciesDex": 16, "familyId": "dex-family-016", "consumesArea": true}}
+  ],
+  "expect": {"consumedAreas": ["route-2"], "livingCount": 0, "deathCount": 0, "gameOver": false, "exceptionCount": 0}
+}

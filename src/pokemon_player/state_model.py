@@ -115,10 +115,14 @@ class GameSnapshot:
     inventory: tuple[InventoryItem, ...]
     money: int | None
     badges: int | None
+    options_raw: int | None = None
+    battle_style: str | None = None
     battle_type_raw: int | None = None
     active_party_slot: int | None = None
     enemy: BattleEnemy | None = None
     story_events: tuple[StoryEvent, ...] = field(default_factory=tuple)
+    pokedex_owned_dex_numbers: tuple[int, ...] = field(default_factory=tuple)
+    pokedex_seen_dex_numbers: tuple[int, ...] = field(default_factory=tuple)
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
     def has_item(self, item_id: int) -> bool:
@@ -197,11 +201,18 @@ class GameSnapshot:
             badges = ", ".join(self.badge_names()) or "none"
             lines.append(f"Badges: {badges}")
 
+        if self.battle_style:
+            lines.append(f"Battle style: {self.battle_style.title()}")
+
         if self.story_events:
             set_events = [event.summary() for event in self.story_events if event.value]
             if set_events:
                 lines.append("Story events:")
                 lines.extend(f"- {event}" for event in set_events)
+
+        if self.pokedex_owned_dex_numbers:
+            owned = ", ".join(str(number) for number in self.pokedex_owned_dex_numbers)
+            lines.append(f"Pokedex owned numbers: {owned}")
 
         facts = self.facts()
         if facts:

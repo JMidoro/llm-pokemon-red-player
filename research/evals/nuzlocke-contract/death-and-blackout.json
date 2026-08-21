@@ -1,0 +1,10 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "death-and-blackout",
+  "events": [
+    {"type": "pokemon_registered", "data": {"pokemonId": "shell-001", "nickname": "SHELL", "speciesDex": 7, "familyId": "dex-family-007", "status": "alive", "location": "party"}},
+    {"type": "death_registered", "data": {"pokemonId": "shell-001"}},
+    {"type": "blackout", "data": {"gameOver": true}}
+  ],
+  "expect": {"consumedAreas": [], "livingCount": 0, "deathCount": 1, "gameOver": true, "exceptionCount": 0}
+}

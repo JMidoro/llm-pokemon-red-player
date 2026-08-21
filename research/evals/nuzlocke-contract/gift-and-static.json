@@ -1,0 +1,11 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "gift-and-static",
+  "events": [
+    {"type": "encounter_resolved", "data": {"areaId": "pallet-town", "source": "gift", "outcome": "caught", "speciesDex": 7, "familyId": "dex-family-007", "consumesArea": false}},
+    {"type": "encounter_resolved", "data": {"areaId": "power-plant", "source": "static", "outcome": "caught", "speciesDex": 145, "familyId": "dex-family-145", "consumesArea": false}},
+    {"type": "pokemon_registered", "data": {"pokemonId": "shell-001", "speciesDex": 7, "familyId": "dex-family-007", "status": "alive", "location": "party"}},
+    {"type": "pokemon_registered", "data": {"pokemonId": "zap-002", "speciesDex": 145, "familyId": "dex-family-145", "status": "alive", "location": "box"}}
+  ],
+  "expect": {"consumedAreas": [], "livingCount": 2, "deathCount": 0, "gameOver": false, "exceptionCount": 0}
+}

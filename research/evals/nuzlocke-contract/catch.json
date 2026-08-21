@@ -1,0 +1,10 @@
+{
+  "schema": "nuzlocke_replay_fixture_v1",
+  "id": "catch",
+  "events": [
+    {"type": "encounter_observed", "data": {"areaId": "route-1", "source": "wild", "speciesDex": 19, "familyId": "dex-family-019", "eligible": true, "consumesArea": true}},
+    {"type": "encounter_resolved", "data": {"areaId": "route-1", "source": "wild", "outcome": "caught", "speciesDex": 19, "familyId": "dex-family-019", "consumesArea": true}},
+    {"type": "pokemon_registered", "data": {"pokemonId": "ratty-001", "nickname": "RATTY", "speciesDex": 19, "familyId": "dex-family-019", "status": "alive", "location": "party"}}
+  ],
+  "expect": {"consumedAreas": ["route-1"], "livingCount": 1, "deathCount": 0, "gameOver": false, "exceptionCount": 0}
+}

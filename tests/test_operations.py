@@ -62,6 +62,18 @@ def sample_report(tmp_path: Path, run_id: str = "20260820T120000000000Z") -> tup
             "summary": "Safe to continue.",
             "reviewItems": [{"title": "Check battle", "detail": "Verify the final battle screen."}],
         },
+        "nuzlocke": {
+            "lineageId": "early-game-lineage",
+            "ruleset": {"id": "stream-nuzlocke", "version": 1, "enabled": True},
+            "gameOver": False,
+            "deaths": [],
+            "consumedAreas": [{"areaId": "route-1", "outcome": "caught"}],
+            "nextEligibleAreas": ["route-2"],
+            "exceptions": [
+                {"kind": "hm", "reason": "evidence at F:\\secret\\exception.json"}
+            ],
+            "recentGuardDecisions": [],
+        },
     }
     (run_dir / "report.json").write_text(json.dumps(report), encoding="utf-8")
     return run_dir, report
@@ -91,6 +103,8 @@ def test_report_summary_is_useful_and_excludes_sensitive_payloads(tmp_path: Path
     assert summary["lastDecision"]["args"] == {"move": "Tackle"}
     assert summary["lastSkillResult"]["evidence"] == ["pp_delta=-1"]
     assert summary["reviewItems"][0]["title"] == "Check battle"
+    assert summary["nuzlocke"]["ruleset"]["id"] == "stream-nuzlocke"
+    assert summary["nuzlocke"]["consumedAreas"][0]["areaId"] == "route-1"
     for forbidden in ("do-not-leak", "raw-model-payload", "F:\\\\secret", "baseUrl", "requests", "run_dir"):
         assert forbidden not in encoded
 

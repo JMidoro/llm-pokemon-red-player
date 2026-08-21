@@ -119,9 +119,10 @@ def resolve_target(target_species: str | int | None) -> tuple[str, int] | None:
         return None
 
     if isinstance(target_species, int):
-        dex_number = mm.dex_number_for_species_id(target_species)
-        if dex_number is not None:
-            return mm.species_name(target_species), dex_number
+        if target_species in mm.PROMOTED_SPECIES_IDS or target_species > mm.POKEDEX_SPECIES_COUNT:
+            dex_number = mm.dex_number_for_species_id(target_species)
+            if dex_number is not None:
+                return mm.species_name(target_species), dex_number
         if 1 <= target_species <= mm.POKEDEX_SPECIES_COUNT:
             species_id = mm.DEX_NUMBER_TO_SPECIES_ID.get(target_species)
             if species_id is None:

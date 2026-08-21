@@ -194,6 +194,8 @@ Human burden: review a sample of checkpoint decisions, not every segment.
 
 Purpose: make the actual target rules enforceable and stream-legible.
 
+Status: implementation and deterministic validation complete; see `research/milestone-4-validation.md`.
+
 Work:
 
 - Define a versioned ruleset covering first encounter per area, fainting/death, nicknames, duplicate and shiny clauses, gift/static encounters, level caps, item restrictions, battle style, blackout policy, and reset policy.
@@ -375,8 +377,8 @@ The first implementation sequence should be:
 3. Private phone access to the Operations page.
 4. Provider-neutral Director contracts and adapters.
 5. Durable supervisor with automatic checkpoint continuation.
-6. Nuzlocke ruleset and ledger.
-7. Early-game boot-to-Brock reliability suite.
+6. Nuzlocke ruleset and ledger. Complete.
+7. Early-game boot-to-Brock reliability suite. Next.
 
 Do not start broad chapter expansion, public stream integration, or production-model selection before items 1-6 exist. Those foundations directly reduce the amount of unattended work that disappears into videos nobody can efficiently diagnose.
 
@@ -384,7 +386,6 @@ Do not start broad chapter expansion, public stream integration, or production-m
 
 - Production LLM provider and model.
 - Exact stream platform.
-- Exact Nuzlocke clauses and level-cap policy.
 - Notification provider.
 - Whether a self-hosted GitHub runner is worth the security and maintenance burden.
 - Whether any learned option beyond the narrow battle-menu experiment is justified.
