@@ -56,8 +56,8 @@ def test_pewter_navigation_recognizes_brock_landmark() -> None:
         screenshot_path=record["screenshot_file"],
     )
 
-    assert result.status == "succeeded"
-    assert "Player is at Brock pre-battle position." == result.summary
+    assert result.status == "blocked"
+    assert "choose the next semantic action" in result.summary
 
 
 def test_pewter_navigation_accepts_forced_dialogue_waypoint_after_run() -> None:

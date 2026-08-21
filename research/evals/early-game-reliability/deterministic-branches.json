@@ -1,0 +1,72 @@
+{
+  "schema": "milestone_5_deterministic_branches_v1",
+  "caseCount": 10,
+  "cases": [
+    {
+      "id": "trainer-switch-keep",
+      "predicate": "trainer_switch_keep",
+      "reportPath": "research/artifacts/m5-skill-validation/trainer-switch-keep/handle_trainer_switch_prompt/20260821T183703Z/report.json",
+      "reportSha256": "1b3d65a5c3449532d7cd553d7ede23ad9f415eb1e25de3b28030a7907db6c432"
+    },
+    {
+      "id": "trainer-switch-switch",
+      "predicate": "trainer_switch_switch",
+      "reportPath": "research/artifacts/m5-skill-validation/trainer-switch-switch/handle_trainer_switch_prompt/20260821T183709Z/report.json",
+      "reportSha256": "396f9d1595d5747825011913a5985f54188be5c3774378111f471883838009c8"
+    },
+    {
+      "id": "move-learning-skip",
+      "predicate": "move_learning_skip",
+      "reportPath": "research/artifacts/m5-skill-validation/move-learning-skip/handle_move_learning_prompt/20260821T184807Z/report.json",
+      "reportSha256": "289fba72653d831869dfa2826f33cf5da5d752bfda5c21609a83456fa80297c3"
+    },
+    {
+      "id": "move-learning-replace",
+      "predicate": "move_learning_replace",
+      "reportPath": "research/artifacts/m5-skill-validation/move-learning-replace/handle_move_learning_prompt/20260821T184808Z/report.json",
+      "reportSha256": "0a6f88c088efce14a8c10aaa52fc6b889929152258b92b4b4a311fb3fd188368"
+    },
+    {
+      "id": "evolution-and-level-up",
+      "predicate": "evolution_and_level_up",
+      "reportPath": "research/artifacts/m5-skill-validation/evolution-bundle/resolve_battle_outcome_dialogue_bundle/20260821T184959Z/report.json",
+      "reportSha256": "417fa38e984890c42d9c74f933cf90a397cbbccc4bf026ead844e6aefa7c28e7"
+    },
+    {
+      "id": "forced-switch",
+      "predicate": "forced_switch",
+      "reportPath": "research/artifacts/m5-skill-validation/forced-switch/switch_party_member/20260821T192259Z/report.json",
+      "reportSha256": "249a3cfa61c9e731f48236a4deea82420aed99bd0149932714f785c10d0be60c"
+    },
+    {
+      "id": "blackout-before-inference",
+      "predicate": "blackout_before_inference",
+      "reportPath": "research/artifacts/m5-baselines/blackout/blackout-terminal-01/report.json",
+      "reportSha256": "6e4433864503d0280901bb2f8a747e5218d6edd552afda585895c12585782722"
+    },
+    {
+      "id": "post-catch-pokedex-nickname",
+      "predicate": "post_catch_pokedex_nickname",
+      "reportPath": "research/artifacts/m5-baselines/pikachu-catch/pikachu-catch-m5-integrated-02/report.json",
+      "reportSha256": "24ba303d652adcc2a13881e484ddb472385131021012ad136f273b5849ac4175",
+      "supportingReports": [
+        {
+          "path": "research/artifacts/m5-baselines/pikachu-catch/pikachu-catch-m5-integrated-02/skill-runs/resolve_battle_outcome_dialogue_bundle/20260821T192812Z/report.json",
+          "sha256": "17051c6d4c86d11f3d4eee627cc721eef1ad96ec8d2aac9f7781e4f08ef07ea7"
+        }
+      ]
+    },
+    {
+      "id": "brock-badge-completion",
+      "predicate": "brock_badge_completion",
+      "reportPath": "research/artifacts/m5-baselines/brock-post-badge/brock-post-badge-gemma-01/report.json",
+      "reportSha256": "0b7a727f36b6010a7935352860f90c8633d7cdab756f1c72d5d677ce58f0f861"
+    },
+    {
+      "id": "sparse-battle-dialogue",
+      "predicate": "sparse_battle_dialogue",
+      "reportPath": "research/artifacts/m5-skill-validation/sparse-battle-dialogue-fix-5/advance_battle_dialogue/20260821T194108Z/report.json",
+      "reportSha256": "0dcfa34a55ea3cffd057a81e188e5ca4cd5f0562d19208b3ff5cd88ef2ef1179"
+    }
+  ]
+}

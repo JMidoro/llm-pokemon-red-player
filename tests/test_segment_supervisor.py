@@ -16,9 +16,50 @@ from pokemon_player.segment_supervisor import (
     LineageLease,
     SegmentExecution,
     SegmentRequest,
+    SubprocessSegmentRunner,
     SupervisorConfig,
     SupervisorPaths,
 )
+
+
+def test_subprocess_runner_offsets_seed_by_accepted_actions_and_fresh_starts_once(
+    tmp_path: Path,
+) -> None:
+    runner = SubprocessSegmentRunner(
+        project_root=tmp_path,
+        provider="lmstudio-chat",
+        max_actions=100,
+        temperature=0.1,
+        first_inference_seed=5301,
+        fresh_start_first_segment=True,
+    )
+
+    first = SegmentRequest(
+        lineage_id="trial",
+        segment_id="segment-000001-a1",
+        sequence=1,
+        attempt=1,
+        input_state=tmp_path / "seed.state",
+        segment_dir=tmp_path / "segments" / "segment-000001-a1",
+    )
+    second = SegmentRequest(
+        lineage_id="trial",
+        segment_id="segment-000002-a1",
+        sequence=2,
+        attempt=1,
+        input_state=tmp_path / "continued.state",
+        segment_dir=tmp_path / "segments" / "segment-000002-a1",
+        inference_action_offset=37,
+    )
+
+    first_command = runner._command(first)
+    second_command = runner._command(second)
+
+    assert "--fresh-start" in first_command
+    assert "--fresh-start" not in second_command
+    assert first_command[first_command.index("--seed") + 1] == "5301"
+    assert second_command[second_command.index("--seed") + 1] == "5338"
+    assert first_command[first_command.index("--temperature") + 1] == "0.1"
 
 
 class FakeRunner:
@@ -222,8 +263,10 @@ def test_healthy_segments_chain_from_hashed_final_state(tmp_path: Path) -> None:
     assert result["state"]["state"] == "completed"
     assert result["checkpoint"]["machineReason"] == "segment_limit_reached"
     assert runner.requests[1].input_state == runner.requests[0].segment_dir / "final.state"
+    assert [request.inference_action_offset for request in runner.requests] == [0, 1]
     assert len(result["manifest"]["segments"]) == 2
     for item in result["manifest"]["segments"]:
+        assert item["directorActionCount"] == 1
         segment = read_json(paths.lineage_root / str(item["manifestPath"]))
         assert segment and segment["artifacts"]["complete"] is True
         assert segment["artifacts"]["finalState"]["sha256"]
@@ -237,6 +280,7 @@ def test_model_error_retries_once_after_healthy_provider_check(tmp_path: Path) -
 
     assert runner.health_checks == 1
     assert [request.attempt for request in runner.requests] == [1, 2]
+    assert [request.inference_action_offset for request in runner.requests] == [0, 0]
     assert [request.input_state for request in runner.requests] == [seed.resolve(), seed.resolve()]
     assert result["state"]["state"] == "completed"
 

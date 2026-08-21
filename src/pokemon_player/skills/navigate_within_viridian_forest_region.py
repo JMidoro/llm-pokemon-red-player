@@ -9,9 +9,9 @@ from PIL import Image
 from pokemon_player.battle_ui import dark_ratio
 from pokemon_player.capsule_a_navigation import (
     ALLOWED_MAP_IDS,
-    at_landmark,
     is_allowed_position,
     is_boundary_position,
+    navigation_goal_reached,
     resolve_landmark,
     snapshot_position,
 )
@@ -112,12 +112,16 @@ def navigate_within_viridian_forest_region(
             warnings=warnings,
         )
 
-    if at_landmark(position, landmark):
+    if navigation_goal_reached(position, landmark):
         return SkillResult(
             skill_id=SKILL_ID,
-            status="succeeded",
-            summary=f"Player is at {landmark.label}.",
-            evidence=evidence,
+            status="succeeded" if before_snapshot is not None else "blocked",
+            summary=(
+                f"Navigation reached {landmark.label}."
+                if before_snapshot is not None
+                else f"Player is already at {landmark.label}; choose the next semantic action."
+            ),
+            evidence=evidence + (("navigation_noop=true",) if before_snapshot is None else ()),
             warnings=warnings,
         )
 

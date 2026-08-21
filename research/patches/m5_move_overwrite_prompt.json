@@ -1,0 +1,16 @@
+{
+  "description": "Give the level-up fixture a full four-move set so Horn Attack reaches the overwrite decision branch.",
+  "goal": "Generate a reproducible Milestone 5 move-learning decision surface without human gameplay.",
+  "metadata": {
+    "milestone": 5,
+    "baseFixture": "resolve_battle_outcome_dialogue_bundle/xp_or_level_up_dialogue"
+  },
+  "operations": [
+    {
+      "type": "set_party_moves",
+      "slot": 1,
+      "moves": ["Leer", "Tackle", "Scratch", "Growl"],
+      "pp": [30, 32, 35, 40]
+    }
+  ]
+}

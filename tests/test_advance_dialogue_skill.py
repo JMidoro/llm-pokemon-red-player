@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from PIL import Image, ImageDraw
+
 from pokemon_player.skills.advance_dialogue import advance_dialogue
 from pokemon_player.skills.visual_state import inspect_ui_visual_state
 
@@ -46,3 +48,34 @@ def test_advance_dialogue_visual_state_distinguishes_prompt_from_start_menu() ->
     assert not start_menu.bottom_text_box
     assert mixed_prompt.bottom_text_box
     assert mixed_prompt.upper_menu
+
+
+def test_dark_room_borders_are_not_mistaken_for_an_upper_menu(tmp_path: Path) -> None:
+    image = Image.new("L", (160, 144), 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 0, 159, 21), fill=0)
+    draw.rectangle((75, 12, 83, 93), fill=0)
+    draw.rectangle((150, 12, 159, 93), fill=0)
+    draw.rectangle((84, 22, 149, 93), fill=0)
+    screenshot = tmp_path / "dark-room-border.png"
+    image.save(screenshot)
+
+    visual = inspect_ui_visual_state(screenshot)
+
+    assert not visual.upper_menu
+
+
+def test_compact_upper_left_battle_choice_is_an_upper_menu(tmp_path: Path) -> None:
+    image = Image.new("L", (160, 144), 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 48, 56, 96), outline=0, width=8)
+    draw.text((12, 60), "YES", fill=0)
+    draw.text((12, 76), "NO", fill=0)
+    draw.rectangle((0, 96, 159, 143), outline=0, width=8)
+    screenshot = tmp_path / "battle-choice.png"
+    image.save(screenshot)
+
+    visual = inspect_ui_visual_state(screenshot)
+
+    assert visual.bottom_text_box
+    assert visual.upper_menu

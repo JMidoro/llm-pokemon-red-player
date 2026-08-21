@@ -68,7 +68,7 @@ def has_bottom_dialogue_text(image: Image.Image) -> bool:
     dialogue_box = image.crop((0, height - 40, width, height))
     left_text_area = image.crop((8, height - 32, min(70, width), height - 6))
     return dark_ratio(text_area) > 0.10 or (
-        dark_ratio(dialogue_box) > 0.10 and dark_ratio(left_text_area) > 0.045
+        dark_ratio(dialogue_box) > 0.10 and dark_ratio(left_text_area) > 0.04
     )
 
 
@@ -78,7 +78,16 @@ def is_battle_item_menu(image: Image.Image) -> bool:
         return False
     top_border = image.crop((50, 48, 156, 53))
     left_border = image.crop((48, 50, 53, 126))
-    return dark_ratio(top_border) > 0.12 and dark_ratio(left_border) > 0.08
+    bottom_text = image.crop((8, 112, 132, 138))
+    lower_panel_edge = image.crop((0, 104, 160, 110))
+    item_list_or_stats_panel = (
+        dark_ratio(bottom_text) < 0.02 or dark_ratio(lower_panel_edge) > 0.10
+    )
+    return (
+        dark_ratio(top_border) > 0.12
+        and dark_ratio(left_border) > 0.08
+        and item_list_or_stats_panel
+    )
 
 
 def is_battle_party_menu(image: Image.Image) -> bool:
@@ -153,10 +162,12 @@ def has_battle_action_menu_box(image: Image.Image) -> bool:
     internal_divider = image.crop((104, 104, 110, 142))
     top_edge = image.crop((64, 104, 154, 110))
     command_box = image.crop((64, 104, 154, 142))
+    dialogue_text_area = image.crop((8, 112, 64, 136))
     return (
         dark_ratio(internal_divider) > 0.15
         and dark_ratio(top_edge) < 0.05
         and dark_ratio(command_box) > 0.14
+        and dark_ratio(dialogue_text_area) < 0.06
     )
 
 

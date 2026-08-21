@@ -641,6 +641,36 @@ def test_boulder_badge_completes_chapter_7() -> None:
     assert "boulder_badge=true" in goal.evidence
 
 
+def test_defeated_brock_claims_badge_before_damaged_party_can_leave_to_heal() -> None:
+    snapshot = {
+        "mode": "dialogue",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x36, "x": 5, "y": 1},
+        "party": [
+            {
+                "species_name": "Squirtle",
+                "level": 14,
+                "hp": 7,
+                "max_hp": 41,
+                "status": 0,
+                "moves": [{"move_name": "Bubble"}],
+            },
+            {"species_name": "Pikachu", "level": 9, "hp": 26, "max_hp": 26, "status": 0},
+        ],
+        "inventory": [],
+        "badge_names": [],
+        "story_events": {"beat_brock": True},
+    }
+
+    goal = current_chapter_goal(snapshot)
+
+    assert goal.chapter_id == "chapter_7_claim_boulder_badge"
+    assert goal.success is False
+    assert "brock_defeated=true" in goal.evidence
+    assert "boulder_badge=false" in goal.evidence
+    assert not any("pokecenter" in hint.lower() for hint in goal.hints)
+
+
 def test_forest_pikachu_battle_requests_catch() -> None:
     snapshot = {
         "mode": "battle",

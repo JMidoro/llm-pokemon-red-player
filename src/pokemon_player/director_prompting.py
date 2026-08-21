@@ -84,6 +84,8 @@ def build_director_instructions(request: DirectorRequest) -> str:
         "For use_move pass a move name or id, not the full option object.",
         "For switch_party_member pass a slot, nickname, or species, not an option object.",
         "For handle_nickname_prompt pass choice=accept or choice=decline.",
+        "For handle_move_learning_prompt pass choice=skip, or choice=replace with forgetMove.",
+        "For handle_trainer_switch_prompt pass choice=keep, or choice=switch with a target party member.",
         "For enter_nickname_text pass uppercase A-Z text of at most ten characters.",
     ]
     lines.extend(instruction for instruction in request.runtime_instructions if instruction.strip())

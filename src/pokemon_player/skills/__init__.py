@@ -13,6 +13,8 @@ __all__ = [
     "enter_grass_search_loop",
     "enter_nickname_text",
     "handle_nickname_prompt",
+    "handle_move_learning_prompt",
+    "handle_trainer_switch_prompt",
     "heal_at_pokecenter",
     "navigate_within_viridian_forest_region",
     "navigate_within_pewter_region",
@@ -22,6 +24,7 @@ __all__ = [
     "resolve_battle_outcome_dialogue_bundle",
     "run_from_wild_battle",
     "switch_party_member",
+    "talk_to_npc",
     "use_move",
     "walk_local_direction",
 ]

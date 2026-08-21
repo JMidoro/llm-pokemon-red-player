@@ -697,7 +697,7 @@ def test_alternate_ruleset_switches_change_runtime_behavior_without_code_edits(
     memory = Memory({mm.OPTIONS: 0})
     style = apply_configured_battle_style(memory, alternative)
     assert style["after"] == "shift"
-    assert memory[mm.OPTIONS] & (1 << 6)
+    assert memory[mm.OPTIONS] & (1 << 6) == 0
 
 
 def test_dead_pokemon_battle_use_is_blocked_before_input(tmp_path: Path) -> None:
@@ -808,12 +808,12 @@ def test_battle_style_configuration_changes_only_the_options_style_bit() -> None
         def __getitem__(self, key):
             return self.get(key, 0)
 
-    memory = Memory({mm.OPTIONS: 0b11000101})
+    memory = Memory({mm.OPTIONS: 0b10000101})
     result = apply_configured_battle_style(memory, ruleset())
 
     assert result["before"] == "shift"
     assert result["after"] == "set"
-    assert memory[mm.OPTIONS] == 0b10000101
+    assert memory[mm.OPTIONS] == 0b11000101
 
 
 def test_hm_softlock_exception_is_required_only_field_only_and_audited(tmp_path: Path) -> None:
@@ -961,6 +961,49 @@ def test_checkpoint_reconciliation_tracks_box_capture_death_blackout_and_gift(tm
     )
     assert gift_ledger.state["encounters"] == {}
     assert next(iter(gift_ledger.state["pokemon"].values()))["encounterSource"] == "gift"
+
+
+def test_checkpoint_reconciliation_ignores_transient_post_catch_party_placeholder(tmp_path: Path) -> None:
+    active = ledger(tmp_path)
+    team = [party_member(1, 0xB1, "SHELL")]
+    reconcile_snapshot(
+        active,
+        ruleset(),
+        snapshot(
+            mode="battle",
+            battle_type=1,
+            party=team,
+            owned=[7],
+            enemy={"species_id": 0x54, "species_name": "Pikachu"},
+        ),
+        checkpoint_id="before-catch",
+    )
+    placeholder = {
+        "slot": 2,
+        "species_id": 0,
+        "species_name": "Species 0x00",
+        "nickname": "",
+        "hp": 0,
+        "max_hp": 0,
+        "level": 0,
+        "moves": [],
+    }
+    reconcile_snapshot(
+        active,
+        ruleset(),
+        snapshot(
+            mode="battle",
+            battle_type=1,
+            party=[*team, placeholder],
+            owned=[7, 25],
+            enemy={"species_id": 0x54, "species_name": "Pikachu"},
+        ),
+        checkpoint_id="nickname-prompt",
+        last_action={"skillId": "resolve_battle_outcome_dialogue_bundle"},
+    )
+
+    assert not any(record.get("speciesName") == "Species 0x00" for record in active.state["pokemon"].values())
+    assert not any(pokemon_id.startswith("species-0x00") for pokemon_id in active.state["deaths"])
 
 
 def test_director_context_explains_rules_eligibility_deaths_and_exceptions(tmp_path: Path) -> None:

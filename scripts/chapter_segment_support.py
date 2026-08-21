@@ -28,6 +28,8 @@ from pokemon_player.skill_execution import (  # noqa: E402
     execute_enter_grass_search_loop,
     execute_enter_nickname_text,
     execute_handle_nickname_prompt,
+    execute_handle_move_learning_prompt,
+    execute_handle_trainer_switch_prompt,
     execute_heal_at_pokecenter,
     execute_navigate_within_pallet_region,
     execute_navigate_within_pewter_region,
@@ -37,10 +39,12 @@ from pokemon_player.skill_execution import (  # noqa: E402
     execute_resolve_battle_outcome_dialogue_bundle,
     execute_run_from_wild_battle,
     execute_switch_party_member,
+    execute_talk_to_npc,
     execute_use_move,
     run_timed_trace,
 )
 from pokemon_player.skills.purchase_pokemart_item import normalize_shop_item  # noqa: E402
+from pokemon_player.skills.talk_to_npc import default_interaction_target  # noqa: E402
 from pokemon_player.snapshot_io import snapshot_to_dict  # noqa: E402
 from pokemon_player.trace import load_trace  # noqa: E402
 
@@ -59,6 +63,8 @@ SUPPORTED_SKILLS = {
     "enter_grass_search_loop",
     "enter_nickname_text",
     "handle_nickname_prompt",
+    "handle_move_learning_prompt",
+    "handle_trainer_switch_prompt",
     "heal_at_pokecenter",
     "literal_button_press",
     "navigate_within_pallet_region",
@@ -69,12 +75,39 @@ SUPPORTED_SKILLS = {
     "resolve_battle_outcome_dialogue_bundle",
     "run_from_wild_battle",
     "switch_party_member",
+    "talk_to_npc",
     "use_move",
 }
 
 
 def timestamp() -> str:
     return datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+
+
+def requested_success_reached(
+    success_target: str,
+    snapshot_dict: dict[str, Any],
+    chapter_direction: ChapterGoal,
+) -> tuple[bool, str]:
+    if success_target == "chapter":
+        return chapter_direction.success, chapter_direction.title
+    if success_target != "capsule-a":
+        raise ValueError(f"Unsupported success target: {success_target}")
+    party = snapshot_dict.get("party")
+    party = party if isinstance(party, list) else []
+    has_pikachu = any(
+        isinstance(member, dict)
+        and str(member.get("species_name") or "").lower() == "pikachu"
+        for member in party
+    )
+    position = snapshot_dict.get("position")
+    position = position if isinstance(position, dict) else {}
+    map_id = position.get("map_id")
+    y = position.get("y")
+    reached_north_exit = map_id == 0x2F or (
+        map_id == 0x33 and isinstance(y, int) and y <= 0
+    )
+    return has_pikachu and reached_north_exit, "Capsule A north exit"
 
 
 def compact_snapshot(snapshot_dict: dict[str, Any]) -> dict[str, Any]:
@@ -184,6 +217,14 @@ def requires_viridian_checkpoint(
         return False
     if str(snapshot_dict.get("mode", "unknown")) == "battle":
         return False
+    position = snapshot_dict.get("position") if isinstance(snapshot_dict.get("position"), dict) else {}
+    if (
+        chapter_direction.chapter_id == "chapter_6_capsule_a"
+        and position.get("map_id") in {0x32, 0x33, 0x34}
+    ):
+        # Frozen Capsule A starts are valid chapter starts after the checkpoint.
+        # Do not force them to backtrack to Viridian before searching the forest.
+        return False
     return chapter_direction.chapter_id in {"chapter_5b_route_22_spearow", "chapter_6_capsule_a"}
 
 
@@ -193,8 +234,44 @@ def apply_chapter_skill_policy(
     chapter_direction: ChapterGoal,
     history: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
+    interaction_target = default_interaction_target(snapshot_dict)
+    expected_interaction = {
+        "chapter_3_retrieve_parcel": "viridian_mart_clerk",
+        "chapter_4_return_parcel_in_lab": "professor_oak",
+        "chapter_5_acquire_poke_balls": "viridian_mart_clerk",
+        "chapter_7_defeat_brock": "brock",
+    }.get(chapter_direction.chapter_id)
+    if interaction_target and interaction_target == expected_interaction:
+        filtered = [skill for skill in available if skill.get("id") == "talk_to_npc"]
+        if filtered:
+            return (
+                filtered,
+                [
+                    (
+                        f"The player is already at {interaction_target}; use talk_to_npc "
+                        f"target={interaction_target} to begin the story interaction."
+                    )
+                ],
+            )
+        dialogue = [skill for skill in available if skill.get("id") == "advance_dialogue"]
+        if dialogue:
+            return (
+                dialogue,
+                [
+                    (
+                        f"The interaction with {interaction_target} has already started; "
+                        "advance_dialogue is the only relevant next action until the dialogue closes "
+                        "or a battle/decision surface appears."
+                    )
+                ],
+            )
+
     if should_suppress_mart_counter_navigation(snapshot_dict, chapter_direction):
-        allowed_counter_skills = {"advance_dialogue", "literal_button_press", "purchase_pokemart_item"}
+        allowed_counter_skills = {
+            "advance_dialogue",
+            "purchase_pokemart_item",
+            "talk_to_npc",
+        }
         filtered = [skill for skill in available if skill.get("id") in allowed_counter_skills]
         if len(filtered) != len(available):
             return (
@@ -202,8 +279,8 @@ def apply_chapter_skill_policy(
                 [
                     (
                         "counter-navigation and recovery skills suppressed because the player is already at "
-                        "the Viridian Mart counter; use literal_button_press button=A or advance_dialogue to "
-                        "open/progress clerk dialogue, then purchase_pokemart_item when the BUY list is visible."
+                        "the Viridian Mart counter; use talk_to_npc target=viridian_mart_clerk to "
+                        "open the clerk dialogue, then purchase_pokemart_item when the BUY list is visible."
                     )
                 ],
             )
@@ -334,6 +411,10 @@ def infer_missing_skill_args(
         move = default_active_battle_move(snapshot_dict)
         if move:
             inferred["move"] = move
+    if skill_id == "talk_to_npc" and not inferred.get("target"):
+        target = default_interaction_target(snapshot_dict)
+        if target:
+            inferred["target"] = target
     if skill_id == "navigate_within_pewter_region":
         if chapter_direction.chapter_id == "chapter_7_level_for_brock":
             inferred["target"] = (
@@ -373,11 +454,7 @@ def default_active_battle_move(snapshot_dict: dict[str, Any]) -> str | None:
         usable.append(name)
     if not usable:
         return None
-    non_damaging = {"growl", "leer", "tail whip", "string shot"}
-    for name in usable:
-        if name.lower() not in non_damaging:
-            return name
-    return usable[0]
+    return usable[0] if len(usable) == 1 else None
 
 
 def normalize_selected_skill(
@@ -429,6 +506,7 @@ PATHING_VIDEO_SKILLS = {
     "navigate_within_pallet_region",
     "navigate_within_pewter_region",
     "navigate_within_viridian_forest_region",
+    "talk_to_npc",
 }
 
 
@@ -573,7 +651,7 @@ def execute_local_skill(
     if skill_id == "advance_dialogue":
         return execute_advance_dialogue(pyboy, **common)
     if skill_id == "advance_battle_dialogue":
-        return execute_advance_battle_dialogue(pyboy, **common, max_inputs=int(args.get("maxInputs", 16)))
+        return execute_advance_battle_dialogue(pyboy, **common, max_inputs=int(args.get("maxInputs", 32)))
     if skill_id == "attempt_catch":
         return execute_attempt_catch(
             pyboy,
@@ -616,6 +694,42 @@ def execute_local_skill(
         raw_choice = str(args.get("choice", args.get("nicknameChoice", args.get("nickname", "decline")))).strip().lower()
         choice = "accept" if raw_choice in {"accept", "yes", "y", "true", "nickname", "name"} else "decline"
         return execute_handle_nickname_prompt(pyboy, **common, choice=choice)
+    if skill_id == "handle_move_learning_prompt":
+        raw_choice = str(args.get("choice", args.get("decision", args.get("response", "skip")))).strip().lower()
+        choice = "replace" if raw_choice in {"replace", "learn", "yes", "accept", "forget"} else "skip"
+        forget_move = args.get("forgetMove", args.get("forget_move", args.get("move")))
+        if isinstance(forget_move, dict):
+            forget_move = (
+                forget_move.get("name")
+                or forget_move.get("moveName")
+                or forget_move.get("slot")
+                or forget_move.get("moveId")
+            )
+        if choice == "replace" and forget_move is None:
+            return missing_skill_argument_result(skill_id, "forgetMove")
+        return execute_handle_move_learning_prompt(
+            pyboy,
+            **common,
+            choice=choice,
+            forget_move=forget_move,
+        )
+    if skill_id == "handle_trainer_switch_prompt":
+        raw_choice = str(args.get("choice", args.get("decision", args.get("response", "keep")))).strip().lower()
+        choice = "switch" if raw_choice in {"switch", "change", "yes", "accept"} else "keep"
+        target = args.get("target")
+        if isinstance(target, dict):
+            target = target.get("slot") or target.get("nickname") or target.get("species") or target.get("name")
+        if choice == "switch" and target is None:
+            return missing_skill_argument_result(skill_id, "target")
+        if isinstance(target, str) and target.isdigit():
+            target = int(target)
+        return execute_handle_trainer_switch_prompt(
+            pyboy,
+            **common,
+            choice=choice,
+            target=target,
+            max_wait_frames=int(args.get("maxWaitFrames", 1200)),
+        )
     if skill_id == "heal_at_pokecenter":
         return execute_heal_at_pokecenter(pyboy, **common)
     if skill_id == "navigate_within_pallet_region":
@@ -656,7 +770,11 @@ def execute_local_skill(
     if skill_id == "recover_to_overworld":
         return execute_recover_to_overworld(pyboy, **common, max_inputs=int(args.get("maxInputs", 12)))
     if skill_id == "resolve_battle_outcome_dialogue_bundle":
-        return execute_resolve_battle_outcome_dialogue_bundle(pyboy, **common)
+        return execute_resolve_battle_outcome_dialogue_bundle(
+            pyboy,
+            **common,
+            max_inputs=int(args.get("maxInputs", 16)),
+        )
     if skill_id == "run_from_wild_battle":
         return execute_run_from_wild_battle(pyboy, **common, max_wait_frames=int(args.get("maxWaitFrames", 900)))
     if skill_id == "switch_party_member":
@@ -664,7 +782,7 @@ def execute_local_skill(
         if isinstance(target, dict):
             target = target.get("slot") or target.get("nickname") or target.get("species") or target.get("name")
         if target is None:
-            raise ValueError("switch_party_member requires target.")
+            return missing_skill_argument_result(skill_id, "target")
         if isinstance(target, str) and target.isdigit():
             target = int(target)
         return execute_switch_party_member(
@@ -673,12 +791,17 @@ def execute_local_skill(
             target=target,
             max_wait_frames=int(args.get("maxWaitFrames", 1200)),
         )
+    if skill_id == "talk_to_npc":
+        target = str(args.get("target") or "").strip()
+        if not target:
+            return missing_skill_argument_result(skill_id, "target")
+        return execute_talk_to_npc(pyboy, **common, target=target)
     if skill_id == "use_move":
         requested_move = args.get("move", args.get("requestedMove"))
         if requested_move is None:
             requested_move = args.get("moveName", args.get("moveId"))
         if requested_move is None:
-            raise ValueError("use_move requires move, requestedMove, moveName, or moveId.")
+            return missing_skill_argument_result(skill_id, "move")
         return execute_use_move(
             pyboy,
             **common,
@@ -696,6 +819,17 @@ def execute_local_skill(
         run_timed_trace(pyboy, [ButtonInput(button, hold_frames=8, settle_frames=36)], render=render)
         return {"skill_id": skill_id, "status": "succeeded", "summary": f"Pressed {button.upper()} once.", "evidence": [f"button={button}"], "warnings": []}
     raise ValueError(f"Unsupported chapter segment skill: {skill_id}")
+
+
+def missing_skill_argument_result(skill_id: str, argument: str) -> dict[str, Any]:
+    return {
+        "actionStarted": False,
+        "skill_id": skill_id,
+        "status": "blocked",
+        "summary": f"{skill_id} requires the {argument} argument before input can start.",
+        "evidence": [f"missing_argument={argument}", "action_started=false"],
+        "warnings": ["invalid_semantic_tool_arguments"],
+    }
 
 
 def artifact_result_dict(artifact: SkillRunArtifact | dict[str, Any]) -> dict[str, Any]:

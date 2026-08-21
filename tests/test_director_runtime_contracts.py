@@ -31,11 +31,12 @@ class SequenceProvider:
         )
     )
     calls: int = 0
+    prepared_requests: list[Any] = field(default_factory=list)
 
     def complete(self, request: Any) -> ProviderResponse:
         from pokemon_player.director_providers import ProviderFailure
 
-        del request
+        self.prepared_requests.append(request)
         item = self.responses[self.calls]
         self.calls += 1
         if isinstance(item, DirectorError):
@@ -161,6 +162,173 @@ def test_retry_happens_before_exactly_one_execution() -> None:
     assert len(executor_calls) == 1
 
 
+def test_single_enabled_skill_is_inferred_when_tool_call_omits_skill_id() -> None:
+    provider = SequenceProvider(
+        [
+            ProviderResponse(
+                tool_calls=(
+                    ToolCall(
+                        name="execute_skill",
+                        arguments={
+                            "args": {"target": "forest_grass"},
+                            "plaintextReasoning": "Move toward the only enabled objective.",
+                        },
+                    ),
+                )
+            )
+        ]
+    )
+
+    decision = DirectorRuntime(provider).decide(canonical_request())
+
+    assert decision.error is None
+    assert decision.tool_call is not None
+    assert decision.tool_call.arguments["skillId"] == "navigate_within_viridian_forest_region"
+
+
+def test_move_arguments_infer_use_move_among_multiple_tactical_skills() -> None:
+    request = replace(
+        canonical_request(),
+        enabled_skills=(
+            {"id": "use_move", "label": "Use Move", "params": {}},
+            {"id": "switch_party_member", "label": "Switch", "params": {}},
+        ),
+    )
+    provider = SequenceProvider(
+        [
+            ProviderResponse(
+                tool_calls=(
+                    ToolCall(
+                        name="execute_skill",
+                        arguments={
+                            "move": "Bubble",
+                            "plaintextReasoning": "Bubble is super effective here.",
+                        },
+                    ),
+                )
+            )
+        ]
+    )
+
+    decision = DirectorRuntime(provider).decide(request)
+
+    assert decision.error is None
+    assert decision.tool_call is not None
+    assert decision.tool_call.arguments == {
+        "skillId": "use_move",
+        "args": {"move": "Bubble"},
+        "plaintextReasoning": "Bubble is super effective here.",
+    }
+    assert request.summary()["seed"] is None
+
+
+def test_nested_sole_skill_id_is_unwrapped_without_leaking_into_args() -> None:
+    request = replace(
+        canonical_request(),
+        enabled_skills=(
+            {"id": "switch_party_member", "label": "Switch", "params": {}},
+        ),
+    )
+    provider = SequenceProvider(
+        [
+            ProviderResponse(
+                tool_calls=(
+                    ToolCall(
+                        name="execute_skill",
+                        arguments={"args": {"skillId": "switch_party_member"}},
+                    ),
+                )
+            )
+        ]
+    )
+
+    decision = DirectorRuntime(provider).decide(request)
+
+    assert decision.error is None
+    assert decision.tool_call is not None
+    assert decision.tool_call.arguments["skillId"] == "switch_party_member"
+    assert decision.tool_call.arguments["args"] == {}
+
+
+def test_repeated_attack_normalizes_to_sole_agency_neutral_outcome_bundle() -> None:
+    request = replace(
+        canonical_request(),
+        enabled_skills=(
+            {
+                "id": "resolve_battle_outcome_dialogue_bundle",
+                "label": "Resolve Outcome",
+                "params": {},
+            },
+        ),
+    )
+    provider = SequenceProvider(
+        [
+            ProviderResponse(
+                tool_calls=(
+                    ToolCall(
+                        name="execute_skill",
+                        arguments={
+                            "skillId": "use_move",
+                            "args": {"move": "Bubble"},
+                            "plaintextReasoning": "Continue attacking.",
+                        },
+                    ),
+                )
+            )
+        ]
+    )
+
+    decision = DirectorRuntime(provider).decide(request)
+
+    assert decision.error is None
+    assert decision.tool_call is not None
+    assert decision.tool_call.arguments["skillId"] == "resolve_battle_outcome_dialogue_bundle"
+    assert decision.tool_call.arguments["args"] == {}
+
+
+def test_invalid_tool_arguments_receive_one_repair_retry_before_execution() -> None:
+    request = replace(
+        canonical_request(),
+        enabled_skills=(
+            *canonical_request().enabled_skills,
+            {"id": "recover_to_overworld", "label": "Recover", "params": {}},
+        ),
+    )
+    provider = SequenceProvider(
+        [
+            ProviderResponse(
+                tool_calls=(
+                    ToolCall(
+                        name="execute_skill",
+                        arguments={
+                            "args": {},
+                            "plaintextReasoning": "Malformed first attempt.",
+                        },
+                    ),
+                )
+            ),
+            successful_response(),
+        ]
+    )
+    executor_calls: list[ToolCall] = []
+
+    tick = DirectorRuntime(provider, max_retries=1, retry_backoff_seconds=0).run_tick(
+        request,
+        executor=lambda call: executor_calls.append(call)
+        or {"actionStarted": True, "status": "succeeded"},
+    )
+
+    assert tick.decision.error is None
+    assert tick.decision.attempts == 2
+    assert provider.calls == 2
+    assert len(executor_calls) == 1
+    assert "previous response was rejected" in provider.prepared_requests[1].messages[-1]["content"]
+    repair_tool_names = [tool["name"] for tool in provider.prepared_requests[1].tools]
+    assert "execute_skill" not in repair_tool_names
+    assert "navigate_within_viridian_forest_region" in repair_tool_names
+    assert "recover_to_overworld" in repair_tool_names
+
+
 def test_unavailable_skill_is_rejected_before_execution() -> None:
     provider = SequenceProvider(
         [
@@ -185,7 +353,9 @@ def test_unavailable_skill_is_rejected_before_execution() -> None:
         called = True
         return {"actionStarted": True, "call": call.to_dict()}
 
-    tick = DirectorRuntime(provider).run_tick(canonical_request(), executor=executor)
+    tick = DirectorRuntime(provider, max_retries=0).run_tick(
+        canonical_request(), executor=executor
+    )
 
     assert tick.decision.error is not None
     assert tick.decision.error.category == "unavailable_skill"

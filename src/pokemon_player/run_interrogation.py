@@ -62,6 +62,7 @@ def interrogate_run_report(
         [
             f"state_hash_unique={progress['uniqueStateHashes']}",
             f"state_hash_max_repeat={progress['maxStateHashRepeat']}",
+            f"state_hash_trailing_repeat={progress['trailingStateHashRepeat']}",
             f"chapter_movements={progress['chapterMovements']}",
             f"position_changes={progress['positionChanges']}",
             f"resource_changes={progress['resourceChanges']}",
@@ -445,6 +446,7 @@ def _progress_analysis(
         "observationCount": len(normalized),
         "uniqueStateHashes": len(state_counts),
         "maxStateHashRepeat": max(state_counts.values(), default=0),
+        "trailingStateHashRepeat": _trailing_repeat_count(state_hashes),
         "chapterMovements": chapter_movements,
         "positionChanges": position_changes,
         "resourceChanges": resource_changes,
@@ -501,6 +503,18 @@ def _change_count(values: list[Any]) -> int:
     return sum(1 for before, after in zip(values, values[1:]) if before != after)
 
 
+def _trailing_repeat_count(values: list[Any]) -> int:
+    if not values:
+        return 0
+    final_value = values[-1]
+    count = 0
+    for value in reversed(values):
+        if value != final_value:
+            break
+        count += 1
+    return count
+
+
 def _state_interpretation_reason(
     failure_category: str,
     progress: dict[str, Any],
@@ -534,6 +548,8 @@ def _loop_reason(
         and int(progress.get("resourceChanges") or 0) == 0
     ):
         return "repeated_state_hash_without_progress"
+    if int(progress.get("trailingStateHashRepeat") or 0) >= 5:
+        return "trailing_repeated_state_hash"
     last_five = [item for item in history[-5:] if isinstance(item, dict)]
     skill_ids = [str(item.get("skillId")) for item in last_five]
 
@@ -545,9 +561,19 @@ def _loop_reason(
             blocked_or_failed += 1
         if result.get("status") != "succeeded":
             non_success += 1
-    if len(set(skill_ids)) == 1 and non_success >= 3:
+    final_result = (
+        last_five[-1].get("result")
+        if last_five and isinstance(last_five[-1].get("result"), dict)
+        else {}
+    )
+    final_status = final_result.get("status")
+    if (
+        len(set(skill_ids)) == 1
+        and non_success >= 3
+        and final_status != "succeeded"
+    ):
         return f"last_five_same_skill_without_success={skill_ids[0]}"
-    if blocked_or_failed >= 3:
+    if blocked_or_failed >= 3 and final_status in {"blocked", "failed"}:
         return f"blocked_or_failed_results_in_last_five={blocked_or_failed}"
 
     last_ten = [item for item in history[-10:] if isinstance(item, dict)]

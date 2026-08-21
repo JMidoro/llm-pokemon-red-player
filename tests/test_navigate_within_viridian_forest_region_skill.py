@@ -10,8 +10,10 @@ from pokemon_player.capsule_a_navigation import (
     MAP_ROUTE_22,
     MAP_VIRIDIAN_CITY,
     MAP_VIRIDIAN_FOREST,
+    MAP_VIRIDIAN_FOREST_NORTH_GATE,
     MAP_VIRIDIAN_POKECENTER,
     Position,
+    navigation_goal_reached,
     resolve_landmark,
 )
 from pokemon_player.skill_execution import (
@@ -46,7 +48,7 @@ def test_navigation_allows_capsule_a_start_region() -> None:
     assert "Navigation can start" in result.summary
 
 
-def test_navigation_succeeds_when_already_at_target() -> None:
+def test_navigation_blocks_noop_when_already_at_target() -> None:
     record = load_record("step_01_viridian_forest_grass_1")
 
     result = navigate_within_viridian_forest_region(
@@ -55,8 +57,8 @@ def test_navigation_succeeds_when_already_at_target() -> None:
         screenshot_path=record["screenshot_file"],
     )
 
-    assert result.status == "succeeded"
-    assert "south grass patch" in result.summary
+    assert result.status == "blocked"
+    assert "choose the next semantic action" in result.summary
 
 
 def test_navigation_blocks_outside_capsule_a_region() -> None:
@@ -68,8 +70,8 @@ def test_navigation_blocks_outside_capsule_a_region() -> None:
         screenshot_path=record["screenshot_file"],
     )
 
-    assert result.status == "succeeded"
-    assert "Route 22 approved grass patch" in result.summary
+    assert result.status == "blocked"
+    assert "choose the next semantic action" in result.summary
 
 
 def test_navigation_after_run_fails_if_target_not_reached() -> None:
@@ -187,6 +189,60 @@ def test_same_map_planner_accepts_trainer_battle_as_terminal_route(monkeypatch) 
     assert result["status"] == "planned_trainer_battle"
     assert result["buttons"] == ["right"]
     assert result["position"] == "map=0x33,x=18,y=47"
+
+
+def test_same_map_planner_accepts_expected_boundary_transition(monkeypatch) -> None:
+    start = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": MAP_VIRIDIAN_FOREST, "x": 6, "y": 1},
+    }
+    north_gate = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": MAP_VIRIDIAN_FOREST_NORTH_GATE, "x": 4, "y": 7},
+    }
+
+    class FakePyBoy:
+        current = start
+
+    fake_pyboy = FakePyBoy()
+    monkeypatch.setattr(skill_execution, "snapshot", lambda pyboy: pyboy.current)
+    monkeypatch.setattr(skill_execution, "snapshot_to_dict", lambda value: value)
+    monkeypatch.setattr(skill_execution, "pyboy_state_bytes", lambda pyboy: b"state")
+    monkeypatch.setattr(skill_execution, "load_pyboy_state_bytes", lambda pyboy, state: None)
+    monkeypatch.setattr(
+        skill_execution,
+        "wait_for_navigation_trainer_engagement",
+        lambda pyboy, *, render, max_frames: None,
+    )
+
+    def fake_run_navigation_button(pyboy, button: str, *, render: bool) -> dict:
+        assert button == "up"
+        pyboy.current = north_gate
+        return north_gate
+
+    monkeypatch.setattr(skill_execution, "run_navigation_button", fake_run_navigation_button)
+    result = skill_execution.find_same_map_navigation_path(
+        fake_pyboy,
+        target=Position(MAP_VIRIDIAN_FOREST, 1, 0),
+        max_expansions=10,
+        max_steps=10,
+        render=False,
+        terminal_checker=skill_execution.forest_north_gate_reached,
+    )
+
+    assert result["status"] == "planned"
+    assert result["buttons"] == ["up"]
+    assert result["terminal_transition"] is True
+
+
+def test_forest_north_exit_goal_accepts_north_gate_arrival() -> None:
+    landmark = resolve_landmark("forest_north_exit")
+
+    assert navigation_goal_reached(
+        Position(MAP_VIRIDIAN_FOREST_NORTH_GATE, 4, 7), landmark
+    )
 
 
 def test_same_map_planner_accepts_wild_battle_as_terminal_route(monkeypatch) -> None:

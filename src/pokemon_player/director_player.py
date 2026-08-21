@@ -36,6 +36,8 @@ from pokemon_player.skill_execution import (
     execute_enter_grass_search_loop,
     execute_enter_nickname_text,
     execute_handle_nickname_prompt,
+    execute_handle_move_learning_prompt,
+    execute_handle_trainer_switch_prompt,
     execute_heal_at_pokecenter,
     execute_navigate_within_pallet_region,
     execute_navigate_within_pewter_region,
@@ -46,6 +48,7 @@ from pokemon_player.skill_execution import (
     execute_resolve_battle_outcome_dialogue_bundle,
     execute_run_from_wild_battle,
     execute_switch_party_member,
+    execute_talk_to_npc,
     execute_use_move,
     run_timed_trace,
 )
@@ -63,6 +66,17 @@ from pokemon_player.skills.handle_nickname_prompt import (
     screenshot_has_nickname_intro_dialogue,
     screenshot_has_naming_screen,
     screenshot_has_nickname_prompt,
+)
+from pokemon_player.skills.handle_move_learning_prompt import (
+    MoveLearningChoice,
+    handle_move_learning_prompt,
+    move_options as move_learning_options,
+    screenshot_has_move_learning_prompt,
+)
+from pokemon_player.skills.handle_trainer_switch_prompt import (
+    TrainerSwitchChoice,
+    handle_trainer_switch_prompt,
+    screenshot_has_trainer_switch_prompt,
 )
 from pokemon_player.skills.heal_at_pokecenter import heal_at_pokecenter
 from pokemon_player.skills.navigate_within_viridian_forest_region import (
@@ -94,6 +108,11 @@ from pokemon_player.skills.resolve_battle_outcome_dialogue_bundle import (
 )
 from pokemon_player.skills.run_from_wild_battle import run_from_wild_battle
 from pokemon_player.skills.switch_party_member import switch_party_member
+from pokemon_player.skills.talk_to_npc import (
+    default_interaction_target,
+    interaction_options,
+    talk_to_npc,
+)
 from pokemon_player.skills.use_move import use_move
 from pokemon_player.snapshot_io import snapshot_hash, snapshot_to_dict
 
@@ -108,6 +127,8 @@ EXECUTABLE_SKILLS = (
     "enter_grass_search_loop",
     "enter_nickname_text",
     "handle_nickname_prompt",
+    "handle_move_learning_prompt",
+    "handle_trainer_switch_prompt",
     "heal_at_pokecenter",
     "literal_button_press",
     "navigate_within_pallet_region",
@@ -119,6 +140,7 @@ EXECUTABLE_SKILLS = (
     "resolve_battle_outcome_dialogue_bundle",
     "run_from_wild_battle",
     "switch_party_member",
+    "talk_to_npc",
     "use_move",
 )
 
@@ -133,6 +155,8 @@ SKILL_LABELS = {
     "enter_grass_search_loop": "Enter Grass Search",
     "enter_nickname_text": "Enter Nickname Text",
     "handle_nickname_prompt": "Handle Nickname Prompt",
+    "handle_move_learning_prompt": "Handle Move Learning",
+    "handle_trainer_switch_prompt": "Handle Trainer Switch Prompt",
     "heal_at_pokecenter": "Heal At PokeCenter",
     "literal_button_press": "Press Button",
     "navigate_within_pallet_region": "Navigate Pallet",
@@ -144,6 +168,7 @@ SKILL_LABELS = {
     "resolve_battle_outcome_dialogue_bundle": "Resolve Battle Outcome",
     "run_from_wild_battle": "Run From Wild Battle",
     "switch_party_member": "Switch Party Member",
+    "talk_to_npc": "Talk To NPC",
     "use_move": "Use Move",
 }
 
@@ -893,7 +918,7 @@ class DirectorPlayer:
             return execute_advance_battle_dialogue(
                 self.pyboy,
                 **common,
-                max_inputs=int(args.get("maxInputs", 16)),
+                max_inputs=int(args.get("maxInputs", 32)),
             )
         if skill_id == "attempt_catch":
             return execute_attempt_catch(
@@ -935,6 +960,33 @@ class DirectorPlayer:
                 self.pyboy,
                 **common,
                 choice=normalize_nickname_choice_arg(args),
+            )
+        if skill_id == "handle_move_learning_prompt":
+            choice = normalize_move_learning_choice_arg(args)
+            forget_move = normalize_requested_move_arg(
+                args.get("forgetMove", args.get("forget_move", args.get("move")))
+            )
+            if choice == "replace" and (forget_move is None or forget_move == ""):
+                raise ValueError("handle_move_learning_prompt requires forgetMove when choice is replace.")
+            return execute_handle_move_learning_prompt(
+                self.pyboy,
+                **common,
+                choice=choice,
+                forget_move=forget_move,
+            )
+        if skill_id == "handle_trainer_switch_prompt":
+            choice = normalize_trainer_switch_choice_arg(args)
+            target = normalize_party_target_arg(args.get("target"))
+            if choice == "switch" and (target is None or target == ""):
+                raise ValueError("handle_trainer_switch_prompt requires target when choice is switch.")
+            if isinstance(target, str) and target.isdigit():
+                target = int(target)
+            return execute_handle_trainer_switch_prompt(
+                self.pyboy,
+                **common,
+                choice=choice,
+                target=target,
+                max_wait_frames=int(args.get("maxWaitFrames", 1200)),
             )
         if skill_id == "heal_at_pokecenter":
             return execute_heal_at_pokecenter(
@@ -1019,6 +1071,15 @@ class DirectorPlayer:
                 **common,
                 target=target,
                 max_wait_frames=int(args.get("maxWaitFrames", 1200)),
+            )
+        if skill_id == "talk_to_npc":
+            target = str(args.get("target") or "").strip()
+            if not target:
+                raise ValueError("talk_to_npc requires target.")
+            return execute_talk_to_npc(
+                self.pyboy,
+                **common,
+                target=target,
             )
         if skill_id == "use_move":
             move = normalize_requested_move_arg(args.get("move"))
@@ -1150,6 +1211,15 @@ def informative_snapshot_events(
         if not previous:
             continue
         label = party_member_label(member)
+        before_species = previous.get("species_name")
+        after_species = member.get("species_name")
+        if before_species != after_species:
+            events.append(
+                (
+                    f"{label} evolved from {before_species} into {after_species}.",
+                    [f"slot={slot}", f"before_species={before_species}", f"after_species={after_species}"],
+                )
+            )
         before_level = previous.get("level")
         after_level = member.get("level")
         if before_level != after_level:
@@ -1351,6 +1421,8 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
     pokedex_intro_visible = (
         battle_enemy_hp(snapshot_dict) > 0 and screenshot_has_pokedex_intro_dialogue(screenshot_path)
     )
+    trainer_switch_prompt_visible = screenshot_has_trainer_switch_prompt(snapshot_dict, screenshot_path)
+    move_learning_prompt_visible = screenshot_has_move_learning_prompt(snapshot_dict, screenshot_path)
     availability: list[dict[str, Any]] = []
 
     availability.append(skill_from_result("advance_dialogue", advance_dialogue(snapshot_dict, screenshot_path=screenshot_path)))
@@ -1367,10 +1439,14 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
             },
         )
     )
+    outcome_probe = resolve_battle_outcome_dialogue_bundle(
+        snapshot_dict,
+        screenshot_path=screenshot_path,
+    )
     availability.append(
         skill_from_result(
             "resolve_battle_outcome_dialogue_bundle",
-            resolve_battle_outcome_dialogue_bundle(snapshot_dict, screenshot_path=screenshot_path),
+            outcome_probe,
             params={
                 "requiredPromotions": [
                     "mode-and-ui-state-classification",
@@ -1378,7 +1454,8 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
                     "battle-dialogue-advancement-contract",
                     "party-switch-and-active-battler",
                 ],
-                "execution": "single_a_press",
+                "execution": "bounded_dialogue_bundle",
+                "maxInputs": 16,
             },
         )
     )
@@ -1420,6 +1497,41 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
                 "itemNames": [item.name for item in mart_stock],
                 "quantityPolicy": "Pokemon Red buys one item at a time; this skill repeats the purchase flow quantity times and stops when money runs out.",
                 "requiredPromotions": ["mode-and-ui-state-classification", "mart-buy-menu-contract"],
+            },
+        )
+    )
+    if outcome_probe.status == "succeeded":
+        suppress_skill(
+            availability,
+            "advance_battle_dialogue",
+            reason=(
+                "A bounded battle-outcome bundle is available and will stop before the next "
+                "tactical, party, or choice surface."
+            ),
+        )
+    npc_options = interaction_options(snapshot_dict)
+    default_npc_target = default_interaction_target(snapshot_dict)
+    npc_probe = talk_to_npc(
+        snapshot_dict,
+        target=default_npc_target or "",
+        screenshot_path=screenshot_path,
+    )
+    availability.append(
+        skill_from_result(
+            "talk_to_npc",
+            npc_probe,
+            params={
+                "argsSchema": {
+                    "target": "NPC target id exactly from targets",
+                },
+                "exampleArgs": {"target": default_npc_target} if default_npc_target else {},
+                "defaultTarget": default_npc_target,
+                "targets": npc_options,
+                "targetIds": [option["id"] for option in npc_options],
+                "requiredPromotions": [
+                    "mode-and-ui-state-classification",
+                    "early-game-npc-interaction-contract",
+                ],
             },
         )
     )
@@ -1717,6 +1829,62 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
             },
         }
     )
+    trainer_switch_probe = handle_trainer_switch_prompt(
+        snapshot_dict,
+        choice="keep",
+        screenshot_path=screenshot_path,
+    )
+    availability.append(
+        skill_from_result(
+            "handle_trainer_switch_prompt",
+            trainer_switch_probe,
+            params={
+                "argsSchema": {
+                    "choice": "keep or switch",
+                    "target": "required with switch: party slot number, species, or nickname",
+                },
+                "exampleArgs": {"choice": "keep"},
+                "exampleSwitchArgs": (
+                    {"choice": "switch", "target": target_options[0]["slot"]}
+                    if target_options
+                    else None
+                ),
+                "choices": ["keep", "switch"],
+                "targets": target_options,
+                "requiredPromotions": [
+                    "battle-dialogue-advancement-contract",
+                    "party-switch-and-active-battler",
+                ],
+            },
+        )
+    )
+    current_move_options = move_learning_options(snapshot_dict.get("active_party_member"))
+    move_learning_probe = handle_move_learning_prompt(
+        snapshot_dict,
+        choice="skip",
+        screenshot_path=screenshot_path,
+    )
+    availability.append(
+        skill_from_result(
+            "handle_move_learning_prompt",
+            move_learning_probe,
+            params={
+                "argsSchema": {
+                    "choice": "skip or replace",
+                    "forgetMove": "required with replace: current move name or slot",
+                },
+                "exampleArgs": {"choice": "skip"},
+                "exampleReplaceArgs": (
+                    {"choice": "replace", "forgetMove": current_move_options[0]["name"]}
+                    if current_move_options
+                    else None
+                ),
+                "choices": ["skip", "replace"],
+                "moves": current_move_options,
+                "requiredPromotions": ["battle-dialogue-advancement-contract"],
+            },
+        )
+    )
     if pokedex_page_visible or pokedex_intro_visible:
         for skill_id in ("attempt_catch", "use_move", "switch_party_member"):
             suppress_skill(
@@ -1757,6 +1925,36 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
                     if nickname_prompt_visible
                     else "Naming keyboard is active; nickname text-entry support is required."
                 ),
+            )
+    if trainer_switch_prompt_visible:
+        for skill_id in (
+            "advance_battle_dialogue",
+            "resolve_battle_outcome_dialogue_bundle",
+            "literal_button_press",
+            "attempt_catch",
+            "run_from_wild_battle",
+            "use_move",
+            "switch_party_member",
+        ):
+            suppress_skill(
+                availability,
+                skill_id,
+                reason="Shift-style trainer switch prompt is visible; use handle_trainer_switch_prompt.",
+            )
+    if move_learning_prompt_visible:
+        for skill_id in (
+            "advance_battle_dialogue",
+            "resolve_battle_outcome_dialogue_bundle",
+            "literal_button_press",
+            "attempt_catch",
+            "run_from_wild_battle",
+            "use_move",
+            "switch_party_member",
+        ):
+            suppress_skill(
+                availability,
+                skill_id,
+                reason="Four-move learning prompt is visible; use handle_move_learning_prompt.",
             )
     return availability
 
@@ -1884,6 +2082,22 @@ def normalize_nickname_choice_arg(args: dict[str, Any]) -> NicknameChoice:
     if value in {"accept", "yes", "y", "true", "nickname", "name"}:
         return "accept"
     return "decline"
+
+
+def normalize_move_learning_choice_arg(args: dict[str, Any]) -> MoveLearningChoice:
+    raw = args.get("choice", args.get("decision", args.get("response", "skip")))
+    value = str(raw).strip().lower().replace("-", "_").replace(" ", "_")
+    if value in {"replace", "learn", "yes", "accept", "forget"}:
+        return "replace"
+    return "skip"
+
+
+def normalize_trainer_switch_choice_arg(args: dict[str, Any]) -> TrainerSwitchChoice:
+    raw = args.get("choice", args.get("decision", args.get("response", "keep")))
+    value = str(raw).strip().lower().replace("-", "_").replace(" ", "_")
+    if value in {"switch", "change", "yes", "accept", "switch_pokemon"}:
+        return "switch"
+    return "keep"
 
 
 def normalize_nickname_text_arg(args: dict[str, Any]) -> str:

@@ -31,6 +31,7 @@ def resolve_battle_outcome_dialogue_bundle(
         f"battle_ui={ui_kind}",
         f"visual_bottom_text_box={visual.bottom_text_box}",
         f"visual_upper_menu={visual.upper_menu}",
+        f"visual_compact_choice={visual.compact_choice}",
         f"pokedex_page={pokedex_page}",
         f"pokedex_intro={pokedex_intro}",
     )
@@ -111,7 +112,7 @@ def resolve_battle_outcome_dialogue_bundle(
             warnings=warnings,
         )
 
-    if visual.bottom_text_box and visual.upper_menu and hp > 0:
+    if visual.bottom_text_box and visual.compact_choice:
         return SkillResult(
             skill_id=SKILL_ID,
             status="uncertain",
@@ -244,7 +245,11 @@ def screenshot_has_pokedex_intro_dialogue(path: str | Path | None) -> bool:
     except Exception:
         return False
     visual = inspect_ui_visual_state(image_path)
-    if not visual.bottom_text_box or visual.upper_menu or ui.kind != "action_menu":
+    if (
+        not visual.bottom_text_box
+        or visual.upper_menu
+        or ui.kind not in {"action_menu", "dialogue"}
+    ):
         return False
 
     first_line_left = dark_ratio(image.crop((8, 112, 80, 120)))
