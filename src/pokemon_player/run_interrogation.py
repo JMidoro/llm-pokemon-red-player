@@ -8,7 +8,11 @@ from typing import Any
 CHECKPOINT_SCHEMA = "checkpoint_interrogation_v1"
 
 
-def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
+def interrogate_run_report(
+    report: dict[str, Any],
+    *,
+    previous_report: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return a compact checkpoint verdict for a local Director run report."""
     finish = report.get("finish") if isinstance(report.get("finish"), dict) else {}
     history = report.get("history") if isinstance(report.get("history"), list) else []
@@ -20,6 +24,7 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
     evidence: list[str] = []
     review_items: list[dict[str, Any]] = []
     fallback_taken: list[str] = []
+    progress = _progress_analysis(report, previous_report)
 
     if report.get("schema"):
         evidence.append(f"report_schema={report.get('schema')}")
@@ -53,6 +58,24 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
     skill_counts = Counter(str(item.get("skillId")) for item in history if isinstance(item, dict))
     if skill_counts:
         evidence.append("top_skills=" + ",".join(f"{name}:{count}" for name, count in skill_counts.most_common(5)))
+    evidence.extend(
+        [
+            f"state_hash_unique={progress['uniqueStateHashes']}",
+            f"state_hash_max_repeat={progress['maxStateHashRepeat']}",
+            f"chapter_movements={progress['chapterMovements']}",
+            f"position_changes={progress['positionChanges']}",
+            f"resource_changes={progress['resourceChanges']}",
+            f"literal_button_frequency={progress['literalButtonFrequency']:.3f}",
+        ]
+    )
+    if progress["failureClusters"]:
+        evidence.append(
+            "failure_clusters="
+            + ",".join(
+                f"{name}:{count}"
+                for name, count in list(progress["failureClusters"].items())[:5]
+            )
+        )
 
     if finish.get("success") is True:
         return _checkpoint(
@@ -73,9 +96,43 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
         )
 
     failure_category = str(finish.get("failureCategory") or "")
+    if failure_category == "execution_error":
+        return _checkpoint(
+            verdict="unsafe_state",
+            confidence="high",
+            continue_recommended=False,
+            summary=(
+                "Semantic tool execution ended with unknown action state; reconcile from the "
+                "pre-provider checkpoint before continuing."
+            ),
+            evidence=evidence + ["action_state_known=false"],
+            review_items=[
+                _review_item(
+                    kind="execution_state_reconciliation",
+                    summary=(
+                        "Inspect the final state or reload the pre-provider checkpoint before "
+                        "another Director action."
+                    ),
+                    state_path=final_state,
+                    screenshot_path=final_screenshot,
+                )
+            ],
+            fallback_taken=["reconcile_or_reload_pre_provider_checkpoint"],
+        )
     if failure_category in {
         "local_llm_request_failed",
+        "authentication",
+        "connection",
+        "invalid_response",
+        "invalid_tool_arguments",
+        "missing_tool_call",
+        "multiple_tool_calls",
+        "provider_error",
+        "provider_unavailable",
+        "rate_limit",
+        "replay_exhausted",
         "text_response_without_tool",
+        "timeout",
         "no_tool_call",
         "no_choices",
         "unexpected_tool",
@@ -116,7 +173,26 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
             fallback_taken=["rollback_or_patch_recovery"],
         )
 
-    loop_reason = _loop_reason(history)
+    interpretation_reason = _state_interpretation_reason(failure_category, progress)
+    if interpretation_reason:
+        return _checkpoint(
+            verdict="state_interpretation_gap",
+            confidence="high",
+            continue_recommended=False,
+            summary=f"Run cannot interpret the current game state reliably: {interpretation_reason}.",
+            evidence=evidence + [f"interpretation_reason={interpretation_reason}"],
+            review_items=[
+                _review_item(
+                    kind="state_interpretation_gap",
+                    summary="Preserve this evidence bundle and patch state interpretation before retrying.",
+                    state_path=final_state,
+                    screenshot_path=final_screenshot,
+                )
+            ],
+            fallback_taken=["preserve_evidence_and_patch_interpretation"],
+        )
+
+    loop_reason = _loop_reason(history, progress=progress)
     if loop_reason:
         return _checkpoint(
             verdict="stalled_loop",
@@ -136,7 +212,7 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
         )
 
     literal_count = skill_counts.get("literal_button_press", 0)
-    if literal_count >= 4:
+    if literal_count >= 3 and progress["literalButtonFrequency"] >= 0.25:
         review_items.append(
             _review_item(
                 kind="literal_button_overuse",
@@ -146,6 +222,18 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
             )
         )
         fallback_taken.append("continue_provisionally_and_queue_skill_gap_review")
+
+    stop_reason = str(finish.get("stopReason") or "")
+    if stop_reason in {"operator_stop_after_action", "operator_emergency_stop"}:
+        return _checkpoint(
+            verdict="healthy_needs_review",
+            confidence="high",
+            continue_recommended=False,
+            summary="Run stopped at a safe operator-requested checkpoint.",
+            evidence=evidence + [f"operator_stop={stop_reason}"],
+            review_items=review_items,
+            fallback_taken=fallback_taken,
+        )
 
     if failure_category == "action_budget_exhausted" or finish.get("status") == "checkpoint":
         verdict = "provisional_continue" if review_items else "healthy_continue"
@@ -266,9 +354,186 @@ def _unsafe_reason(snapshot: dict[str, Any]) -> str | None:
     return None
 
 
-def _loop_reason(history: list[dict[str, Any]]) -> str | None:
+def _progress_analysis(
+    report: dict[str, Any],
+    previous_report: dict[str, Any] | None,
+) -> dict[str, Any]:
+    observations = (
+        report.get("progressObservations")
+        if isinstance(report.get("progressObservations"), list)
+        else []
+    )
+    if not observations:
+        context = report.get("context") if isinstance(report.get("context"), dict) else {}
+        observations = (
+            context.get("progressObservations")
+            if isinstance(context.get("progressObservations"), list)
+            else []
+        )
+    normalized = [item for item in observations if isinstance(item, dict)]
+    state_hashes = [str(item.get("stateHash")) for item in normalized if item.get("stateHash")]
+    if not state_hashes:
+        requests = report.get("requests") if isinstance(report.get("requests"), list) else []
+        state_hashes = [
+            str(checkpoint.get("snapshotHash"))
+            for item in requests
+            if isinstance(item, dict)
+            for checkpoint in [item.get("checkpoint")]
+            if isinstance(checkpoint, dict) and checkpoint.get("snapshotHash")
+        ]
+    state_counts = Counter(state_hashes)
+    chapters = [str(item.get("chapterId")) for item in normalized if item.get("chapterId")]
+    positions = [_position_signature(item.get("position")) for item in normalized]
+    resources = [_resource_signature(item) for item in normalized]
+    history = report.get("history") if isinstance(report.get("history"), list) else []
+    cluster_counts: Counter[str] = Counter()
+    literal_count = 0
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        if item.get("skillId") == "literal_button_press":
+            literal_count += 1
+        result = item.get("result") if isinstance(item.get("result"), dict) else {}
+        status = str(result.get("status") or "unknown")
+        if status != "succeeded":
+            cluster_counts[f"status:{status}"] += 1
+        warnings = result.get("warnings") if isinstance(result.get("warnings"), list) else []
+        for warning in warnings:
+            cluster_counts[f"warning:{str(warning)[:80]}"] += 1
+
+    chapter_movements = _change_count(chapters)
+    position_changes = _change_count(positions)
+    resource_changes = _change_count(resources)
+    if previous_report:
+        previous_snapshot = (
+            previous_report.get("finalSnapshot")
+            if isinstance(previous_report.get("finalSnapshot"), dict)
+            else {}
+        )
+        current_snapshot = (
+            report.get("finalSnapshot")
+            if isinstance(report.get("finalSnapshot"), dict)
+            else {}
+        )
+        previous_chapter = _last_chapter(
+            previous_report.get("chapterTimeline")
+            if isinstance(previous_report.get("chapterTimeline"), list)
+            else []
+        )
+        current_chapter = _last_chapter(
+            report.get("chapterTimeline")
+            if isinstance(report.get("chapterTimeline"), list)
+            else []
+        )
+        if previous_chapter and current_chapter and (
+            previous_chapter.get("chapterId") != current_chapter.get("chapterId")
+            or previous_chapter.get("success") != current_chapter.get("success")
+        ):
+            chapter_movements += 1
+        if _position_signature(previous_snapshot.get("position")) != _position_signature(
+            current_snapshot.get("position")
+        ):
+            position_changes += 1
+        if _resource_signature(previous_snapshot) != _resource_signature(current_snapshot):
+            resource_changes += 1
+    clustered = {
+        name: count
+        for name, count in cluster_counts.most_common()
+        if count >= 2
+    }
+    return {
+        "observationCount": len(normalized),
+        "uniqueStateHashes": len(state_counts),
+        "maxStateHashRepeat": max(state_counts.values(), default=0),
+        "chapterMovements": chapter_movements,
+        "positionChanges": position_changes,
+        "resourceChanges": resource_changes,
+        "literalButtonFrequency": literal_count / max(len(history), 1),
+        "failureClusters": clustered,
+    }
+
+
+def _position_signature(value: Any) -> tuple[Any, Any, Any]:
+    position = value if isinstance(value, dict) else {}
+    return (
+        position.get("map_id") or position.get("map_name"),
+        position.get("x"),
+        position.get("y"),
+    )
+
+
+def _resource_signature(value: Any) -> tuple[Any, ...]:
+    snapshot = value if isinstance(value, dict) else {}
+    party = snapshot.get("party") if isinstance(snapshot.get("party"), list) else []
+    inventory = (
+        snapshot.get("inventory") if isinstance(snapshot.get("inventory"), list) else []
+    )
+    party_signature = tuple(
+        (
+            member.get("speciesId") or member.get("species_id"),
+            member.get("level"),
+            member.get("hp"),
+            member.get("status"),
+        )
+        for member in party
+        if isinstance(member, dict)
+    )
+    inventory_signature = tuple(
+        sorted(
+            (
+                str(item.get("itemId") or item.get("item_id") or item.get("item_name") or ""),
+                item.get("quantity"),
+            )
+            for item in inventory
+            if isinstance(item, dict)
+        )
+    )
+    badges = snapshot.get("badges") or snapshot.get("badge_names") or []
+    return (
+        snapshot.get("money"),
+        tuple(str(badge) for badge in badges) if isinstance(badges, list) else str(badges),
+        party_signature,
+        inventory_signature,
+    )
+
+
+def _change_count(values: list[Any]) -> int:
+    return sum(1 for before, after in zip(values, values[1:]) if before != after)
+
+
+def _state_interpretation_reason(
+    failure_category: str,
+    progress: dict[str, Any],
+) -> str | None:
+    if failure_category in {
+        "state_interpretation_gap",
+        "unknown_ui",
+        "unclassified_visual_state",
+        "snapshot_interpretation_failed",
+    }:
+        return failure_category
+    tokens = ("unclassified", "interpretation", "unknown_ui", "unknown_state")
+    for cluster, count in progress["failureClusters"].items():
+        if count >= 2 and any(token in cluster.lower() for token in tokens):
+            return f"repeated_{cluster}"
+    return None
+
+
+def _loop_reason(
+    history: list[dict[str, Any]],
+    *,
+    progress: dict[str, Any] | None = None,
+) -> str | None:
     if len(history) < 5:
         return None
+    progress = progress or {}
+    if (
+        int(progress.get("maxStateHashRepeat") or 0) >= 5
+        and int(progress.get("chapterMovements") or 0) == 0
+        and int(progress.get("positionChanges") or 0) == 0
+        and int(progress.get("resourceChanges") or 0) == 0
+    ):
+        return "repeated_state_hash_without_progress"
     last_five = [item for item in history[-5:] if isinstance(item, dict)]
     skill_ids = [str(item.get("skillId")) for item in last_five]
 

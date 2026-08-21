@@ -1,0 +1,69 @@
+{
+  "schema": "director_frozen_scenario_v1",
+  "id": "viridian_forest_overworld_navigation_v1",
+  "goal": "Progress toward the Viridian Forest grass while preserving party safety.",
+  "tick": 7,
+  "context": {
+    "chapterDirection": {
+      "chapterId": "chapter_6_capsule_a",
+      "title": "Catch Pikachu in Viridian Forest",
+      "objective": "Reach Viridian Forest grass and search for the target encounter.",
+      "success": false,
+      "hints": [
+        "Use navigate_within_viridian_forest_region with target=forest_grass."
+      ]
+    },
+    "snapshot": {
+      "mode": "overworld",
+      "position": {
+        "map_id": 1,
+        "map_name": "Viridian City",
+        "x": 18,
+        "y": 0
+      },
+      "party": [
+        {
+          "species_name": "Squirtle",
+          "level": 8,
+          "hp": 24,
+          "max_hp": 24
+        }
+      ],
+      "inventory": [
+        {
+          "item_name": "Poke Ball",
+          "quantity": 10
+        }
+      ]
+    },
+    "signals": [],
+    "skillPolicy": []
+  },
+  "enabledSkills": [
+    {
+      "id": "navigate_within_viridian_forest_region",
+      "label": "Navigate Viridian Forest Region",
+      "reason": "The player is in the supported region.",
+      "params": {
+        "targets": [
+          "forest_grass",
+          "forest_north_exit",
+          "viridian_pokecenter"
+        ]
+      }
+    },
+    {
+      "id": "recover_to_overworld",
+      "label": "Recover To Overworld",
+      "reason": "Use only if navigation becomes uncertain.",
+      "params": {}
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": "Continue toward the forest grass without taking unnecessary risks.",
+      "kind": "steering"
+    }
+  ]
+}

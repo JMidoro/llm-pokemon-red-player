@@ -22,6 +22,14 @@ def test_portable_repo_path_serializes_current_checkout_path() -> None:
     )
 
 
+def test_portable_repo_path_prefers_checkout_root_over_nested_anchor() -> None:
+    value = ROOT / "research" / "artifacts" / "nested" / "research" / "report.json"
+
+    assert portable_repo_path(value, repo_root=ROOT) == (
+        "research/artifacts/nested/research/report.json"
+    )
+
+
 def test_resolve_repo_path_maps_legacy_windows_checkout_suffix(tmp_path: Path) -> None:
     expected = tmp_path / "research" / "golden-states" / "local" / "example.state"
     expected.parent.mkdir(parents=True)

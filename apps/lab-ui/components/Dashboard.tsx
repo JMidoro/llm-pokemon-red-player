@@ -235,6 +235,7 @@ export function Dashboard({
 function LlmPlayerWorkspace() {
   const defaultGoal = "Complete Capsule A: catch a Pikachu or another allowed early wild Pokemon in or near Viridian Forest without blacking out.";
   const [goal, setGoal] = useState(defaultGoal);
+  const [selectedProvider, setSelectedProvider] = useState("openai-responses");
   const [selectedModel, setSelectedModel] = useState("gpt-5.4-nano");
   const [reasoningEffort, setReasoningEffort] = useState("low");
   const [tickIntervalSeconds, setTickIntervalSeconds] = useState(30);
@@ -279,7 +280,7 @@ function LlmPlayerWorkspace() {
       }
     }, Math.max(1, tickIntervalSeconds) * 1000);
     return () => window.clearInterval(handle);
-  }, [autoTickEnabled, goal, messageLimit, reasoningEffort, selectedModel, tickIntervalSeconds]);
+  }, [autoTickEnabled, goal, messageLimit, reasoningEffort, selectedModel, selectedProvider, tickIntervalSeconds]);
 
   async function runLlmDirector(options: { appendGoal?: boolean } = {}) {
     const trimmedGoal = goal.trim();
@@ -314,6 +315,7 @@ function LlmPlayerWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           goal: trimmedGoal,
+          provider: selectedProvider,
           messages: nextMessages,
           tick: nextTick,
           model: selectedModel,
@@ -330,14 +332,14 @@ function LlmPlayerWorkspace() {
       setMessages(runResult.messages);
       messagesRef.current = runResult.messages;
       setLastRequestMessages(runResult.requestMessages ?? nextMessages);
-      if (runResult.openaiRequest) {
+      if (runResult.requestSummary) {
         const debugPayload = {
-          schema: "llm_openai_request_debug_v1",
+          schema: "director_request_debug_v1",
           reportPath: runResult.reportPath,
           tick: runResult.tick,
           requestMessages: runResult.requestMessages ?? nextMessages,
-          openaiRequest: runResult.openaiRequest,
-          openaiUsage: runResult.openaiUsage ?? {},
+          requestSummary: runResult.requestSummary,
+          usage: runResult.usage ?? {},
           steps: runResult.steps,
         };
         const debugMessages = [
@@ -352,7 +354,7 @@ function LlmPlayerWorkspace() {
           return next;
         });
       }
-      setTokenTotals((current) => addUsageToTotals(current, runResult.openaiUsage));
+      setTokenTotals((current) => addUsageToTotals(current, runResult.usage));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "LLM Director run failed.");
     } finally {
@@ -396,12 +398,22 @@ function LlmPlayerWorkspace() {
         </label>
         <div className="llm-settings-grid">
           <label>
-            <span>Model</span>
-            <select value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)}>
-              <option value="gpt-5.4-nano">gpt-5.4-nano</option>
-              <option value="gpt-5.4-mini">gpt-5.4-mini</option>
-              <option value="gpt-5.4">gpt-5.4</option>
+            <span>Provider</span>
+            <select
+              value={selectedProvider}
+              onChange={(event) => {
+                const provider = event.target.value;
+                setSelectedProvider(provider);
+                setSelectedModel(provider === "lmstudio-chat" ? "google/gemma-4-e4b" : "gpt-5.4-nano");
+              }}
+            >
+              <option value="openai-responses">OpenAI Responses</option>
+              <option value="lmstudio-chat">LM Studio Chat</option>
             </select>
+          </label>
+          <label>
+            <span>Model</span>
+            <input value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)} />
           </label>
           <label>
             <span>Reasoning</span>
@@ -482,16 +494,16 @@ function LlmPlayerWorkspace() {
                 className="llm-message-debug"
                 onClick={() =>
                   setDebugPayload({
-                    title: `OpenAI Input For Message ${index + 1}`,
+                    title: `Director Input For Message ${index + 1}`,
                     payload:
                       messageDebugPayloads[llmMessageKey(message)] ?? {
-                        note: "No OpenAI request debug payload has been recorded for this message yet.",
+                        note: "No Director request summary has been recorded for this message yet.",
                         message,
                         lastRequestMessages,
                       },
                   })
                 }
-                title="Inspect OpenAI input"
+                title="Inspect Director input"
               >
                 JSON
               </button>
@@ -528,15 +540,15 @@ function LlmPlayerWorkspace() {
               className="secondary-action compact"
               onClick={() =>
                 setDebugPayload({
-                  title: "Last OpenAI Request",
-                  payload: result?.openaiRequest
+                  title: "Last Director Request",
+                  payload: result?.requestSummary
                     ? {
-                        schema: "llm_openai_request_debug_v1",
+                        schema: "director_request_debug_v1",
                         reportPath: result.reportPath,
                         tick: result.tick,
                         requestMessages: result.requestMessages ?? lastRequestMessages,
-                        openaiRequest: result.openaiRequest,
-                        openaiUsage: result.openaiUsage ?? {},
+                        requestSummary: result.requestSummary,
+                        usage: result.usage ?? {},
                         steps: result.steps,
                       }
                     : { requestMessages: lastRequestMessages },
@@ -606,6 +618,7 @@ function LlmPlayerWorkspace() {
               <div className="verdict-title">
                 <Bot size={18} />
                 <strong>{result.status}</strong>
+                {result.provider?.provider ? <span>{result.provider.provider}</span> : null}
                 <span>{result.model}</span>
                 {result.reasoningEffort ? <span>{result.reasoningEffort}</span> : null}
               </div>
@@ -780,6 +793,27 @@ function DirectorWorkspace({ states }: { states: StateRecord[] }) {
     }
   }
 
+  async function setDiagnosticMode(enabled: boolean) {
+    setExecutingSkillId("diagnostic_mode");
+    try {
+      const response = await fetch("/api/director-player", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "diagnostic_mode", enabled }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Diagnostic mode update failed.");
+      }
+      setStatus(data as DirectorPlayerStatus);
+      setError(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Diagnostic mode update failed.");
+    } finally {
+      setExecutingSkillId(null);
+    }
+  }
+
   async function captureInterpretation() {
     setExecutingSkillId("capture_interpretation");
     setCaptureMessage(null);
@@ -893,23 +927,32 @@ function DirectorWorkspace({ states }: { states: StateRecord[] }) {
           <div className="manual-input-panel">
             <div className="command-header">
               <div>
-                <span>Manual Gap Log</span>
-                <small>Captures before/after state, screenshots, and trace.</small>
+                <span>Diagnostic Capture Mode</span>
+                <small>Raw buttons stay hidden until this explicit diagnostic mode is enabled.</small>
               </div>
+              <button
+                className={status?.diagnosticMode ? "danger-action compact" : "secondary-action compact"}
+                disabled={!status || executingSkillId !== null}
+                onClick={() => setDiagnosticMode(!status?.diagnosticMode)}
+              >
+                {status?.diagnosticMode ? "Exit diagnostic mode" : "Enter diagnostic mode"}
+              </button>
             </div>
-            <div className="manual-input-grid">
-              {["up", "left", "a", "right", "down", "b", "start", "select"].map((button) => (
-                <button
-                  className="secondary-action compact"
-                  key={button}
-                  disabled={!status || status.busy || executingSkillId !== null}
-                  onClick={() => sendManualButton(button)}
-                  title={`Press ${button} and capture diagnostic artifacts`}
-                >
-                  {button}
-                </button>
-              ))}
-            </div>
+            {status?.diagnosticMode ? (
+              <div className="manual-input-grid">
+                {["up", "left", "a", "right", "down", "b", "start", "select"].map((button) => (
+                  <button
+                    className="secondary-action compact"
+                    key={button}
+                    disabled={!status || status.busy || executingSkillId !== null}
+                    onClick={() => sendManualButton(button)}
+                    title={`Press ${button} and capture diagnostic artifacts`}
+                  >
+                    {button}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {snapshot ? (
@@ -2886,14 +2929,14 @@ function llmMessageKey(message: LlmDirectorChatMessage): string {
 
 function addUsageToTotals(
   current: { input: number; output: number; total: number },
-  usage: Record<string, number> | undefined,
+  usage: LlmDirectorRunResult["usage"],
 ): { input: number; output: number; total: number } {
   if (!usage) {
     return current;
   }
-  const input = usage.input_tokens ?? usage.prompt_tokens ?? 0;
-  const output = usage.output_tokens ?? usage.completion_tokens ?? 0;
-  const total = usage.total_tokens ?? input + output;
+  const input = usage.inputTokens ?? 0;
+  const output = usage.outputTokens ?? 0;
+  const total = usage.totalTokens ?? input + output;
   return {
     input: current.input + input,
     output: current.output + output,
