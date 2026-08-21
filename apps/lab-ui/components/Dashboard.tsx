@@ -780,6 +780,27 @@ function DirectorWorkspace({ states }: { states: StateRecord[] }) {
     }
   }
 
+  async function setDiagnosticMode(enabled: boolean) {
+    setExecutingSkillId("diagnostic_mode");
+    try {
+      const response = await fetch("/api/director-player", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "diagnostic_mode", enabled }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Diagnostic mode update failed.");
+      }
+      setStatus(data as DirectorPlayerStatus);
+      setError(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Diagnostic mode update failed.");
+    } finally {
+      setExecutingSkillId(null);
+    }
+  }
+
   async function captureInterpretation() {
     setExecutingSkillId("capture_interpretation");
     setCaptureMessage(null);
@@ -893,23 +914,32 @@ function DirectorWorkspace({ states }: { states: StateRecord[] }) {
           <div className="manual-input-panel">
             <div className="command-header">
               <div>
-                <span>Manual Gap Log</span>
-                <small>Captures before/after state, screenshots, and trace.</small>
+                <span>Diagnostic Capture Mode</span>
+                <small>Raw buttons stay hidden until this explicit diagnostic mode is enabled.</small>
               </div>
+              <button
+                className={status?.diagnosticMode ? "danger-action compact" : "secondary-action compact"}
+                disabled={!status || executingSkillId !== null}
+                onClick={() => setDiagnosticMode(!status?.diagnosticMode)}
+              >
+                {status?.diagnosticMode ? "Exit diagnostic mode" : "Enter diagnostic mode"}
+              </button>
             </div>
-            <div className="manual-input-grid">
-              {["up", "left", "a", "right", "down", "b", "start", "select"].map((button) => (
-                <button
-                  className="secondary-action compact"
-                  key={button}
-                  disabled={!status || status.busy || executingSkillId !== null}
-                  onClick={() => sendManualButton(button)}
-                  title={`Press ${button} and capture diagnostic artifacts`}
-                >
-                  {button}
-                </button>
-              ))}
-            </div>
+            {status?.diagnosticMode ? (
+              <div className="manual-input-grid">
+                {["up", "left", "a", "right", "down", "b", "start", "select"].map((button) => (
+                  <button
+                    className="secondary-action compact"
+                    key={button}
+                    disabled={!status || status.busy || executingSkillId !== null}
+                    onClick={() => sendManualButton(button)}
+                    title={`Press ${button} and capture diagnostic artifacts`}
+                  >
+                    {button}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {snapshot ? (

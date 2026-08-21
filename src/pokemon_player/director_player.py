@@ -168,6 +168,7 @@ class DirectorPlayerConfig:
     status_period_seconds: float = 5.0
     slow_tick_ms: float = 120.0
     slow_status_ms: float = 200.0
+    operations_control_path: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -198,6 +199,8 @@ class DirectorPlayer:
     event_artifact_dir: Path = field(init=False)
     event_seq: int = field(default=0, init=False)
     last_slow_tick_logged_at: float = field(default=0.0, init=False, repr=False)
+    diagnostic_mode: bool = field(default=False, init=False)
+    stop_after_action_latched: bool = field(default=False, init=False)
 
     def __post_init__(self) -> None:
         self.stop_event = threading.Event()
@@ -236,7 +239,10 @@ class DirectorPlayer:
             try:
                 command = self.command_queue.get(timeout=idle_interval)
             except Empty:
-                if self.config.idle_tick_hz > 0 and not self.busy:
+                control = self._control_state()
+                if control["stopAfterAction"]:
+                    self.stop_after_action_latched = True
+                if self.config.idle_tick_hz > 0 and not self.busy and control["state"] == "running" and not self.stop_after_action_latched:
                     tick_started = time.perf_counter()
                     self.pyboy.tick(1, self.config.render)
                     tick_ms = (time.perf_counter() - tick_started) * 1000
@@ -261,6 +267,9 @@ class DirectorPlayer:
 
     def request_manual_input(self, button: str) -> dict[str, Any]:
         return self._submit("manual_input", {"button": button})
+
+    def request_diagnostic_mode(self, enabled: bool) -> dict[str, Any]:
+        return self._submit("diagnostic_mode", {"enabled": enabled})
 
     def request_capture_interpretation(self, title: str, description: str) -> dict[str, Any]:
         return self._submit(
@@ -288,6 +297,8 @@ class DirectorPlayer:
                 )
             elif command.action == "manual_input":
                 result = self._manual_input(str(command.payload.get("button", "")))
+            elif command.action == "diagnostic_mode":
+                result = self._set_diagnostic_mode(bool(command.payload.get("enabled")))
             elif command.action == "capture_interpretation":
                 result = self._capture_interpretation(
                     str(command.payload.get("title", "")),
@@ -299,7 +310,57 @@ class DirectorPlayer:
         except Exception as exc:
             command.future.set_exception(exc)
         finally:
+            if command.action in {
+                "load_state",
+                "execute_skill",
+                "manual_input",
+                "capture_interpretation",
+            } and self._control_state()["stopAfterAction"]:
+                self.stop_after_action_latched = True
             self.command_queue.task_done()
+
+    def _control_state(self) -> dict[str, Any]:
+        path = getattr(self.config, "operations_control_path", None)
+        control: dict[str, Any] = {}
+        if path:
+            try:
+                loaded = json.loads(Path(path).read_text(encoding="utf-8"))
+                control = loaded if isinstance(loaded, dict) else {}
+            except (FileNotFoundError, OSError, json.JSONDecodeError):
+                control = {}
+        state = str(control.get("state") or "running")
+        if state not in {"running", "paused", "emergency_stopped"}:
+            state = "running"
+        return {"state": state, "stopAfterAction": bool(control.get("stopAfterAction"))}
+
+    def _effective_control_state(self) -> str:
+        control = self._control_state()
+        if control["state"] == "running" and not control["stopAfterAction"]:
+            self.stop_after_action_latched = False
+        if getattr(self, "stop_after_action_latched", False):
+            return "stopped_after_action"
+        return control["state"]
+
+    def _assert_game_action_allowed(self) -> None:
+        state = self._effective_control_state()
+        if state == "paused":
+            raise RuntimeError("Director player is paused by Operations.")
+        if state == "emergency_stopped":
+            raise RuntimeError("Director player is emergency-stopped by Operations.")
+        if state == "stopped_after_action":
+            raise RuntimeError("Director player stopped after the previous action.")
+
+    def _set_diagnostic_mode(self, enabled: bool) -> dict[str, Any]:
+        self.diagnostic_mode = enabled
+        self._record_session_event(
+            "diagnostic_mode",
+            "Raw button diagnostic capture mode enabled." if enabled else "Raw button diagnostic capture mode disabled.",
+            status="warning" if enabled else "info",
+            args={"enabled": enabled},
+        )
+        with self.status_cache_lock:
+            self.cached_status = None
+        return self._fresh_status(log_observations=False)
 
     def _status(self) -> dict[str, Any]:
         with self.status_cache_lock:
@@ -334,6 +395,11 @@ class DirectorPlayer:
             "schema": "director_player_status_v1",
             "running": True,
             "busy": self.busy,
+            "control": {
+                "state": self._effective_control_state(),
+                "stopAfterAction": self._control_state()["stopAfterAction"],
+            },
+            "diagnosticMode": getattr(self, "diagnostic_mode", False),
             "startedUtc": self.started_utc,
             "session": {
                 "id": self.session_id,
@@ -404,6 +470,7 @@ class DirectorPlayer:
         self.last_observed_snapshot = current_dict
 
     def _load_state(self, state_path: str | Path) -> dict[str, Any]:
+        self._assert_game_action_allowed()
         candidate = Path(state_path).resolve()
         if not candidate.exists():
             raise FileNotFoundError(candidate)
@@ -425,6 +492,7 @@ class DirectorPlayer:
         return self._fresh_status(log_observations=False)
 
     def _execute_skill(self, skill_id: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
+        self._assert_game_action_allowed()
         if skill_id not in EXECUTABLE_SKILLS:
             raise ValueError(f"Unsupported director-player skill: {skill_id}")
         args = args or {}
@@ -528,6 +596,9 @@ class DirectorPlayer:
         return self._fresh_status(log_observations=False)
 
     def _manual_input(self, button: str) -> dict[str, Any]:
+        self._assert_game_action_allowed()
+        if not getattr(self, "diagnostic_mode", False):
+            raise PermissionError("Raw button input is available only in explicit diagnostic capture mode.")
         if button not in DIRECTOR_BUTTONS:
             raise ValueError(f"Unsupported manual button: {button}")
         self.busy = True
@@ -603,6 +674,7 @@ class DirectorPlayer:
         return self._fresh_status(log_observations=True)
 
     def _capture_interpretation(self, title: str, description: str) -> dict[str, Any]:
+        self._assert_game_action_allowed()
         cleaned_title = title.strip()
         if not cleaned_title:
             raise ValueError("Capture title is required.")
@@ -1898,6 +1970,9 @@ class DirectorPlayerHandler(BaseHTTPRequestHandler):
             if self.path == "/manual-input":
                 self.write_json(self.player.request_manual_input(str(body.get("button", ""))))
                 return
+            if self.path == "/diagnostic-mode":
+                self.write_json(self.player.request_diagnostic_mode(bool(body.get("enabled"))))
+                return
             if self.path == "/capture-interpretation":
                 self.write_json(
                     self.player.request_capture_interpretation(
@@ -1907,8 +1982,16 @@ class DirectorPlayerHandler(BaseHTTPRequestHandler):
                 )
                 return
             self.write_json({"error": "not found"}, status=404)
+        except PermissionError as exc:
+            self.write_json({"error": str(exc), "type": exc.__class__.__name__}, status=403)
+        except FileNotFoundError as exc:
+            self.write_json({"error": str(exc), "type": exc.__class__.__name__}, status=404)
+        except RuntimeError as exc:
+            self.write_json({"error": str(exc), "type": exc.__class__.__name__}, status=409)
+        except (ValueError, json.JSONDecodeError) as exc:
+            self.write_json({"error": str(exc), "type": exc.__class__.__name__}, status=400)
         except Exception as exc:
-            self.write_json({"error": str(exc), "type": exc.__class__.__name__}, status=500)
+            self.write_json({"error": "Director player request failed.", "type": exc.__class__.__name__}, status=500)
 
     def read_json_body(self) -> dict[str, Any]:
         length = int(self.headers.get("content-length", "0"))
@@ -1984,6 +2067,11 @@ def parse_args() -> DirectorPlayerConfig:
         default=200.0,
         help="Log a performance warning when a fresh status build exceeds this duration; set 0 to disable.",
     )
+    parser.add_argument(
+        "--operations-control",
+        default="research/artifacts/operations/control.json",
+        help="Shared Operations control file; pass an empty value to disable integration.",
+    )
     args = parser.parse_args()
     render = args.window == "SDL2" if args.render == "auto" else args.render == "true"
     return DirectorPlayerConfig(
@@ -2001,6 +2089,7 @@ def parse_args() -> DirectorPlayerConfig:
         status_period_seconds=args.status_period_seconds,
         slow_tick_ms=args.slow_tick_ms,
         slow_status_ms=args.slow_status_ms,
+        operations_control_path=Path(args.operations_control).resolve() if args.operations_control else None,
     )
 
 
