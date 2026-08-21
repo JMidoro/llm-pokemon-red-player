@@ -41,6 +41,7 @@ node_modules/
 .next/
 *.log
 *.tsbuildinfo
+*.disabled
 
 # Local environment/config overrides
 .env

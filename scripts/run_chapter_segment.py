@@ -1,0 +1,446 @@
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from scripts import chapter_segment_support as support  # noqa: E402
+
+from pokemon_player.chapter_direction import current_chapter_goal  # noqa: E402
+from pokemon_player.director_contracts import (  # noqa: E402
+    DirectorRequest,
+    DirectorTickResult,
+    JsonObject,
+    ToolCall,
+)
+from pokemon_player.director_player import promoted_signals, skill_availability  # noqa: E402
+from pokemon_player.director_provider_factory import canonical_provider_id, make_provider  # noqa: E402
+from pokemon_player.director_reporting import build_director_report  # noqa: E402
+from pokemon_player.director_runtime import DirectorRuntime  # noqa: E402
+from pokemon_player.pyboy_lab import load_state, open_emulator, save_state, snapshot  # noqa: E402
+from pokemon_player.rom import fingerprint_rom  # noqa: E402
+from pokemon_player.run_interrogation import interrogate_run_report  # noqa: E402
+from pokemon_player.snapshot_io import snapshot_hash  # noqa: E402
+
+
+DEFAULT_GOAL = (
+    "Progress through Pokemon Red's early-game chapters from the current seed, including "
+    "the prologue if starting from a clean boot. At every action, follow the current "
+    "chapterDirection objective and choose one enabled semantic skill that serves it."
+)
+DEFAULT_LOCAL_MODEL = "google/gemma-4-e4b"
+
+
+def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run a provider-neutral unattended Pokemon Red chapter segment."
+    )
+    parser.add_argument("--rom", default=str(support.DEFAULT_ROM))
+    parser.add_argument("--state-in", default=str(support.DEFAULT_STATE))
+    parser.add_argument("--fresh-start", action="store_true")
+    parser.add_argument("--fresh-start-boot-frames", type=int, default=1800)
+    if forced_provider is None:
+        parser.add_argument(
+            "--provider",
+            choices=("lmstudio-chat", "openai-responses", "replay"),
+            default="lmstudio-chat",
+        )
+    else:
+        parser.set_defaults(provider=forced_provider)
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--base-url", default=None)
+    parser.add_argument("--api-token", default=None)
+    parser.add_argument("--replay-path", default=None)
+    parser.add_argument("--goal", default=DEFAULT_GOAL)
+    parser.add_argument(
+        "--run-root",
+        default=None,
+        help="Optional artifact root; defaults to research/artifacts/chapter-segment-runs.",
+    )
+    parser.add_argument("--max-actions", type=int, default=100)
+    parser.add_argument("--temperature", type=float, default=0.1)
+    parser.add_argument("--max-tokens", type=int, default=2048)
+    parser.add_argument("--request-timeout-seconds", type=int, default=180)
+    parser.add_argument("--max-retries", type=int, default=1)
+    parser.add_argument("--reasoning-effort", default="low")
+    parser.add_argument("--no-image", action="store_true")
+    parser.add_argument("--render", action="store_true")
+    parser.add_argument("--no-video", action="store_true")
+    parser.add_argument("--video-output-dir", default=str(support.DEFAULT_VIDEO_OUTPUT_DIR))
+    parser.add_argument("--video-fps", type=int, default=2)
+    return parser
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    forced_provider: str | None = None,
+) -> int:
+    args = build_parser(forced_provider=forced_provider).parse_args(argv)
+    provider_id = canonical_provider_id(args.provider)
+    model = args.model or default_model(provider_id)
+    provider = make_provider(
+        provider_id,
+        env_path=ROOT / ".env",
+        base_url=args.base_url,
+        api_token=args.api_token,
+        timeout_seconds=args.request_timeout_seconds,
+        replay_path=Path(args.replay_path) if args.replay_path else None,
+    )
+    runtime = DirectorRuntime(provider, max_retries=args.max_retries)
+    rom = fingerprint_rom(args.rom)
+    state_in = Path(args.state_in)
+    run_root = (
+        Path(args.run_root)
+        if args.run_root
+        else ROOT / "research" / "artifacts" / "chapter-segment-runs"
+    )
+    run_dir = run_root / support.timestamp()
+    run_id = run_dir.name
+    run_dir.mkdir(parents=True, exist_ok=True)
+    skill_run_root = run_dir / "skill-runs"
+    video_frame_dir = run_dir / "video-frames"
+    video_frame_index = 1
+    video_artifact: JsonObject = {"enabled": False}
+    pathing_frame_warnings: list[str] = []
+    history: list[JsonObject] = []
+    director_requests: list[DirectorRequest] = []
+    ticks: list[DirectorTickResult] = []
+    chapter_timeline: list[JsonObject] = []
+    clean_ram_path = run_dir / "fresh-start-clean.ram"
+
+    if args.fresh_start:
+        clean_ram_path.write_bytes(bytes([0]) * 32768)
+        pyboy = open_emulator(
+            rom.path,
+            window="SDL2" if args.render else "null",
+            ram_path=clean_ram_path,
+        )
+        state_in = run_dir / "fresh-start-title.state"
+    else:
+        pyboy = open_emulator(rom.path, window="SDL2" if args.render else "null")
+
+    finish: JsonObject | None = None
+    final_screenshot: Path | None = None
+    final_state: Path | None = None
+    final_snapshot: JsonObject = {}
+    try:
+        if args.fresh_start:
+            pyboy.tick(args.fresh_start_boot_frames, args.render)
+            save_state(pyboy, state_in)
+        else:
+            load_state(pyboy, state_in)
+            pyboy.tick(60, args.render)
+
+        for action_index in range(1, args.max_actions + 1):
+            screenshot_path, current_state_path, snapshot_dict = support.save_current_artifacts(
+                pyboy,
+                run_dir,
+                f"action_{action_index:03d}_before",
+            )
+            if not args.no_video:
+                video_frame_index = support.append_video_frame(
+                    screenshot_path,
+                    video_frame_dir,
+                    video_frame_index,
+                )
+            signals = promoted_signals(snapshot_dict, screenshot_path)
+            chapter_direction = current_chapter_goal(snapshot_dict)
+            available = support.enabled_supported_skills(
+                skill_availability(snapshot_dict, screenshot_path)
+            )
+            available, skill_policy_notes = support.apply_chapter_skill_policy(
+                available,
+                snapshot_dict,
+                chapter_direction,
+                history,
+            )
+            chapter_timeline.append({"action": action_index, **chapter_direction.to_dict()})
+            if chapter_direction.success:
+                finish = {
+                    "status": "completed",
+                    "success": True,
+                    "summary": f"Reached chapter success: {chapter_direction.title}.",
+                    "failureCategory": None,
+                }
+                break
+            if not available:
+                finish = {
+                    "status": "failed",
+                    "success": False,
+                    "summary": "No supported enabled semantic skills are available.",
+                    "failureCategory": "no_supported_enabled_skills",
+                }
+                break
+
+            checkpoint = {
+                "kind": "saved_emulator_state",
+                "statePath": str(current_state_path),
+                "screenshotPath": str(screenshot_path),
+                "snapshotHash": snapshot_hash(snapshot(pyboy)),
+                "actionStarted": False,
+            }
+            request = DirectorRequest(
+                goal=args.goal,
+                model=model,
+                provider=provider_id,
+                enabled_skills=tuple(available),
+                context={
+                    "chapterDirection": chapter_direction.to_dict(),
+                    "actionIndex": action_index,
+                    "maxActions": args.max_actions,
+                    "snapshot": support.compact_snapshot(snapshot_dict),
+                    "signals": signals,
+                    "skillPolicy": skill_policy_notes,
+                },
+                action_history=tuple(history),
+                screenshot_path=None if args.no_image else screenshot_path,
+                tick=action_index,
+                max_history=8,
+                reasoning_effort=args.reasoning_effort,
+                temperature=args.temperature,
+                max_output_tokens=args.max_tokens,
+                runtime_instructions=(
+                    "chapterDirection is authoritative for the current local goal.",
+                    "Choose actions that directly serve chapterDirection.objective.",
+                    "When a hint names a navigation target, pass that exact target in args.target.",
+                    "The harness, not the model, decides whether chapter success is satisfied.",
+                ),
+                metadata={"checkpoint": checkpoint},
+            )
+            director_requests.append(request)
+
+            selected_artifact: dict[str, Any] = {}
+
+            def execute(call: ToolCall) -> JsonObject:
+                nonlocal video_frame_index
+                arguments = call.arguments
+                skill_id = str(arguments.get("skillId") or "")
+                skill_args = (
+                    arguments.get("args") if isinstance(arguments.get("args"), dict) else {}
+                )
+                skill_args = support.infer_missing_skill_args(
+                    skill_id,
+                    skill_args,
+                    chapter_direction,
+                    snapshot_dict,
+                    history,
+                )
+                artifact = support.execute_local_skill(
+                    pyboy,
+                    skill_id=skill_id,
+                    args=skill_args,
+                    state_in=current_state_path,
+                    rom=rom,
+                    run_root=skill_run_root,
+                    render=args.render,
+                )
+                result = support.artifact_result_dict(artifact)
+                selected_artifact.update({"skillId": skill_id, "args": skill_args, "result": result})
+                if not args.no_video:
+                    video_frame_index = support.append_skill_trace_video_frames(
+                        artifact,
+                        rom=rom,
+                        skill_id=skill_id,
+                        frame_dir=video_frame_dir,
+                        frame_index=video_frame_index,
+                        warnings=pathing_frame_warnings,
+                    )
+                return {
+                    "actionStarted": True,
+                    "skillId": skill_id,
+                    "args": skill_args,
+                    "plaintextReasoning": arguments.get("plaintextReasoning"),
+                    **result,
+                }
+
+            tick_result = runtime.run_tick(request, executor=execute)
+            ticks.append(tick_result)
+            decision = tick_result.decision
+            if decision.error:
+                finish = {
+                    "status": "stopped",
+                    "success": False,
+                    "summary": (
+                        f"Provider request failed safely at action {action_index}: "
+                        f"{decision.error.message}"
+                    ),
+                    "failureCategory": decision.error.category,
+                    "actionStarted": False,
+                    "checkpoint": checkpoint,
+                }
+                break
+            execution = tick_result.execution or {}
+            if execution.get("status") == "error":
+                error = execution.get("error")
+                error = error if isinstance(error, dict) else {}
+                finish = {
+                    "status": "failed",
+                    "success": False,
+                    "summary": str(
+                        execution.get("summary")
+                        or "Semantic tool execution failed after invocation."
+                    ),
+                    "failureCategory": str(error.get("category") or "execution_error"),
+                    "actionStarted": None,
+                    "actionStateKnown": False,
+                    "requiresCheckpointReconciliation": True,
+                    "checkpoint": checkpoint,
+                }
+                break
+            if decision.tool_call and decision.tool_call.name == "finish_run":
+                arguments = decision.tool_call.arguments
+                history.append(
+                    {
+                        "action": action_index,
+                        "skillId": "finish_run",
+                        "args": arguments,
+                        "plaintextReasoning": arguments.get("plaintextReasoning"),
+                        "result": {
+                            "skill_id": "finish_run",
+                            "status": "blocked",
+                            "summary": (
+                                "finish_run was rejected because the authoritative chapter goal "
+                                "is not satisfied."
+                            ),
+                            "evidence": [
+                                f"chapter_id={chapter_direction.chapter_id}",
+                                f"chapter_success={chapter_direction.success}",
+                            ],
+                            "warnings": ["premature_finish_rejected"],
+                        },
+                    }
+                )
+                continue
+            if selected_artifact:
+                history.append(
+                    {
+                        "action": action_index,
+                        "skillId": selected_artifact["skillId"],
+                        "args": selected_artifact["args"],
+                        "plaintextReasoning": (
+                            decision.tool_call.arguments.get("plaintextReasoning")
+                            if decision.tool_call
+                            else None
+                        ),
+                        "result": selected_artifact["result"],
+                    }
+                )
+        else:
+            finish = {
+                "status": "checkpoint",
+                "success": False,
+                "summary": f"Action budget checkpoint reached after {args.max_actions} actions.",
+                "failureCategory": None,
+                "stopReason": "action_budget",
+            }
+
+        final_screenshot, final_state, final_snapshot = support.save_current_artifacts(
+            pyboy,
+            run_dir,
+            "final",
+        )
+        if not args.no_video:
+            video_frame_index = support.append_video_frame(
+                final_screenshot,
+                video_frame_dir,
+                video_frame_index,
+            )
+    finally:
+        pyboy.stop(False)
+
+    if not args.no_video:
+        video_artifact = support.render_video_artifact(
+            run_dir=run_dir,
+            frame_dir=video_frame_dir,
+            output_dir=Path(args.video_output_dir),
+            run_id=run_id,
+            fps=max(args.video_fps, 1),
+        )
+        video_artifact.setdefault("warnings", []).extend(pathing_frame_warnings)
+
+    assert finish is not None and final_screenshot is not None and final_state is not None
+    report_path = run_dir / "report.json"
+    report = build_director_report(
+        run_id=run_id,
+        mode="chapter_segment",
+        provider=provider,
+        model=model,
+        goal=args.goal,
+        requests=director_requests,
+        ticks=ticks,
+        finish=finish,
+        history=history,
+        artifacts={
+            "reportPath": str(report_path),
+            "stateIn": str(state_in),
+            "finalScreenshot": str(final_screenshot),
+            "finalState": str(final_state),
+            "video": video_artifact,
+            "freshStartCleanRam": str(clean_ram_path) if args.fresh_start else None,
+        },
+        context={
+            "freshStart": bool(args.fresh_start),
+            "maxActions": args.max_actions,
+            "chapterTimeline": chapter_timeline,
+        },
+    )
+    report.update(
+        {
+            "stateIn": str(state_in),
+            "freshStart": bool(args.fresh_start),
+            "maxActions": args.max_actions,
+            "chapterTimeline": chapter_timeline,
+            "video": video_artifact,
+            "pathingFrameWarnings": pathing_frame_warnings,
+            "finalScreenshot": str(final_screenshot),
+            "finalState": str(final_state),
+            "finalSnapshot": final_snapshot,
+        }
+    )
+    report["checkpoint"] = interrogate_run_report(report)
+    (run_dir / "checkpoint.json").write_text(
+        json.dumps(report["checkpoint"], indent=2),
+        encoding="utf-8",
+    )
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(
+        json.dumps(
+            {
+                "report": str(report_path),
+                "provider": provider_id,
+                "model": model,
+                "finalScreenshot": str(final_screenshot),
+                "finalState": str(final_state),
+                "video": video_artifact,
+                "finish": finish,
+                "checkpoint": report["checkpoint"],
+                "actionsTaken": len(history),
+                "usage": report["usage"],
+            },
+            indent=2,
+        )
+    )
+    return 0 if report["checkpoint"].get("verdict") not in {"unsafe_state", "model_error"} else 1
+
+
+def default_model(provider_id: str) -> str:
+    if provider_id == "lmstudio-chat":
+        return DEFAULT_LOCAL_MODEL
+    if provider_id == "openai-responses":
+        return "gpt-5.4-nano"
+    return "deterministic-replay"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

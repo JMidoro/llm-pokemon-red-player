@@ -144,7 +144,7 @@ Long end-to-end runs remain useful smoke tests, but they should not be the only 
 
 To enact this operating model, build or update:
 
-- a run interrogator that reads `local_gemma_chapter_run_v1` reports;
+- a run interrogator that reads canonical `director_segment_run_v1` reports while accepting legacy `local_gemma_chapter_run_v1` artifacts;
 - checkpoint health classification separate from `finish.failureCategory`;
 - report fields such as `checkpoint`, `verdict`, `confidence`, `continueRecommended`, `reviewItems`, and `fallbackTaken`;
 - a "continue from last healthy or provisional checkpoint" workflow;

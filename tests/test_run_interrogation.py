@@ -5,7 +5,7 @@ from pokemon_player.run_interrogation import interrogate_run_report
 
 def base_report() -> dict:
     return {
-        "schema": "local_gemma_chapter_run_v1",
+        "schema": "director_segment_run_v1",
         "finish": {
             "status": "checkpoint",
             "success": False,
@@ -57,6 +57,7 @@ def test_action_budget_checkpoint_is_healthy_continue() -> None:
 
 def test_legacy_action_budget_failure_category_is_still_checkpoint() -> None:
     report = base_report()
+    report["schema"] = "local_gemma_chapter_run_v1"
     report["finish"] = {
         "status": "stopped",
         "success": False,
@@ -84,6 +85,27 @@ def test_model_error_is_not_continue_recommended() -> None:
     assert checkpoint["verdict"] == "model_error"
     assert checkpoint["continueRecommended"] is False
     assert checkpoint["fallbackTaken"] == ["retry_once_after_model_health_check_or_pivot"]
+
+
+def test_execution_error_requires_state_reconciliation() -> None:
+    report = base_report()
+    report["finish"] = {
+        "status": "failed",
+        "success": False,
+        "summary": "Semantic tool execution failed after invocation.",
+        "failureCategory": "execution_error",
+        "actionStarted": None,
+        "actionStateKnown": False,
+    }
+
+    checkpoint = interrogate_run_report(report)
+
+    assert checkpoint["verdict"] == "unsafe_state"
+    assert checkpoint["continueRecommended"] is False
+    assert "action_state_known=false" in checkpoint["evidence"]
+    assert checkpoint["fallbackTaken"] == [
+        "reconcile_or_reload_pre_provider_checkpoint"
+    ]
 
 
 def test_no_conscious_party_is_unsafe() -> None:

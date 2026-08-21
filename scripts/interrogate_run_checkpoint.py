@@ -14,8 +14,8 @@ from pokemon_player.run_interrogation import interrogate_run_report, load_report
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Classify a local Gemma run checkpoint.")
-    parser.add_argument("report", help="Path to a local_gemma_chapter_run_v1 report.json")
+    parser = argparse.ArgumentParser(description="Classify a Director segment checkpoint.")
+    parser.add_argument("report", help="Path to a director_segment_run_v1 report.json")
     parser.add_argument(
         "--write",
         action="store_true",
