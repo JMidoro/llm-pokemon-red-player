@@ -1,6 +1,6 @@
 # Milestone 3 Phase Contract: Durable Segment Supervisor
 
-Status: active implementation phase
+Status: complete; all Milestone 3 gates passed on 2026-08-21.
 
 ## Hypothesis
 

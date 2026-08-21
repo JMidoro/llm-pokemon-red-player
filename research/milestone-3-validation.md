@@ -1,6 +1,6 @@
 # Milestone 3 Validation Record
 
-Status: implementation gates passed; real eight-hour soak pending.
+Status: complete; all implementation, fault, diagnostics, restart, and real-wall-clock soak gates passed.
 
 ## Automated fault and diagnostics gate
 
@@ -26,6 +26,17 @@ The complete Python suite passes with 414 tests, repository validation passes, R
 
 These short runs validate the harness and restart mechanism. They do not substitute for the required real-wall-clock eight-hour soak.
 
-## Remaining completion gate
+## Real eight-hour soak gate
 
-Run `scripts/run_supervisor_soak.py --duration-seconds 28800 --restart-after-seconds 900`. Milestone 3 remains incomplete until its summary reports at least eight elapsed wall-clock hours and every soak check passes.
+Run: `research/artifacts/supervisor-soaks/milestone-3-eight-hour-9ce23d9/soak-summary.json`
+
+The final run exercised commit `9ce23d9` and passed every soak check:
+
+- 28,800.797 elapsed wall-clock seconds against a required 28,800 seconds.
+- 937 completed segments, with 937 complete artifact manifests and 937 machine-readable segment reasons.
+- The harness terminated the first supervisor during `segment-000030-a1`; its child process remained alive and replacement supervisor PID 18648 adopted the lineage.
+- All 937 segment IDs were unique and the recorded process intervals contained zero overlaps.
+- The harness observed no unexpected worker exit and the replacement supervisor exited successfully after the deadline.
+- The final stable checkpoint referenced `segment-000937-a1` and recorded `operator_stop_after_action` as its machine-readable reason.
+
+Together with the 24-of-24 diagnosability sample above, this supplies the required elapsed-time, restart, segment-count, concurrency, stop-reason, stable-artifact, and diagnostic evidence. Milestone 3 is complete.
