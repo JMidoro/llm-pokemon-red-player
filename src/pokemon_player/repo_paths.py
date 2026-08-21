@@ -50,8 +50,24 @@ def resolve_repo_path(
     if not raw:
         raise ValueError("Artifact path cannot be empty.")
 
-    relative_suffix = _repo_relative_suffix(raw)
     original = _as_native_absolute_path(raw)
+
+    if original is not None:
+        try:
+            _lexical_absolute(original).relative_to(root)
+            result = original
+        except ValueError:
+            result = _resolve_legacy_or_absolute(raw, root, original)
+    else:
+        result = _resolve_legacy_or_absolute(raw, root, original)
+
+    if must_exist and not result.exists():
+        raise FileNotFoundError(result)
+    return result
+
+
+def _resolve_legacy_or_absolute(raw: str, root: Path, original: Path | None) -> Path:
+    relative_suffix = _repo_relative_suffix(raw)
 
     if relative_suffix is not None:
         remapped = root.joinpath(*relative_suffix.parts)
@@ -64,9 +80,6 @@ def resolve_repo_path(
     else:
         normalized = raw.replace("\\", "/")
         result = root.joinpath(*PurePosixPath(normalized).parts)
-
-    if must_exist and not result.exists():
-        raise FileNotFoundError(result)
     return result
 
 
@@ -78,21 +91,23 @@ def portable_repo_path(value: str | Path, *, repo_root: str | Path | None = None
     if not raw:
         raise ValueError("Artifact path cannot be empty.")
 
+    original = _as_native_absolute_path(raw)
+    if original is not None:
+        try:
+            return _lexical_absolute(original).relative_to(root).as_posix()
+        except ValueError:
+            pass
+
     suffix = _repo_relative_suffix(raw)
     if suffix is not None:
         return suffix.as_posix()
-
-    original = _as_native_absolute_path(raw)
-    if original is None:
-        normalized = PurePosixPath(raw.replace("\\", "/"))
-        if ".." in normalized.parts:
-            raise ValueError(f"Repository path cannot escape the checkout: {value}")
-        return normalized.as_posix()
-
-    try:
-        return original.resolve().relative_to(root).as_posix()
-    except ValueError:
+    if original is not None:
         return str(original)
+
+    normalized = PurePosixPath(raw.replace("\\", "/"))
+    if ".." in normalized.parts:
+        raise ValueError(f"Repository path cannot escape the checkout: {value}")
+    return normalized.as_posix()
 
 
 def _looks_like_repo_root(path: Path) -> bool:
@@ -118,3 +133,9 @@ def _as_native_absolute_path(raw: str) -> Path | None:
         return Path(PureWindowsPath(raw))
     path = Path(raw).expanduser()
     return path if path.is_absolute() else None
+
+
+def _lexical_absolute(path: Path) -> Path:
+    """Normalize dot segments without following worktree artifact junctions."""
+
+    return Path(os.path.abspath(path))

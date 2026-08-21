@@ -38,7 +38,7 @@ These are the most relevant story/progression surfaces for chapter capsules.
 
 ## Chapter Tooling Notes
 
-- Prologue clean boot is represented in local runner tooling with `scripts/run_local_gemma_chapter.py --fresh-start`.
+- Prologue clean boot is represented in provider-neutral runner tooling with `scripts/run_chapter_segment.py --fresh-start`; `scripts/run_local_gemma_chapter.py` remains a local-Gemma compatibility command.
 - `complete_prologue` owns title menu navigation, Oak intro dialogue, player/rival name entry, and the Red's House 2F landing.
 - The default prologue handoff is `pallet_outside`, which saves intermediate `red_house_2f.state` / `red_house_2f.png` evidence and then uses Pallet navigation to exit Red's house at Pallet Town `map=0x00,x=5,y=6`.
 - The clean-boot WRAM snapshot is not semantically meaningful until the intro completes; use screenshots and the final handoff state as the trusted evidence.

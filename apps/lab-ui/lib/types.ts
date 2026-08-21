@@ -364,8 +364,14 @@ export type LlmDirectorStep = {
 };
 
 export type LlmDirectorRunResult = {
-  schema: "llm_director_run_v1";
-  status: "completed" | "stopped" | "error";
+  schema: "director_segment_run_v1";
+  status: "completed" | "checkpoint" | "stopped" | "failed" | "error";
+  provider?: {
+    provider?: string;
+    apiFamily?: string;
+    model?: string;
+    capabilities?: Record<string, boolean>;
+  };
   model: string;
   reasoningEffort?: string;
   goal: string;
@@ -380,7 +386,14 @@ export type LlmDirectorRunResult = {
   screenshotSent?: boolean;
   messageLimit?: number;
   requestMessages?: LlmDirectorChatMessage[];
-  openaiRequest?: Record<string, unknown>;
-  openaiUsage?: Record<string, number>;
+  requestSummary?: Record<string, unknown>;
+  usage?: {
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    cachedInputTokens?: number | null;
+    estimatedCostUsd?: number | null;
+  };
   error?: string;
 };

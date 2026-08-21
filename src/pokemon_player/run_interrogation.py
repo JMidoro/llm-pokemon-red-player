@@ -73,9 +73,43 @@ def interrogate_run_report(report: dict[str, Any]) -> dict[str, Any]:
         )
 
     failure_category = str(finish.get("failureCategory") or "")
+    if failure_category == "execution_error":
+        return _checkpoint(
+            verdict="unsafe_state",
+            confidence="high",
+            continue_recommended=False,
+            summary=(
+                "Semantic tool execution ended with unknown action state; reconcile from the "
+                "pre-provider checkpoint before continuing."
+            ),
+            evidence=evidence + ["action_state_known=false"],
+            review_items=[
+                _review_item(
+                    kind="execution_state_reconciliation",
+                    summary=(
+                        "Inspect the final state or reload the pre-provider checkpoint before "
+                        "another Director action."
+                    ),
+                    state_path=final_state,
+                    screenshot_path=final_screenshot,
+                )
+            ],
+            fallback_taken=["reconcile_or_reload_pre_provider_checkpoint"],
+        )
     if failure_category in {
         "local_llm_request_failed",
+        "authentication",
+        "connection",
+        "invalid_response",
+        "invalid_tool_arguments",
+        "missing_tool_call",
+        "multiple_tool_calls",
+        "provider_error",
+        "provider_unavailable",
+        "rate_limit",
+        "replay_exhausted",
         "text_response_without_tool",
+        "timeout",
         "no_tool_call",
         "no_choices",
         "unexpected_tool",

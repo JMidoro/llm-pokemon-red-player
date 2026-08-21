@@ -1,0 +1,26 @@
+{
+  "schema": "director_replay_v1",
+  "decisions": [
+    {
+      "toolCall": {
+        "name": "execute_skill",
+        "arguments": {
+          "skillId": "navigate_within_viridian_forest_region",
+          "args": {
+            "target": "forest_grass"
+          },
+          "plaintextReasoning": "The chapter hint and current position make forest grass the direct semantic target."
+        }
+      },
+      "assistantMessage": "I will navigate toward the Viridian Forest grass.",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0,
+        "estimatedCostUsd": 0.0
+      },
+      "responseId": "replay-frozen-scenario-v1",
+      "finishReason": "tool_call"
+    }
+  ]
+}
