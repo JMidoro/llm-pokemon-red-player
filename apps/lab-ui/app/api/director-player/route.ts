@@ -6,13 +6,14 @@ const directorPlayerUrl = process.env.DIRECTOR_PLAYER_URL || "http://127.0.0.1:8
 const allowedStateRoot = path.join(repoRoot, "research");
 
 type DirectorPlayerRequest = {
-  action?: "execute_skill" | "load_state" | "manual_input" | "capture_interpretation";
+  action?: "execute_skill" | "load_state" | "manual_input" | "capture_interpretation" | "diagnostic_mode";
   skillId?: string;
   args?: Record<string, unknown>;
   statePath?: string;
   button?: string;
   title?: string;
   description?: string;
+  enabled?: boolean;
 };
 
 export async function GET() {
@@ -42,6 +43,13 @@ export async function POST(request: Request) {
     return proxyJson(`${directorPlayerUrl}/manual-input`, {
       method: "POST",
       body: JSON.stringify({ button: body.button }),
+    });
+  }
+
+  if (body.action === "diagnostic_mode") {
+    return proxyJson(`${directorPlayerUrl}/diagnostic-mode`, {
+      method: "POST",
+      body: JSON.stringify({ enabled: Boolean(body.enabled) }),
     });
   }
 

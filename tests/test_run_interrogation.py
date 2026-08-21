@@ -71,6 +71,23 @@ def test_legacy_action_budget_failure_category_is_still_checkpoint() -> None:
     assert checkpoint["continueRecommended"] is True
 
 
+def test_operator_stop_is_a_safe_noncontinuing_checkpoint() -> None:
+    report = base_report()
+    report["finish"] = {
+        "status": "checkpoint",
+        "success": False,
+        "summary": "Operator requested a stop after the completed action.",
+        "failureCategory": None,
+        "stopReason": "operator_stop_after_action",
+    }
+
+    checkpoint = interrogate_run_report(report)
+
+    assert checkpoint["verdict"] == "healthy_needs_review"
+    assert checkpoint["continueRecommended"] is False
+    assert "operator_stop=operator_stop_after_action" in checkpoint["evidence"]
+
+
 def test_model_error_is_not_continue_recommended() -> None:
     report = base_report()
     report["finish"] = {
@@ -154,4 +171,3 @@ def test_repeated_blocked_results_are_stalled_loop() -> None:
 
     assert checkpoint["verdict"] == "stalled_loop"
     assert checkpoint["continueRecommended"] is False
-
