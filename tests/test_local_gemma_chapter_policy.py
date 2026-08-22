@@ -7,11 +7,30 @@ from scripts.run_local_gemma_chapter import (
     infer_missing_skill_args,
     normalize_selected_skill,
 )
+from scripts.chapter_segment_support import (
+    missing_skill_argument_result,
+    requested_success_reached,
+)
 from pokemon_player.chapter_direction import current_chapter_goal
 
 
 def enabled_ids(skills: list[dict[str, object]]) -> set[str]:
     return {str(skill["id"]) for skill in skills}
+
+
+def test_capsule_a_success_target_requires_pikachu_and_north_exit() -> None:
+    at_exit = {
+        "party": [{"species_name": "Pikachu"}],
+        "position": {"map_id": 0x33, "x": 1, "y": 0},
+    }
+    in_grass = {
+        "party": [{"species_name": "Pikachu"}],
+        "position": {"map_id": 0x33, "x": 28, "y": 43},
+    }
+    chapter = current_chapter_goal(in_grass)
+
+    assert requested_success_reached("capsule-a", at_exit, chapter)[0] is True
+    assert requested_success_reached("capsule-a", in_grass, chapter)[0] is False
 
 
 def available_skills() -> list[dict[str, object]]:
@@ -26,7 +45,9 @@ def available_skills() -> list[dict[str, object]]:
         {"id": "purchase_pokemart_item", "enabled": True},
         {"id": "recover_to_overworld", "enabled": True},
         {"id": "run_from_wild_battle", "enabled": True},
+        {"id": "talk_to_npc", "enabled": True},
         {"id": "use_move", "enabled": True},
+        {"id": "enter_grass_search_loop", "enabled": True},
     ]
 
 
@@ -40,11 +61,24 @@ def test_execute_move_alias_normalizes_to_use_move() -> None:
     assert args == {"move": "Tackle"}
 
 
-def test_use_move_infers_first_damaging_active_move() -> None:
+def test_use_move_does_not_replace_strategy_when_multiple_moves_are_usable() -> None:
     snapshot = {
         "active_party_member": {
             "moves": [
                 {"move_name": "Tail Whip", "pp": 30},
+                {"move_name": "Tackle", "pp": 35},
+            ]
+        }
+    }
+
+    assert default_active_battle_move(snapshot) is None
+
+
+def test_use_move_infers_the_only_usable_active_move() -> None:
+    snapshot = {
+        "active_party_member": {
+            "moves": [
+                {"move_name": "Tail Whip", "pp": 0},
                 {"move_name": "Tackle", "pp": 35},
             ]
         }
@@ -86,7 +120,27 @@ def test_pikachu_chapter_allows_attempt_catch_for_target_species_id() -> None:
 
     assert goal.chapter_id == "chapter_6_capsule_a_pikachu_catch"
     assert "attempt_catch" in enabled_ids(filtered)
-    assert notes == []
+    assert "run_from_wild_battle" not in enabled_ids(filtered)
+    assert any("chapter target" in note for note in notes)
+
+
+def test_target_encounter_keeps_run_available_when_active_hp_is_low() -> None:
+    snapshot = {
+        "mode": "battle",
+        "battle_type_raw": 1,
+        "position": {"map_id": 0x21, "x": 31, "y": 11},
+        "active_party_member": {"species_name": "Squirtle", "hp": 9, "max_hp": 21},
+        "party": [{"species_name": "Squirtle", "hp": 9, "max_hp": 21}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 15}],
+        "enemy": {"species_id": 0x05, "species_name": "Spearow"},
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal)
+
+    assert goal.chapter_id == "chapter_5b_route_22_spearow_catch"
+    assert "run_from_wild_battle" in enabled_ids(filtered)
+    assert any("below 50% HP" in note for note in notes)
 
 
 def test_route_22_chapter_suppresses_attempt_catch_for_non_spearow() -> None:
@@ -141,9 +195,66 @@ def test_acquire_poke_balls_suppresses_noop_mart_counter_navigation() -> None:
     filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal)
 
     assert goal.chapter_id == "chapter_5_acquire_poke_balls"
-    assert enabled_ids(filtered) == {"advance_dialogue", "literal_button_press", "purchase_pokemart_item"}
+    assert enabled_ids(filtered) == {"talk_to_npc"}
     assert "navigate_within_pallet_region" not in enabled_ids(filtered)
     assert notes
+
+
+def test_brock_checkpoint_exposes_only_semantic_npc_interaction() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x36, "x": 5, "y": 1},
+        "party": [
+            {
+                "species_name": "Squirtle",
+                "hp": 41,
+                "max_hp": 41,
+                "status": 0,
+                "moves": [{"move_name": "Bubble"}],
+            },
+            {"species_name": "Pikachu", "hp": 20, "max_hp": 20, "status": 0},
+        ],
+        "inventory": [],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal)
+    args = infer_missing_skill_args("talk_to_npc", {}, goal, snapshot)
+
+    assert goal.chapter_id == "chapter_7_defeat_brock"
+    assert enabled_ids(filtered) == {"talk_to_npc"}
+    assert args == {"target": "brock"}
+    assert any("already at brock" in note for note in notes)
+
+
+def test_brock_checkpoint_hands_active_dialogue_to_advance_skill() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x36, "x": 5, "y": 1},
+        "party": [
+            {
+                "species_name": "Squirtle",
+                "hp": 41,
+                "max_hp": 41,
+                "status": 0,
+                "moves": [{"move_name": "Bubble"}],
+            },
+            {"species_name": "Pikachu", "hp": 20, "max_hp": 20, "status": 0},
+        ],
+        "inventory": [],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+    available = [skill for skill in available_skills() if skill["id"] != "talk_to_npc"]
+
+    filtered, notes = apply_chapter_skill_policy(available, snapshot, goal)
+
+    assert goal.chapter_id == "chapter_7_defeat_brock"
+    assert enabled_ids(filtered) == {"advance_dialogue"}
+    assert any("already started" in note for note in notes)
 
 
 def test_level_for_brock_policy_notes_healing_priority() -> None:
@@ -227,6 +338,87 @@ def test_route_22_spearow_uses_grass_after_viridian_checkpoint() -> None:
     assert enabled_ids(filtered) == enabled_ids(available_skills())
     assert nav_args == {"target": "route_22_grass"}
     assert notes == []
+
+
+def test_capsule_a_chapter_start_inside_forest_does_not_backtrack_for_checkpoint() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x33, "x": 28, "y": 43},
+        "party": [{"species_name": "Squirtle", "hp": 20, "max_hp": 20, "status": 0}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 5}],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=[])
+
+    assert goal.chapter_id == "chapter_6_capsule_a"
+    assert enabled_ids(filtered) == {"enter_grass_search_loop"}
+    assert any("navigation to the patch is complete" in note for note in notes)
+
+
+def test_route_22_grass_hands_off_from_navigation_to_encounter_search() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x21, "x": 33, "y": 11},
+        "party": [{"species_name": "Squirtle", "hp": 20, "max_hp": 20, "status": 0}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 15}],
+        "badge_names": [],
+    }
+    history = [
+        {
+            "skillId": "heal_at_pokecenter",
+            "result": {"status": "succeeded", "evidence": ["position=map=0x29,x=3,y=4"]},
+        }
+    ]
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=history)
+
+    assert goal.chapter_id == "chapter_5b_route_22_spearow"
+    assert enabled_ids(filtered) == {"enter_grass_search_loop"}
+    assert any("navigation to the patch is complete" in note for note in notes)
+
+
+def test_route_22_position_preserves_checkpoint_across_supervisor_segments() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x21, "x": 33, "y": 11},
+        "party": [{"species_name": "Squirtle", "hp": 20, "max_hp": 20, "status": 0}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 15}],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=[])
+
+    assert goal.chapter_id == "chapter_5b_route_22_spearow"
+    assert enabled_ids(filtered) == {"enter_grass_search_loop"}
+    assert all("PokeCenter checkpoint" not in note for note in notes)
+
+
+def test_spearow_catch_at_route_22_preserves_checkpoint_for_next_segment() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x21, "x": 31, "y": 11},
+        "party": [
+            {"species_name": "Squirtle", "hp": 19, "max_hp": 22, "status": 0},
+            {"species_name": "Spearow", "hp": 8, "max_hp": 16, "status": 0},
+        ],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 13}],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=[])
+
+    assert goal.chapter_id == "chapter_6_capsule_a"
+    assert "navigate_within_viridian_forest_region" in enabled_ids(filtered)
+    assert all("PokeCenter checkpoint" not in note for note in notes)
 
 
 def test_level_for_brock_training_battle_suppresses_running_and_catching() -> None:
@@ -402,3 +594,11 @@ def test_normalize_selected_skill_unwraps_nested_execute_skill_payload() -> None
 
     assert skill_id == "navigate_within_viridian_forest_region"
     assert args == {"target": "forest_north_exit"}
+
+
+def test_missing_required_semantic_argument_is_rejected_before_input() -> None:
+    result = missing_skill_argument_result("switch_party_member", "target")
+
+    assert result["actionStarted"] is False
+    assert result["status"] == "blocked"
+    assert "action_started=false" in result["evidence"]

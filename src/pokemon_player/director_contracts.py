@@ -117,6 +117,7 @@ class DirectorRequest:
     max_history: int = 20
     reasoning_effort: str | None = None
     temperature: float | None = None
+    seed: int | None = None
     max_output_tokens: int = 1400
     runtime_instructions: tuple[str, ...] = ()
     metadata: JsonObject = field(default_factory=dict)
@@ -142,6 +143,7 @@ class DirectorRequest:
             "actionHistoryCount": min(len(self.action_history), history_limit),
             "imageRequested": self.screenshot_path is not None,
             "reasoningEffort": self.reasoning_effort,
+            "seed": self.seed,
             "maxOutputTokens": self.max_output_tokens,
             "checkpoint": self.metadata.get("checkpoint"),
         }

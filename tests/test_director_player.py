@@ -53,7 +53,8 @@ def test_director_availability_enables_grass_search_but_not_catch_in_overworld()
     assert by_id(skills, "enter_grass_search_loop")["enabled"] is True
     assert by_id(skills, "attempt_catch")["enabled"] is False
     literal = by_id(skills, "literal_button_press")
-    assert literal["enabled"] is True
+    assert literal["enabled"] is False
+    assert "operator-only" in literal["reason"]
     assert literal["params"]["buttons"] == ["a", "b", "up", "down", "left", "right", "start", "select"]
 
 
@@ -174,12 +175,13 @@ def test_operations_pause_blocks_director_game_actions(tmp_path: Path) -> None:
         raise AssertionError("Paused Operations state must block Director actions")
 
 
-def test_director_availability_prioritizes_battle_dialogue_recovery() -> None:
+def test_director_availability_prioritizes_bounded_battle_dialogue_recovery() -> None:
     record = load_record("step_01_wild_battle_in_approved_grass")
 
     skills = skill_availability(record["snapshot"], Path(record["screenshot_file"]))
 
-    assert by_id(skills, "advance_battle_dialogue")["enabled"] is True
+    assert by_id(skills, "advance_battle_dialogue")["enabled"] is False
+    assert by_id(skills, "resolve_battle_outcome_dialogue_bundle")["enabled"] is True
     assert by_id(skills, "attempt_catch")["enabled"] is False
     assert by_id(skills, "use_move")["enabled"] is False
     assert by_id(skills, "enter_grass_search_loop")["enabled"] is False
@@ -222,12 +224,13 @@ def test_party_target_normalizer_accepts_llm_target_option_object() -> None:
     assert normalize_party_target_arg("Squirtle") == "Squirtle"
 
 
-def test_director_availability_enables_battle_dialogue_recovery_during_battle_text() -> None:
+def test_director_availability_prefers_bounded_outcome_bundle_during_battle_text() -> None:
     record = load_skill_record("attempt_catch", "uncertain_throw_dialogue")
 
     skills = skill_availability(record["snapshot"], Path(record["screenshot_file"]))
 
-    assert by_id(skills, "advance_battle_dialogue")["enabled"] is True
+    assert by_id(skills, "advance_battle_dialogue")["enabled"] is False
+    assert by_id(skills, "resolve_battle_outcome_dialogue_bundle")["enabled"] is True
     assert "battle-dialogue-advancement-contract" in by_id(skills, "advance_battle_dialogue")["params"][
         "requiredPromotions"
     ]
@@ -240,7 +243,8 @@ def test_director_availability_enables_battle_outcome_bundle_on_aftermath_text()
     bundle = by_id(skills, "resolve_battle_outcome_dialogue_bundle")
 
     assert bundle["enabled"] is True
-    assert bundle["params"]["execution"] == "single_a_press"
+    assert bundle["params"]["execution"] == "bounded_dialogue_bundle"
+    assert bundle["params"]["maxInputs"] == 16
 
 
 def test_director_availability_does_not_auto_advance_forced_party_selection() -> None:
@@ -416,6 +420,23 @@ def test_director_informational_events_report_party_move_changes() -> None:
 
     assert events
     assert "Water Gun" in events[0][0]
+
+
+def test_director_informational_events_report_evolution_as_party_change() -> None:
+    before = {
+        "mode": "battle",
+        "battle_type_raw": 1,
+        "party": [{"slot": 1, "species_id": 123, "species_name": "Caterpie", "nickname": "CATERPIE"}],
+    }
+    after = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "party": [{"slot": 1, "species_id": 124, "species_name": "Metapod", "nickname": "CATERPIE"}],
+    }
+
+    events = informative_snapshot_events(before, after)
+
+    assert any("evolved from Caterpie into Metapod" in summary for summary, _ in events)
 
 
 def test_director_informational_events_report_battle_started() -> None:

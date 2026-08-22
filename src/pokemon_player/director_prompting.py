@@ -79,11 +79,12 @@ def build_director_instructions(request: DirectorRequest) -> str:
         "Choose high-level semantic Pokemon skills; do not emit raw controller sequences.",
         "Preserve strategic agency while obeying the supplied safety and rules context.",
         "Never invent skills or arguments that are not present in enabledSkills.",
-        "Prefer semantic skills over literal_button_press whenever a semantic option exists.",
         "Every execute_skill call must include concise plaintextReasoning.",
         "For use_move pass a move name or id, not the full option object.",
         "For switch_party_member pass a slot, nickname, or species, not an option object.",
         "For handle_nickname_prompt pass choice=accept or choice=decline.",
+        "For handle_move_learning_prompt pass choice=skip, or choice=replace with forgetMove.",
+        "For handle_trainer_switch_prompt pass choice=keep, or choice=switch with a target party member.",
         "For enter_nickname_text pass uppercase A-Z text of at most ten characters.",
     ]
     lines.extend(instruction for instruction in request.runtime_instructions if instruction.strip())

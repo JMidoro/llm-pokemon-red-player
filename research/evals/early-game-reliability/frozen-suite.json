@@ -1,0 +1,102 @@
+{
+  "schema": "milestone_5_evaluation_suite_v1",
+  "frozenAtUtc": "2026-08-21T19:13:12.6457061Z",
+  "status": "frozen_before_model_evaluation",
+  "providerProfile": {
+    "provider": "lmstudio-chat",
+    "model": "google/gemma-4-e4b",
+    "temperature": 0.1,
+    "seedPolicy": "first inference seed plus zero-based action index",
+    "hostedInferenceAllowed": false
+  },
+  "romProfile": {
+    "title": "POKEMON RED",
+    "sizeBytes": 1048576,
+    "sha256": "5CA7BA01642A3B27B0CC0B5349B52792795B62D3ED977E98A09390659AF96B7B"
+  },
+  "capsuleA": {
+    "capsuleId": "viridian_forest_catching",
+    "ruleset": "research/rulesets/standard-run-v1.json",
+    "requiredSuccesses": 4,
+    "caseCount": 5,
+    "successPredicate": "Pikachu was absent initially, is owned at completion, the player reached the Viridian Forest north exit or north gate after ownership, no blackout occurred, and the final state is inspectable.",
+    "cases": [
+      {
+        "id": "capsule-a-01-forest-search-nidoran",
+        "variantId": "viridian_forest_catching_valid_01",
+        "statePath": "research/artifacts/m5-evals/frozen-start-candidates/viridian_forest_catching/valid/viridian_forest_catching_valid_01.state",
+        "stateSha256": "f8fc6b96c5567fa0dba6e81855ed3ad689843cccba1cdddca38d5359453ddc9a",
+        "snapshotHash": "e85ebf213b92b8e8260c57dc7417cde6c8290be299aad4a0e9c3500e5f95ddb3",
+        "firstInferenceSeed": 5201
+      },
+      {
+        "id": "capsule-a-02-active-weedle-battle",
+        "variantId": "viridian_forest_catching_valid_03",
+        "statePath": "research/artifacts/m5-evals/frozen-start-candidates/viridian_forest_catching/valid/viridian_forest_catching_valid_03.state",
+        "stateSha256": "2d6d2c9608aa18ca3e092b1a5b71a59e49590e1e802f6360d2987999af4c0926",
+        "snapshotHash": "ae1999789c8650f76d475a7ea60dff8f8991009a908aaa1a18a656b294f33dbf",
+        "firstInferenceSeed": 5202
+      },
+      {
+        "id": "capsule-a-03-weakened-pikachu",
+        "variantId": "viridian_forest_catching_valid_10",
+        "statePath": "research/artifacts/m5-evals/frozen-start-candidates/viridian_forest_catching/valid/viridian_forest_catching_valid_10.state",
+        "stateSha256": "40be9142dc74056573ad4ee9a6a9a1b3c8dac670fe002c9410806f168162590e",
+        "snapshotHash": "c92155644c564c48eab42ffa40eb42a1879a75d43dd66c2339ed4079764d1036",
+        "firstInferenceSeed": 5203
+      },
+      {
+        "id": "capsule-a-04-forest-search-butterfree",
+        "variantId": "viridian_forest_catching_valid_16",
+        "statePath": "research/artifacts/m5-evals/frozen-start-candidates/viridian_forest_catching/valid/viridian_forest_catching_valid_16.state",
+        "stateSha256": "de111b36197cd95c950efdb23ffb2c90098a3281425dab9c2106ff9738decb20",
+        "snapshotHash": "9c29aa0ddaaf0d7207703a641b84d3ad0ea62e42e658b8306a03ddd9cc52958e",
+        "firstInferenceSeed": 5204
+      },
+      {
+        "id": "capsule-a-05-south-gate",
+        "variantId": "viridian_forest_catching_valid_17",
+        "statePath": "research/artifacts/m5-evals/frozen-start-candidates/viridian_forest_catching/valid/viridian_forest_catching_valid_17.state",
+        "stateSha256": "fdc31f776bc32b2d4a9b7d3a2c0abc0012add1f3a93034f4a705bb71c6780929",
+        "snapshotHash": "b374a8e3e4451725790c828f78f8fa8741f31e4412b8eed122f36e1cf10de63e",
+        "firstInferenceSeed": 5205
+      }
+    ]
+  },
+  "cleanBootBoulder": {
+    "ruleset": "research/rulesets/stream-nuzlocke-v1.json",
+    "bootstrapStatePath": "research/golden-states/local/boot_smoke.state",
+    "requiredSuccesses": 7,
+    "caseCount": 10,
+    "freshStart": true,
+    "successPredicate": "Boulder Badge is observed, the lineage is not game over, the final state is inspectable, and no human gameplay input occurred.",
+    "cases": [
+      {"id": "clean-boot-boulder-01", "firstInferenceSeed": 5301},
+      {"id": "clean-boot-boulder-02", "firstInferenceSeed": 5302},
+      {"id": "clean-boot-boulder-03", "firstInferenceSeed": 5303},
+      {"id": "clean-boot-boulder-04", "firstInferenceSeed": 5304},
+      {"id": "clean-boot-boulder-05", "firstInferenceSeed": 5305},
+      {"id": "clean-boot-boulder-06", "firstInferenceSeed": 5306},
+      {"id": "clean-boot-boulder-07", "firstInferenceSeed": 5307},
+      {"id": "clean-boot-boulder-08", "firstInferenceSeed": 5308},
+      {"id": "clean-boot-boulder-09", "firstInferenceSeed": 5309},
+      {"id": "clean-boot-boulder-10", "firstInferenceSeed": 5310}
+    ]
+  },
+  "crossSuiteGates": {
+    "maxExecutedIllegalActions": 0,
+    "maxDestructiveActions": 0,
+    "minimumUsefulFailureRate": 0.95,
+    "humanGameplayInterventions": 0
+  },
+  "excludedFromFinalHeldout": [
+    {
+      "id": "historical-capsule-a-south-gate",
+      "reason": "Its observed run exposed the navigation no-op used for tuning."
+    },
+    {
+      "id": "pikachu-catch-nickname-gemma-01",
+      "reason": "This was a model-driven tuning run used to repair transient post-catch ledger reconciliation."
+    }
+  ]
+}

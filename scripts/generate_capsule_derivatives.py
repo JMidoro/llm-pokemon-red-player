@@ -34,11 +34,24 @@ def main() -> int:
     parser.add_argument("--out-root", default=str(OUT_ROOT))
     parser.add_argument("--per-capsule-valid", type=int, default=25)
     parser.add_argument("--per-capsule-degraded", type=int, default=5)
+    parser.add_argument(
+        "--capsule",
+        action="append",
+        choices=("viridian_forest_catching", "cerulean_misty"),
+        help="Generate only the selected capsule; may be supplied more than once.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
     rom = fingerprint_rom(args.rom)
     variants = capsule_variants(args.per_capsule_valid, args.per_capsule_degraded)
+    if args.capsule:
+        selected_capsules = set(args.capsule)
+        variants = [
+            variant
+            for variant in variants
+            if variant["capsule_id"] in selected_capsules
+        ]
     generated = []
     failed = []
 
@@ -182,7 +195,6 @@ def viridian_variants(valid_count: int, degraded_count: int) -> list[dict[str, A
     leads = [
         ("Nidoran M", 8, 26, ["Leer", "Tackle", "Horn Attack"]),
         ("Squirtle", 9, 29, ["Tackle", "Tail Whip", "Bubble"]),
-        ("Pikachu", 9, 26, ["ThunderShock", "Growl", "Thunder Wave"]),
         ("Spearow", 7, 22, ["Peck", "Growl"]),
         ("Butterfree", 10, 35, ["Tackle", "String Shot"]),
     ]

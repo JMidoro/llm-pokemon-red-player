@@ -117,9 +117,13 @@ def navigate_within_pallet_region(
     if at_pallet_landmark(position, landmark):
         return SkillResult(
             skill_id=SKILL_ID,
-            status="succeeded",
-            summary=f"Player is at {landmark.label}.",
-            evidence=evidence,
+            status="succeeded" if before_snapshot is not None else "blocked",
+            summary=(
+                f"Navigation reached {landmark.label}."
+                if before_snapshot is not None
+                else f"Player is already at {landmark.label}; choose the next semantic action."
+            ),
+            evidence=evidence + (("navigation_noop=true",) if before_snapshot is None else ()),
             warnings=warnings,
         )
 

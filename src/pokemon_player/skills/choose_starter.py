@@ -15,6 +15,7 @@ STARTER_SPECIES = {
     "charmander": "Charmander",
     "squirtle": "Squirtle",
 }
+OAKS_LAB_STARTER_HANDOFF = (0x28, 5, 3)
 
 
 def choose_starter(
@@ -75,11 +76,35 @@ def choose_starter(
         )
 
     visual = inspect_ui_visual_state(screenshot_path)
-    if visual.bottom_text_box or snapshot.get("mode") in {"overworld", "dialogue", "menu_or_dialogue_uncertain"}:
+    map_id, expected_x, expected_y = OAKS_LAB_STARTER_HANDOFF
+    if (
+        position.get("map_id") != map_id
+        or position.get("x") != expected_x
+        or position.get("y") != expected_y
+        or snapshot.get("mode") != "overworld"
+        or visual.bottom_text_box
+    ):
+        return SkillResult(
+            skill_id=SKILL_ID,
+            status="blocked",
+            summary=(
+                "Starter selection requires the stable Oak's Lab starter-table handoff at "
+                "map 0x28, x=5, y=3 with no dialogue visible."
+            ),
+            evidence=evidence
+            + (
+                f"visual_bottom_text_box={visual.bottom_text_box}",
+                f"visual_upper_menu={visual.upper_menu}",
+                f"required_position=map=0x{map_id:02X},x={expected_x},y={expected_y}",
+            ),
+            warnings=warnings,
+        )
+
+    if snapshot.get("mode") == "overworld":
         return SkillResult(
             skill_id=SKILL_ID,
             status="succeeded",
-            summary=f"{STARTER_SPECIES[normalized]} can be selected from Oak's Lab starter surface.",
+            summary=f"{STARTER_SPECIES[normalized]} can be selected from Oak's Lab starter-table handoff.",
             evidence=evidence
             + (
                 f"visual_bottom_text_box={visual.bottom_text_box}",
@@ -88,17 +113,7 @@ def choose_starter(
             warnings=warnings,
         )
 
-    return SkillResult(
-        skill_id=SKILL_ID,
-        status="uncertain",
-        summary="Oak's Lab is active, but the starter selection surface is not clearly visible.",
-        evidence=evidence
-        + (
-            f"visual_bottom_text_box={visual.bottom_text_box}",
-            f"visual_upper_menu={visual.upper_menu}",
-        ),
-        warnings=warnings,
-    )
+    raise AssertionError("unreachable starter precondition state")
 
 
 def classify_choose_starter_result(
@@ -112,17 +127,29 @@ def classify_choose_starter_result(
     before_party = party_species(before_snapshot)
     after_party = party_species(snapshot)
     expected = STARTER_SPECIES[starter]
+    story_events = snapshot.get("story_events") if isinstance(snapshot.get("story_events"), Mapping) else {}
+    starter_handoff_complete = story_events.get("got_starter") is True
     evidence = evidence + (
         "before_party=" + ",".join(before_party),
         "after_party=" + ",".join(after_party),
         f"expected_species={expected}",
+        f"got_starter={starter_handoff_complete}",
     )
+
+    if expected in after_party and expected not in before_party and starter_handoff_complete:
+        return SkillResult(
+            skill_id=SKILL_ID,
+            status="succeeded",
+            summary=f"{expected} was added to the party and the starter handoff completed.",
+            evidence=evidence,
+            warnings=warnings,
+        )
 
     if expected in after_party and expected not in before_party:
         return SkillResult(
             skill_id=SKILL_ID,
-            status="succeeded",
-            summary=f"{expected} was added to the party.",
+            status="uncertain",
+            summary=f"{expected} entered the party, but Oak's starter handoff is still active.",
             evidence=evidence,
             warnings=warnings,
         )

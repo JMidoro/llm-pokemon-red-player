@@ -30,8 +30,8 @@ from pokemon_player.capsule_a_navigation import (
     Position,
     approved_grass_patch_for_map,
     approved_grass_patch_for_position,
-    at_landmark,
     is_allowed_position,
+    navigation_goal_reached,
     resolve_landmark,
     resolve_grass_patch,
     snapshot_position,
@@ -72,6 +72,16 @@ from pokemon_player.skills.handle_nickname_prompt import (
     screenshot_has_nickname_intro_dialogue,
     screenshot_has_nickname_prompt,
 )
+from pokemon_player.skills.handle_move_learning_prompt import (
+    MoveLearningChoice,
+    handle_move_learning_prompt,
+    move_options as move_learning_options,
+    resolve_move as resolve_move_learning_target,
+)
+from pokemon_player.skills.handle_trainer_switch_prompt import (
+    TrainerSwitchChoice,
+    handle_trainer_switch_prompt,
+)
 from pokemon_player.skills.heal_at_pokecenter import heal_at_pokecenter, party_fully_healed
 from pokemon_player.skills.navigate_within_viridian_forest_region import (
     navigate_within_viridian_forest_region,
@@ -98,6 +108,7 @@ from pokemon_player.skills.purchase_pokemart_item import (
 )
 from pokemon_player.skills.run_from_wild_battle import run_from_wild_battle
 from pokemon_player.skills.switch_party_member import resolve_target_member, switch_party_member
+from pokemon_player.skills.talk_to_npc import interaction_buttons, talk_to_npc
 from pokemon_player.skills.use_move import active_party_member, move_slot, resolve_requested_move, use_move
 from pokemon_player.skills.visual_state import inspect_ui_visual_state
 from pokemon_player.skills.walk_local_direction import Direction, walk_local_direction
@@ -199,6 +210,7 @@ def execute_attempt_catch(
             "throw_executor": throw_executor,
             "battle_menu_policy": str(battle_menu_policy) if battle_menu_policy else None,
             "battle_menu_max_steps": battle_menu_max_steps,
+            "max_wait_frames": max_wait_frames,
             "render": render,
             "emulation_speed": emulation_speed,
         },
@@ -216,7 +228,10 @@ def execute_attempt_catch(
         ],
     }
 
-    initial_result = attempt_catch(snapshot_to_dict(before))
+    initial_result = attempt_catch(
+        snapshot_to_dict(before),
+        screenshot_path=before_screenshot_path,
+    )
     execution["initial_result"] = initial_result.to_dict()
     if initial_result.status == "blocked":
         trace: list[ButtonInput] = []
@@ -305,21 +320,22 @@ def execute_attempt_catch(
             )
             report_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
             return SkillRunArtifact(run_dir=run_dir, report_path=report_path, result=result)
-        after = snapshot(pyboy)
-        save_screenshot(pyboy, after_screenshot_path)
-        result = SkillResult(
-            skill_id="attempt_catch",
-            status="succeeded",
-            summary="A Poke Ball item was selected; the catch attempt was initiated.",
-            evidence=(
-                f"throw_executor={throw_executor}",
-                f"throw_status={throw_artifact.status}",
-                f"throw_summary={throw_artifact.summary}",
-            ),
+        after = wait_for_attempt_catch_outcome(
+            pyboy,
+            before_snapshot=snapshot_to_dict(before),
+            screenshot_path=after_screenshot_path,
+            trace=trace,
+            render=render,
+            max_wait_frames=max_wait_frames,
+        )
+        result = attempt_catch(
+            snapshot_to_dict(after),
+            before_snapshot=snapshot_to_dict(before),
+            screenshot_path=after_screenshot_path,
         )
         execution["timeline"].append(
             {
-                "event": "attempt_initiated_result",
+                "event": "critic_result",
                 "status": result.status,
                 "summary": result.summary,
             }
@@ -730,7 +746,10 @@ def execute_advance_dialogue(
             }
         )
     else:
-        step = ButtonInput("a", hold_frames=8, settle_frames=90)
+        # Trainer-battle fades can outlast an ordinary dialogue redraw. Waiting
+        # here is input-free and prevents the next Director tick from seeing a
+        # transient black frame as stable overworld control.
+        step = ButtonInput("a", hold_frames=8, settle_frames=240)
         trace.append(step)
         run_timed_trace(pyboy, [step], render=render)
         after = snapshot(pyboy)
@@ -848,11 +867,25 @@ def execute_advance_battle_dialogue(
             max_inputs=max_inputs,
         )
         save_screenshot(pyboy, after_screenshot_path)
-        result = advance_battle_dialogue(
-            snapshot_to_dict(after),
-            before_snapshot=before_dict,
-            screenshot_path=after_screenshot_path,
-        )
+        if inspect_ui_visual_state(after_screenshot_path).compact_choice:
+            result = SkillResult(
+                skill_id="advance_battle_dialogue",
+                status="succeeded",
+                summary=(
+                    "Battle dialogue advanced to a compact choice prompt; "
+                    "the Director must choose the response."
+                ),
+                evidence=(
+                    f"before_mode={before_dict.get('mode')}",
+                    "stop_surface=compact_choice",
+                ),
+            )
+        else:
+            result = advance_battle_dialogue(
+                snapshot_to_dict(after),
+                before_snapshot=before_dict,
+                screenshot_path=after_screenshot_path,
+            )
         execution["timeline"].append(
             {
                 "event": "critic_result",
@@ -981,6 +1014,20 @@ def execute_choose_starter(
                 max_wait_frames=max_wait_frames,
                 render=render,
             )
+        after, handoff_trace = wait_for_starter_acquisition_handoff(
+            pyboy,
+            screenshot_path=after_screenshot_path,
+            max_wait_frames=max_wait_frames,
+            render=render,
+        )
+        trace.extend(handoff_trace)
+        execution["timeline"].append(
+            {
+                "event": "starter_acquisition_handoff_resolved",
+                "dialogue_inputs": len(handoff_trace),
+                "got_starter": snapshot_to_dict(after).get("story_events", {}).get("got_starter"),
+            }
+        )
         save_screenshot(pyboy, after_screenshot_path)
         result = choose_starter(
             snapshot_to_dict(after),
@@ -1051,19 +1098,144 @@ def execute_resolve_battle_outcome_dialogue_bundle(
     render: bool = False,
     post_load_settle_frames: int = 60,
     emulation_speed: int = 0,
+    max_inputs: int = 32,
 ) -> SkillRunArtifact:
-    return execute_single_button_skill(
-        pyboy,
-        skill_id="resolve_battle_outcome_dialogue_bundle",
-        runner=resolve_battle_outcome_dialogue_bundle,
-        button="a",
-        state_in=state_in,
-        rom=rom,
-        run_root=run_root,
-        render=render,
-        post_load_settle_frames=post_load_settle_frames,
-        emulation_speed=emulation_speed,
+    configure_skill_emulation(pyboy, emulation_speed)
+    skill_id = "resolve_battle_outcome_dialogue_bundle"
+    run_dir = make_run_dir(run_root, skill_id)
+    before_state_path = run_dir / "before.state"
+    after_state_path = run_dir / "after.state"
+    before_screenshot_path = run_dir / "before.png"
+    after_screenshot_path = run_dir / "after.png"
+    trace_path = run_dir / "trace.json"
+    report_path = run_dir / "report.json"
+
+    load_state(pyboy, state_in)
+    pyboy.tick(post_load_settle_frames, render)
+    before = snapshot(pyboy)
+    before_dict = snapshot_to_dict(before)
+    save_state(pyboy, before_state_path)
+    save_screenshot(pyboy, before_screenshot_path)
+    trace: list[ButtonInput] = []
+    execution: dict[str, Any] = {
+        "schema": "skill_execution_v1",
+        "skill_id": skill_id,
+        "executor": {
+            "button": "a",
+            "render": render,
+            "emulation_speed": emulation_speed,
+            "max_inputs": max_inputs,
+            "stop_condition": (
+                "battle ended, action menu, party/choice surface, unclassified UI, or input budget"
+            ),
+        },
+        "timeline": [
+            {
+                "event": "skill_call_started",
+                "skill_id": skill_id,
+                "state_in": str(state_in),
+            },
+            {
+                "event": "initial_snapshot",
+                "snapshot_hash": snapshot_hash(before),
+                "screenshot_file": str(before_screenshot_path),
+            },
+        ],
+    }
+    initial_result = resolve_battle_outcome_dialogue_bundle(
+        before_dict,
+        screenshot_path=before_screenshot_path,
     )
+    execution["initial_result"] = initial_result.to_dict()
+    after = before
+    result = initial_result
+
+    if initial_result.status != "succeeded":
+        execution["timeline"].append(
+            {
+                "event": "skill_not_executed",
+                "status": initial_result.status,
+                "reason": initial_result.summary,
+            }
+        )
+    else:
+        max_inputs = max(1, int(max_inputs))
+        for input_index in range(1, max_inputs + 1):
+            step = ButtonInput("a", hold_frames=8, settle_frames=180)
+            trace.append(step)
+            run_timed_trace(pyboy, [step], render=render)
+            after = snapshot(pyboy)
+            after_dict = snapshot_to_dict(after)
+            save_screenshot(pyboy, after_screenshot_path)
+            current_result = resolve_battle_outcome_dialogue_bundle(
+                after_dict,
+                screenshot_path=after_screenshot_path,
+            )
+            ui_kind = inspect_battle_ui_screenshot(after_screenshot_path).kind
+            execution["timeline"].append(
+                {
+                    "event": "dialogue_advance",
+                    "input": input_index,
+                    "battle_active": (
+                        after_dict.get("mode") == "battle"
+                        and after_dict.get("battle_type_raw") not in {None, 0}
+                    ),
+                    "battle_ui": ui_kind,
+                    "status": current_result.status,
+                    "summary": current_result.summary,
+                }
+            )
+
+            if after_dict.get("mode") != "battle" or after_dict.get("battle_type_raw") in {None, 0}:
+                result = resolve_battle_outcome_dialogue_bundle(
+                    after_dict,
+                    before_snapshot=before_dict,
+                    screenshot_path=after_screenshot_path,
+                )
+                break
+            if ui_kind == "action_menu":
+                result = SkillResult(
+                    skill_id=skill_id,
+                    status="succeeded",
+                    summary="Battle outcome dialogue advanced to the next tactical action menu.",
+                    evidence=(f"inputs_sent={len(trace)}", "stop_surface=action_menu"),
+                    warnings=tuple(str(item) for item in after_dict.get("warnings", ())),
+                )
+                break
+            if current_result.status != "succeeded":
+                result = current_result
+                break
+            result = current_result
+        else:
+            result = SkillResult(
+                skill_id=skill_id,
+                status="uncertain",
+                summary="Battle outcome dialogue reached the bounded input budget before a decision surface.",
+                evidence=(f"inputs_sent={len(trace)}", "stop_surface=input_budget"),
+                warnings=tuple(str(item) for item in snapshot_to_dict(after).get("warnings", ())),
+            )
+
+    save_state(pyboy, after_state_path)
+    if not after_screenshot_path.exists():
+        save_screenshot(pyboy, after_screenshot_path)
+    trace_path.write_text(dump_trace(trace), encoding="utf-8")
+    execution["final_result"] = result.to_dict()
+    report = skill_run_report(
+        rom=rom,
+        state_in=state_in,
+        before=before,
+        after=after,
+        result=result,
+        trace=trace,
+        before_state_path=before_state_path,
+        after_state_path=after_state_path,
+        before_screenshot_path=before_screenshot_path,
+        after_screenshot_path=after_screenshot_path,
+        trace_path=trace_path,
+        execution=execution,
+    )
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    return SkillRunArtifact(run_dir=run_dir, report_path=report_path, result=result)
 
 
 def execute_complete_prologue(
@@ -1535,6 +1707,273 @@ def execute_handle_nickname_prompt(
                 "status": result.status,
                 "summary": result.summary,
             }
+        )
+
+    save_state(pyboy, after_state_path)
+    if not after_screenshot_path.exists():
+        save_screenshot(pyboy, after_screenshot_path)
+    trace_path.write_text(dump_trace(trace), encoding="utf-8")
+    execution["final_result"] = result.to_dict()
+    report = skill_run_report(
+        rom=rom,
+        state_in=state_in,
+        before=before,
+        after=after,
+        result=result,
+        trace=trace,
+        before_state_path=before_state_path,
+        after_state_path=after_state_path,
+        before_screenshot_path=before_screenshot_path,
+        after_screenshot_path=after_screenshot_path,
+        trace_path=trace_path,
+        execution=execution,
+    )
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    return SkillRunArtifact(run_dir=run_dir, report_path=report_path, result=result)
+
+
+def execute_handle_move_learning_prompt(
+    pyboy: object,
+    *,
+    state_in: str | Path,
+    rom: RomFingerprint,
+    run_root: str | Path,
+    choice: MoveLearningChoice,
+    forget_move: str | int | None = None,
+    render: bool = False,
+    post_load_settle_frames: int = 60,
+    emulation_speed: int = 0,
+) -> SkillRunArtifact:
+    configure_skill_emulation(pyboy, emulation_speed)
+    skill_id = "handle_move_learning_prompt"
+    run_dir = make_run_dir(run_root, skill_id)
+    before_state_path = run_dir / "before.state"
+    after_state_path = run_dir / "after.state"
+    before_screenshot_path = run_dir / "before.png"
+    after_screenshot_path = run_dir / "after.png"
+    trace_path = run_dir / "trace.json"
+    report_path = run_dir / "report.json"
+
+    load_state(pyboy, state_in)
+    pyboy.tick(post_load_settle_frames, render)
+    before = snapshot(pyboy)
+    before_dict = snapshot_to_dict(before)
+    save_state(pyboy, before_state_path)
+    save_screenshot(pyboy, before_screenshot_path)
+    trace: list[ButtonInput] = []
+    execution: dict[str, Any] = {
+        "schema": "skill_execution_v1",
+        "skill_id": skill_id,
+        "executor": {"choice": choice, "forget_move": forget_move},
+        "timeline": [
+            {
+                "event": "skill_call_started",
+                "skill_id": skill_id,
+                "state_in": str(state_in),
+                "choice": choice,
+                "forget_move": forget_move,
+            }
+        ],
+    }
+    initial_result = handle_move_learning_prompt(
+        before_dict,
+        choice=choice,
+        forget_move=forget_move,
+        screenshot_path=before_screenshot_path,
+    )
+    execution["initial_result"] = initial_result.to_dict()
+
+    if initial_result.status != "succeeded":
+        after = before
+        result = initial_result
+    elif choice == "skip":
+        append_and_run_button(pyboy, trace, "down", render=render, settle_frames=18)
+        append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+        save_screenshot(pyboy, after_screenshot_path)
+        if inspect_ui_visual_state(after_screenshot_path).compact_choice:
+            append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+        after = snapshot(pyboy)
+        save_screenshot(pyboy, after_screenshot_path)
+        result = handle_move_learning_prompt(
+            snapshot_to_dict(after),
+            before_snapshot=before_dict,
+            choice=choice,
+            screenshot_path=after_screenshot_path,
+        )
+    else:
+        options = move_learning_options(before_dict.get("active_party_member"))
+        target = resolve_move_learning_target(options, forget_move)
+        append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+        target_slot = int(target["slot"]) if target else 1
+        for _ in range(max(0, target_slot - 1)):
+            append_and_run_button(pyboy, trace, "down", render=render, settle_frames=18)
+        append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+        before_ids = tuple(move["id"] for move in options)
+        after = snapshot(pyboy)
+        for _ in range(6):
+            current_dict = snapshot_to_dict(after)
+            current_options = move_learning_options(current_dict.get("active_party_member"))
+            current_ids = tuple(move["id"] for move in current_options)
+            if current_ids and current_ids != before_ids:
+                break
+            append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+            after = snapshot(pyboy)
+        save_screenshot(pyboy, after_screenshot_path)
+        result = handle_move_learning_prompt(
+            snapshot_to_dict(after),
+            before_snapshot=before_dict,
+            choice=choice,
+            forget_move=forget_move,
+            screenshot_path=after_screenshot_path,
+        )
+
+    execution["timeline"].append(
+        {"event": "critic_result", "status": result.status, "summary": result.summary, "inputs": len(trace)}
+    )
+    save_state(pyboy, after_state_path)
+    if not after_screenshot_path.exists():
+        save_screenshot(pyboy, after_screenshot_path)
+    trace_path.write_text(dump_trace(trace), encoding="utf-8")
+    execution["final_result"] = result.to_dict()
+    report = skill_run_report(
+        rom=rom,
+        state_in=state_in,
+        before=before,
+        after=after,
+        result=result,
+        trace=trace,
+        before_state_path=before_state_path,
+        after_state_path=after_state_path,
+        before_screenshot_path=before_screenshot_path,
+        after_screenshot_path=after_screenshot_path,
+        trace_path=trace_path,
+        execution=execution,
+    )
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    return SkillRunArtifact(run_dir=run_dir, report_path=report_path, result=result)
+
+
+def execute_handle_trainer_switch_prompt(
+    pyboy: object,
+    *,
+    state_in: str | Path,
+    rom: RomFingerprint,
+    run_root: str | Path,
+    choice: TrainerSwitchChoice,
+    target: str | int | None = None,
+    render: bool = False,
+    post_load_settle_frames: int = 60,
+    max_wait_frames: int = 900,
+    emulation_speed: int = 0,
+) -> SkillRunArtifact:
+    configure_skill_emulation(pyboy, emulation_speed)
+    skill_id = "handle_trainer_switch_prompt"
+    run_dir = make_run_dir(run_root, skill_id)
+    before_state_path = run_dir / "before.state"
+    after_state_path = run_dir / "after.state"
+    before_screenshot_path = run_dir / "before.png"
+    working_screenshot_path = run_dir / "working.png"
+    after_screenshot_path = run_dir / "after.png"
+    trace_path = run_dir / "trace.json"
+    report_path = run_dir / "report.json"
+
+    load_state(pyboy, state_in)
+    pyboy.tick(post_load_settle_frames, render)
+    before = snapshot(pyboy)
+    before_dict = snapshot_to_dict(before)
+    save_state(pyboy, before_state_path)
+    save_screenshot(pyboy, before_screenshot_path)
+    trace: list[ButtonInput] = []
+    execution: dict[str, Any] = {
+        "schema": "skill_execution_v1",
+        "skill_id": skill_id,
+        "executor": {
+            "choice": choice,
+            "target": target,
+            "render": render,
+            "emulation_speed": emulation_speed,
+        },
+        "timeline": [
+            {
+                "event": "skill_call_started",
+                "skill_id": skill_id,
+                "state_in": str(state_in),
+                "choice": choice,
+                "target": target,
+            },
+            {
+                "event": "initial_snapshot",
+                "snapshot_hash": snapshot_hash(before),
+                "screenshot_file": str(before_screenshot_path),
+            },
+        ],
+    }
+    initial_result = handle_trainer_switch_prompt(
+        before_dict,
+        choice=choice,
+        target=target,
+        screenshot_path=before_screenshot_path,
+    )
+    execution["initial_result"] = initial_result.to_dict()
+
+    if initial_result.status != "succeeded":
+        after = before
+        result = initial_result
+        execution["timeline"].append(
+            {
+                "event": "skill_not_executed",
+                "status": result.status,
+                "reason": result.summary,
+            }
+        )
+    elif choice == "keep":
+        append_and_run_button(pyboy, trace, "down", render=render, settle_frames=18)
+        append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+        after = snapshot(pyboy)
+        save_screenshot(pyboy, after_screenshot_path)
+        result = handle_trainer_switch_prompt(
+            snapshot_to_dict(after),
+            before_snapshot=before_dict,
+            choice=choice,
+            screenshot_path=after_screenshot_path,
+        )
+        execution["timeline"].append(
+            {"event": "keep_current_selected", "inputs": len(trace), "status": result.status}
+        )
+    else:
+        append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+        save_screenshot(pyboy, working_screenshot_path)
+        route_status = select_party_switch_from_battle_menu(
+            pyboy,
+            before_snapshot=before_dict,
+            target=target if target is not None else "",
+            screenshot_path=working_screenshot_path,
+            trace=trace,
+            render=render,
+        )
+        execution["timeline"].append(route_status)
+        if route_status["status"] == "switch_selected":
+            after = wait_for_switch_party_outcome(
+                pyboy,
+                before_snapshot=before_dict,
+                target=target if target is not None else "",
+                screenshot_path=after_screenshot_path,
+                trace=trace,
+                render=render,
+                max_wait_frames=max_wait_frames,
+            )
+        else:
+            after = snapshot(pyboy)
+            save_screenshot(pyboy, after_screenshot_path)
+        result = handle_trainer_switch_prompt(
+            snapshot_to_dict(after),
+            before_snapshot=before_dict,
+            choice=choice,
+            target=target,
+            screenshot_path=after_screenshot_path,
+        )
+        execution["timeline"].append(
+            {"event": "critic_result", "status": result.status, "summary": result.summary}
         )
 
     save_state(pyboy, after_state_path)
@@ -2117,7 +2556,7 @@ def execute_navigate_within_viridian_forest_region(
                 "reason": result.summary,
             }
         )
-    elif at_landmark(before_position, landmark):
+    elif navigation_goal_reached(before_position, landmark):
         after = before
         result = initial_result
         execution["timeline"].append({"event": "skill_noop", "reason": result.summary})
@@ -3590,6 +4029,36 @@ def execute_overworld_rearrange_party(
     return SkillRunArtifact(run_dir=run_dir, report_path=report_path, result=result)
 
 
+def execute_talk_to_npc(
+    pyboy: object,
+    *,
+    state_in: str | Path,
+    rom: RomFingerprint,
+    run_root: str | Path,
+    target: str,
+    render: bool = False,
+    post_load_settle_frames: int = 60,
+    emulation_speed: int = 0,
+) -> SkillRunArtifact:
+    trace = [
+        ButtonInput(button, hold_frames=8, settle_frames=36)
+        for button in interaction_buttons(target)
+    ]
+    return execute_trace_skill(
+        pyboy,
+        skill_id="talk_to_npc",
+        runner=talk_to_npc,
+        trace=trace,
+        state_in=state_in,
+        rom=rom,
+        run_root=run_root,
+        render=render,
+        post_load_settle_frames=post_load_settle_frames,
+        emulation_speed=emulation_speed,
+        runner_kwargs={"target": target},
+    )
+
+
 def execute_single_button_skill(
     pyboy: object,
     *,
@@ -4574,7 +5043,7 @@ def plan_capsule_a_navigation_path(
     for _ in range(20):
         current = snapshot_to_dict(snapshot(pyboy))
         current_position = snapshot_position(current)
-        if at_landmark(current_position, target_landmark):
+        if navigation_goal_reached(current_position, target_landmark):
             return {
                 "status": "planned",
                 "summary": f"Planned {len(buttons)} inputs to {target_landmark.label}.",
@@ -4634,6 +5103,12 @@ def plan_capsule_a_navigation_path(
                 max_expansions=max_segment_expansions,
                 max_steps=remaining_inputs,
                 render=render,
+                terminal_checker=(
+                    forest_north_gate_reached
+                    if target_landmark.id == "viridian_forest_north_exit"
+                    and segment_target == target_landmark.position
+                    else None
+                ),
             )
             segment["local_plan"] = {
                 "status": local_plan["status"],
@@ -5527,6 +6002,7 @@ def find_same_map_navigation_path(
     position_reader: Callable[[dict[str, Any]], Position | None] = snapshot_position,
     routeable_checker: Callable[[dict[str, Any]], bool] | None = None,
     summary_label: str = "local",
+    terminal_checker: Callable[[dict[str, Any]], bool] | None = None,
 ) -> dict[str, Any]:
     if routeable_checker is None:
         routeable_checker = navigation_snapshot_is_routeable
@@ -5617,6 +6093,21 @@ def find_same_map_navigation_path(
             after = run_navigation_button(pyboy, button, render=render)
             after_position = position_reader(after)
             next_path = [*path, button]
+            if terminal_checker is not None and terminal_checker(after):
+                load_pyboy_state_bytes(pyboy, start_state)
+                return {
+                    "status": "planned",
+                    "summary": (
+                        f"Planned {len(next_path)} {summary_label} inputs through "
+                        "the target boundary."
+                    ),
+                    "buttons": next_path,
+                    "expansions": expansions,
+                    "position": (
+                        after_position.format() if after_position else "unknown"
+                    ),
+                    "terminal_transition": True,
+                }
             if wild_battle_active(after):
                 record_wild_battle_candidate(
                     wild_battle_candidates,
@@ -6221,6 +6712,16 @@ def navigation_snapshot_is_routeable(snapshot_dict: dict[str, Any]) -> bool:
         snapshot_dict.get("mode") == "overworld"
         and snapshot_dict.get("battle_type_raw") == 0
         and is_allowed_position(position)
+    )
+
+
+def forest_north_gate_reached(snapshot_dict: dict[str, Any]) -> bool:
+    position = snapshot_position(snapshot_dict)
+    return bool(
+        position is not None
+        and position.map_id == MAP_VIRIDIAN_FOREST_NORTH_GATE
+        and snapshot_dict.get("battle_type_raw") in {None, 0}
+        and snapshot_dict.get("mode") == "overworld"
     )
 
 
@@ -6846,6 +7347,47 @@ def wait_for_party_nickname(
     return last
 
 
+def wait_for_starter_acquisition_handoff(
+    pyboy: object,
+    *,
+    screenshot_path: Path,
+    max_wait_frames: int,
+    render: bool,
+    max_dialogue_inputs: int = 16,
+) -> tuple[Any, list[ButtonInput]]:
+    """Finish the scripted starter handoff without entering the rival battle."""
+    last = snapshot(pyboy)
+    continuation: list[ButtonInput] = []
+    elapsed_frames = 0
+
+    while elapsed_frames < max_wait_frames:
+        current = snapshot(pyboy)
+        current_dict = snapshot_to_dict(current)
+        story_events = current_dict.get("story_events")
+        got_starter = isinstance(story_events, dict) and story_events.get("got_starter") is True
+        save_screenshot(pyboy, screenshot_path)
+        visual = inspect_ui_visual_state(screenshot_path)
+        stable_handoff = (
+            got_starter
+            and current_dict.get("mode") == "overworld"
+            and current_dict.get("battle_type_raw") in {None, 0}
+            and not visual.bottom_text_box
+            and not visual.upper_menu
+        )
+        if stable_handoff or current_dict.get("mode") == "battle":
+            return current, continuation
+        if len(continuation) >= max_dialogue_inputs:
+            return current, continuation
+
+        step = ButtonInput("a", hold_frames=8, settle_frames=72)
+        continuation.append(step)
+        run_timed_trace(pyboy, [step], render=render)
+        elapsed_frames += step.hold_frames + step.settle_frames
+        last = current
+
+    return last, continuation
+
+
 def send_window_event(pyboy: object, event_name: str) -> None:
     from pyboy.utils import WindowEvent
 
@@ -6884,11 +7426,20 @@ def run_advance_battle_dialogue_inputs(
     max_inputs: int,
 ) -> Any:
     last_snapshot = snapshot(pyboy)
-    for _ in range(max_inputs):
+    inputs_sent = 0
+    settle_polls = 0
+    max_settle_polls = max(max_inputs * 4, 8)
+    while inputs_sent < max_inputs and settle_polls < max_settle_polls:
+        # PyBoy does not refresh the screen buffer on render=False ticks. Render
+        # only this inspection frame even in a null window so visual gating sees
+        # the current dialogue instead of the last loaded/saved frame.
+        pyboy.tick(1, True)
         current = snapshot(pyboy)
         current_dict = snapshot_to_dict(current)
         save_screenshot(pyboy, screenshot_path)
         ui = inspect_battle_ui_screenshot(screenshot_path)
+        if inspect_ui_visual_state(screenshot_path).compact_choice:
+            return current
         if current_dict.get("mode") != "battle" or current_dict.get("battle_type_raw") in {None, 0}:
             return current
         if ui.kind == "action_menu":
@@ -6898,10 +7449,13 @@ def run_advance_battle_dialogue_inputs(
         if ui.kind == "unknown":
             pyboy.tick(60, render)
             last_snapshot = snapshot(pyboy)
+            settle_polls += 1
             continue
+        settle_polls = 0
         step = ButtonInput("a", hold_frames=8, settle_frames=36)
         trace.append(step)
         run_timed_trace(pyboy, [step], render=render)
+        inputs_sent += 1
         last_snapshot = snapshot(pyboy)
     return last_snapshot
 
@@ -7005,34 +7559,45 @@ def wait_for_attempt_catch_outcome(
     render: bool,
     max_wait_frames: int,
 ) -> Any:
-    before_balls = poke_ball_count(before_snapshot)
+    max_inputs = max(1, min(32, max_wait_frames // 60))
+    inputs_sent = 0
+    settle_polls = 0
     last_snapshot = snapshot(pyboy)
-    last_dialogue_advance_frame = -10_000
-    for frame in range(max_wait_frames):
-        pyboy.tick(1, render)
-        if frame % 15 != 0:
-            continue
+    while inputs_sent < max_inputs and settle_polls < max_inputs * 4:
+        pyboy.tick(1, True)
         current = snapshot(pyboy)
         current_dict = snapshot_to_dict(current)
         save_screenshot(pyboy, screenshot_path)
-        result = attempt_catch(
+        visual = inspect_ui_visual_state(screenshot_path)
+        ui_kind = inspect_battle_ui_screenshot(screenshot_path).kind
+
+        if current_dict.get("mode") != "battle" or current_dict.get("battle_type_raw") in {None, 0}:
+            return current
+        if (
+            visual.compact_choice
+            or screenshot_has_nickname_prompt(screenshot_path)
+            or screenshot_has_nickname_intro_dialogue(screenshot_path)
+        ):
+            return current
+        if ui_kind == "action_menu" and poke_ball_count(current_dict) < poke_ball_count(before_snapshot):
+            return current
+
+        outcome = resolve_battle_outcome_dialogue_bundle(
             current_dict,
-            before_snapshot=before_snapshot,
             screenshot_path=screenshot_path,
         )
-        if result.status in {"succeeded", "failed"} and poke_ball_count(current_dict) < before_balls:
+        if outcome.status == "succeeded":
+            append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+            inputs_sent += 1
+            settle_polls = 0
+            last_snapshot = snapshot(pyboy)
+            continue
+        if ui_kind in {"item_menu", "move_menu", "party_menu"}:
             return current
-        if "screenshot=throw_dialogue" in result.evidence:
-            if frame - last_dialogue_advance_frame >= 60:
-                advance = ButtonInput("a", hold_frames=8, settle_frames=24)
-                trace.append(advance)
-                run_timed_trace(pyboy, [advance], render=render)
-                last_dialogue_advance_frame = frame
-                current = snapshot(pyboy)
-                current_dict = snapshot_to_dict(current)
-            if result.status in {"succeeded", "failed"} and poke_ball_count(current_dict) < before_balls:
-                return current
-        last_snapshot = current
+
+        pyboy.tick(60, render)
+        settle_polls += 1
+        last_snapshot = snapshot(pyboy)
     return last_snapshot
 
 

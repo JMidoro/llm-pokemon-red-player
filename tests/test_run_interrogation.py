@@ -202,6 +202,103 @@ def test_repeated_state_hash_without_progress_is_stalled_loop() -> None:
     assert "loop_reason=repeated_state_hash_without_progress" in checkpoint["evidence"]
 
 
+def test_trailing_repeated_state_hash_after_earlier_progress_is_stalled_loop() -> None:
+    report = base_report()
+    report["history"] = [
+        {
+            "action": index,
+            "skillId": "navigate_within_viridian_forest_region",
+            "result": {"status": "succeeded", "summary": "Navigation completed."},
+        }
+        for index in range(1, 9)
+    ]
+    report["progressObservations"] = [
+        {
+            "action": 1,
+            "stateHash": "made-progress",
+            "chapterId": "chapter_6_capsule_a",
+            "position": {"map_id": 0x32, "x": 4, "y": 10},
+            "party": [{"species_id": 0xB1, "level": 8, "hp": 20}],
+            "inventory": [],
+            "money": 3000,
+        },
+        *[
+            {
+                "action": index,
+                "stateHash": "terminal-no-op",
+                "chapterId": "chapter_6_capsule_a",
+                "position": {"map_id": 0x33, "x": 12, "y": 24},
+                "party": [{"species_id": 0xB1, "level": 8, "hp": 20}],
+                "inventory": [],
+                "money": 3000,
+            }
+            for index in range(2, 9)
+        ],
+    ]
+
+    checkpoint = interrogate_run_report(report)
+
+    assert checkpoint["verdict"] == "stalled_loop"
+    assert "loop_reason=trailing_repeated_state_hash" in checkpoint["evidence"]
+
+
+def test_successful_route_waypoint_clears_same_skill_failure_streak() -> None:
+    report = base_report()
+    report["history"] = [
+        {
+            "action": index,
+            "skillId": "navigate_within_viridian_forest_region",
+            "result": {
+                "status": "uncertain" if index < 8 else "succeeded",
+                "summary": (
+                    "Local plan did not finish."
+                    if index < 8
+                    else "Navigation reached a trainer battle route waypoint."
+                ),
+            },
+        }
+        for index in range(1, 9)
+    ]
+    report["progressObservations"] = [
+        {
+            "action": index,
+            "stateHash": state_hash,
+            "chapterId": "chapter_6_capsule_a_exit_forest",
+            "position": {"map_id": 0x33, "x": x, "y": y},
+            "party": [{"species_id": 0xB1, "level": 12, "hp": 14}],
+            "inventory": [],
+            "money": 935,
+        }
+        for index, state_hash, x, y in (
+            (1, "start", 26, 28),
+            (2, "start", 26, 28),
+            (3, "middle", 25, 19),
+            (4, "middle", 25, 19),
+            (5, "north", 20, 9),
+            (6, "north", 20, 9),
+            (7, "north", 20, 9),
+            (8, "battle", 1, 18),
+        )
+    ]
+    report["finalSnapshot"].update(
+        {
+            "mode": "battle",
+            "battle_type_raw": 2,
+            "position": {
+                "map_id": 0x33,
+                "map_name": "Viridian Forest",
+                "x": 1,
+                "y": 18,
+            },
+        }
+    )
+
+    checkpoint = interrogate_run_report(report)
+
+    assert checkpoint["verdict"] == "healthy_continue"
+    assert checkpoint["continueRecommended"] is True
+
+
 def test_repeated_interpretation_warning_is_a_state_gap() -> None:
     report = base_report()
     report["history"] = [

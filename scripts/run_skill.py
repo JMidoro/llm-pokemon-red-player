@@ -21,14 +21,18 @@ from pokemon_player.skill_execution import (  # noqa: E402
     execute_enter_grass_search_loop,
     execute_enter_nickname_text,
     execute_handle_nickname_prompt,
+    execute_handle_move_learning_prompt,
+    execute_handle_trainer_switch_prompt,
     execute_navigate_within_pallet_region,
     execute_navigate_within_pewter_region,
     execute_navigate_within_viridian_forest_region,
     execute_overworld_rearrange_party,
     execute_purchase_pokemart_item,
     execute_recover_to_overworld,
+    execute_resolve_battle_outcome_dialogue_bundle,
     execute_run_from_wild_battle,
     execute_switch_party_member,
+    execute_talk_to_npc,
     execute_use_move,
     execute_walk_local_direction,
 )
@@ -47,14 +51,18 @@ def main() -> int:
             "enter_grass_search_loop",
             "enter_nickname_text",
             "handle_nickname_prompt",
+            "handle_move_learning_prompt",
+            "handle_trainer_switch_prompt",
             "navigate_within_pallet_region",
             "navigate_within_pewter_region",
             "navigate_within_viridian_forest_region",
             "overworld_rearrange_party",
             "purchase_pokemart_item",
             "recover_to_overworld",
+            "resolve_battle_outcome_dialogue_bundle",
             "run_from_wild_battle",
             "switch_party_member",
+            "talk_to_npc",
             "use_move",
             "walk_local_direction",
         ],
@@ -84,8 +92,14 @@ def main() -> int:
     parser.add_argument(
         "--max-battle-dialogue-inputs",
         type=int,
-        default=16,
+        default=32,
         help="Maximum bounded A presses for advance_battle_dialogue.",
+    )
+    parser.add_argument(
+        "--max-outcome-dialogue-inputs",
+        type=int,
+        default=16,
+        help="Maximum bounded A presses for resolve_battle_outcome_dialogue_bundle.",
     )
     parser.add_argument(
         "--throw-executor",
@@ -150,6 +164,19 @@ def main() -> int:
         default="decline",
         help="Choice for handle_nickname_prompt.",
     )
+    parser.add_argument(
+        "--trainer-switch-choice",
+        choices=["keep", "switch"],
+        default="keep",
+        help="Choice for handle_trainer_switch_prompt; --target is required with switch.",
+    )
+    parser.add_argument(
+        "--move-learning-choice",
+        choices=["skip", "replace"],
+        default="skip",
+        help="Choice for handle_move_learning_prompt; --forget-move is required with replace.",
+    )
+    parser.add_argument("--forget-move", help="Current move name or slot to replace during move learning.")
     parser.add_argument(
         "--starter-nickname",
         help="Optional uppercase A-Z nickname for choose_starter. If omitted, starter nickname is declined.",
@@ -271,6 +298,16 @@ def main() -> int:
                 post_load_settle_frames=args.post_load_settle_frames,
                 max_inputs=args.max_battle_dialogue_inputs,
             )
+        elif args.skill == "resolve_battle_outcome_dialogue_bundle":
+            artifact = execute_resolve_battle_outcome_dialogue_bundle(
+                pyboy,
+                state_in=args.state_in,
+                rom=rom,
+                run_root=args.run_root,
+                render=render,
+                post_load_settle_frames=args.post_load_settle_frames,
+                max_inputs=args.max_outcome_dialogue_inputs,
+            )
         elif args.skill == "close_menu_or_cancel":
             artifact = execute_close_menu_or_cancel(
                 pyboy,
@@ -375,6 +412,39 @@ def main() -> int:
                 post_load_settle_frames=args.post_load_settle_frames,
                 choice=args.nickname_choice,
             )
+        elif args.skill == "handle_move_learning_prompt":
+            if args.move_learning_choice == "replace" and not args.forget_move:
+                raise SystemExit("handle_move_learning_prompt --move-learning-choice replace requires --forget-move.")
+            forget_move = (
+                int(args.forget_move)
+                if args.forget_move and args.forget_move.isdigit()
+                else args.forget_move
+            )
+            artifact = execute_handle_move_learning_prompt(
+                pyboy,
+                state_in=args.state_in,
+                rom=rom,
+                run_root=args.run_root,
+                choice=args.move_learning_choice,
+                forget_move=forget_move,
+                render=render,
+                post_load_settle_frames=args.post_load_settle_frames,
+            )
+        elif args.skill == "handle_trainer_switch_prompt":
+            if args.trainer_switch_choice == "switch" and not args.target:
+                raise SystemExit("handle_trainer_switch_prompt --trainer-switch-choice switch requires --target.")
+            target = int(args.target) if args.target and args.target.isdigit() else args.target
+            artifact = execute_handle_trainer_switch_prompt(
+                pyboy,
+                state_in=args.state_in,
+                rom=rom,
+                run_root=args.run_root,
+                choice=args.trainer_switch_choice,
+                target=target,
+                render=render,
+                post_load_settle_frames=args.post_load_settle_frames,
+                max_wait_frames=args.max_wait_frames,
+            )
         elif args.skill == "purchase_pokemart_item":
             artifact = execute_purchase_pokemart_item(
                 pyboy,
@@ -412,6 +482,18 @@ def main() -> int:
                 render=render,
                 post_load_settle_frames=args.post_load_settle_frames,
                 max_wait_frames=args.max_wait_frames,
+            )
+        elif args.skill == "talk_to_npc":
+            if not args.target:
+                raise SystemExit("talk_to_npc requires --target, e.g. --target brock.")
+            artifact = execute_talk_to_npc(
+                pyboy,
+                state_in=args.state_in,
+                rom=rom,
+                run_root=args.run_root,
+                target=args.target,
+                render=render,
+                post_load_settle_frames=args.post_load_settle_frames,
             )
         elif args.skill == "overworld_rearrange_party":
             if not args.target:

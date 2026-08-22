@@ -293,6 +293,8 @@ def chat_completions_payload(request: PreparedDirectorRequest) -> JsonObject:
     }
     if request.request.temperature is not None:
         payload["temperature"] = request.request.temperature
+    if request.request.seed is not None:
+        payload["seed"] = request.request.seed
     return payload
 
 

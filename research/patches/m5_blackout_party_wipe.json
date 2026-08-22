@@ -1,0 +1,16 @@
+{
+  "description": "Set every member of the six-Pokemon blackout fixture party to zero HP.",
+  "goal": "Generate a reproducible Milestone 5 full-party blackout checkpoint without human gameplay.",
+  "metadata": {
+    "milestone": 5,
+    "baseFixture": "1_party_fainted"
+  },
+  "operations": [
+    {"type": "set_party_stats", "slot": 1, "current_hp": 0},
+    {"type": "set_party_stats", "slot": 2, "current_hp": 0},
+    {"type": "set_party_stats", "slot": 3, "current_hp": 0},
+    {"type": "set_party_stats", "slot": 4, "current_hp": 0},
+    {"type": "set_party_stats", "slot": 5, "current_hp": 0},
+    {"type": "set_party_stats", "slot": 6, "current_hp": 0}
+  ]
+}

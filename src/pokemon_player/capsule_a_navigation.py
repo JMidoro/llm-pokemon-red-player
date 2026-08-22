@@ -329,6 +329,16 @@ def at_landmark(position: Position | None, landmark: Landmark) -> bool:
     return position == landmark.position
 
 
+def navigation_goal_reached(position: Position | None, landmark: Landmark) -> bool:
+    if at_landmark(position, landmark):
+        return True
+    return bool(
+        position is not None
+        and landmark.id == "viridian_forest_north_exit"
+        and position.map_id == MAP_VIRIDIAN_FOREST_NORTH_GATE
+    )
+
+
 def approved_grass_patch_for_position(position: Position | None) -> GrassPatch | None:
     for patch in APPROVED_GRASS_PATCHES.values():
         if patch.contains(position) or patch.is_near(position):

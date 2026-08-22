@@ -30,6 +30,7 @@ def request() -> DirectorRequest:
         context={"snapshot": {"mode": "overworld"}},
         messages=({"role": "user", "content": "Continue safely."},),
         reasoning_effort="low",
+        seed=5001,
     )
 
 
@@ -137,6 +138,8 @@ def test_chat_and_responses_adapters_receive_same_canonical_tools_and_prompt() -
         for item in captured_responses["tools"]
     ]
     assert captured_chat["messages"][0]["content"] == captured_responses["instructions"]
+    assert captured_chat["seed"] == 5001
+    assert "seed" not in captured_responses
     assert chat_result.tool_calls[0].to_dict() == responses_result.tool_calls[0].to_dict()
     assert chat_result.usage.total_tokens == responses_result.usage.total_tokens == 45
 

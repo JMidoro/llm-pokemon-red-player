@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PIL import Image, ImageDraw
+
 from pokemon_player.battle_ui import (
     forced_party_selection_prompt_visible,
+    has_bottom_dialogue_text,
+    has_battle_action_menu_box,
     inspect_battle_ui_screenshot,
+    is_battle_item_menu,
     party_menu_cursor_slot,
 )
 
@@ -69,6 +74,40 @@ def test_battle_ui_detects_resolved_dialogue_action_menu() -> None:
 
     assert ui.kind == "action_menu"
     assert ui.cursor == "fight"
+
+
+def test_dialogue_text_cannot_masquerade_as_battle_action_menu() -> None:
+    image = Image.new("L", (160, 144), 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((104, 110, 109, 141), fill=0)
+    draw.rectangle((72, 113, 79, 119), fill=0)
+    draw.rectangle((110, 112, 150, 118), fill=0)
+    draw.rectangle((110, 128, 150, 134), fill=0)
+    draw.rectangle((8, 112, 60, 118), fill=0)
+    draw.rectangle((8, 128, 60, 134), fill=0)
+
+    assert not has_battle_action_menu_box(image)
+
+
+def test_sparse_short_battle_message_is_still_dialogue() -> None:
+    image = Image.new("L", (160, 144), 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 104, 159, 143), outline=0, width=3)
+    draw.rectangle((8, 113, 35, 115), fill=0)
+    draw.rectangle((38, 113, 45, 115), fill=0)
+    draw.rectangle((48, 113, 63, 115), fill=0)
+
+    assert has_bottom_dialogue_text(image)
+
+
+def test_battle_dialogue_text_does_not_masquerade_as_item_menu() -> None:
+    image = Image.new("L", (160, 144), 255)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((50, 48, 155, 52), fill=0)
+    draw.rectangle((48, 50, 52, 126), fill=0)
+    draw.rectangle((8, 113, 90, 117), fill=0)
+
+    assert not is_battle_item_menu(image)
 
 
 def test_policy_move_submenu_detects_move_cursor() -> None:

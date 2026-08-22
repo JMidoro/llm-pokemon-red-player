@@ -94,7 +94,7 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
             hints=(
                 "If in Pallet Town and not in dialogue, navigate_within_pallet_region target=pallet_oak_trigger.",
                 "If dialogue/script text is visible, advance_dialogue.",
-                "If advance_dialogue is not enabled but the story appears to be waiting, use literal_button_press button=A.",
+                "If a supported story NPC is directly in front of the player, use talk_to_npc with its enabled target.",
                 "Do not leave Pallet for Route 1 until a starter is in the party.",
             ),
         )
@@ -110,10 +110,9 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
             success=False,
             evidence=evidence,
             hints=(
-                "We do not yet have a dedicated choose_starter skill, so literal button presses may be required.",
-                "From the center starter-table position, Squirtle is the right-side ball in Pokemon Red.",
-                "Use navigate_within_pallet_region for lab-local positioning only if it is enabled and relevant.",
-                "After interacting with a starter ball, advance_dialogue through confirmation prompts.",
+                "Use choose_starter with starter=squirtle for the current early-game path.",
+                "First reach the stable starter-table handoff with navigate_within_pallet_region target=oaks_lab_starter_table.",
+                "The choose_starter skill owns ball selection, confirmation dialogue, and the optional nickname flow from that handoff.",
             ),
         )
 
@@ -160,7 +159,7 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
                 evidence=evidence,
                 hints=(
                     "If stable overworld in Oak's Lab and not at the starter table, use navigate_within_pallet_region target=oaks_lab_starter_table.",
-                    "Once at the starter table or when dialogue is visible, use advance_dialogue one press at a time.",
+                    "Once at the starter table, use talk_to_npc target=professor_oak; then advance visible dialogue one prompt at a time.",
                     "Continue dialogue until Oak's Parcel leaves inventory and the Pokedex/Poke Ball sequence resolves.",
                 ),
             )
@@ -198,6 +197,24 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
             success=True,
             evidence=evidence + ("boulder_badge=true",),
             hints=("Stop the run and preserve the final checkpoint before Route 3.",),
+        )
+
+    brock_defeated = _story_event_values(snapshot).get("beat_brock") is True
+    if party and brock_defeated:
+        return ChapterGoal(
+            chapter_id="chapter_7_claim_boulder_badge",
+            title="Claim the Boulder Badge",
+            objective=(
+                "Brock is defeated. Finish his post-battle dialogue until the Boulder Badge "
+                "is present, without leaving to heal or starting another interaction."
+            ),
+            success=False,
+            evidence=evidence + ("brock_defeated=true", "boulder_badge=false"),
+            hints=(
+                "Use advance_dialogue while Brock's post-battle text is visible.",
+                "Do not navigate away or talk to Brock again before Boulder Badge appears in badge_names.",
+                "Once the dialogue closes, verify both beat_brock and Boulder Badge before continuing.",
+            ),
         )
 
     if party and has_pikachu and (reached_forest_exit or in_pewter_region):
@@ -300,7 +317,7 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
                 evidence=evidence + ("pikachu_caught=true", "boulder_badge=false"),
                 hints=(
                     "Use navigate_within_pewter_region target=pewter_gym_brock_pre_battle.",
-                    "At Brock's pre-battle position (Pewter Gym map 0x36 x=5 y=1), use literal_button_press with button=left once to face Brock, then literal_button_press with button=A or advance_dialogue to start the battle.",
+                    "At Brock's pre-battle position, use talk_to_npc target=brock to face him and start the challenge.",
                     "Use battle skills to win; Squirtle's Bubble or Water Gun should be prioritized when available.",
                     "Resolve post-battle dialogue until Boulder Badge appears in badge_names.",
                 ),
@@ -523,7 +540,7 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
             evidence=evidence,
             hints=(
                 "Use navigate_within_pallet_region target=viridian_mart_counter.",
-                "When at the counter or text is visible, use advance_dialogue or literal_button_press button=A.",
+                "When at the counter, use talk_to_npc target=viridian_mart_clerk; advance visible dialogue afterward.",
                 "After the parcel is received, route back to Pallet and Oak's Lab.",
             ),
         )

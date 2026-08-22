@@ -46,6 +46,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-actions", type=int, default=100)
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--reasoning-effort", default="low")
+    parser.add_argument("--temperature", type=float, default=0.1)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional first inference seed; segment/action offsets are deterministic.",
+    )
+    parser.add_argument(
+        "--fresh-start",
+        action="store_true",
+        help="Use clean RAM for the first segment of a new lineage.",
+    )
+    parser.add_argument(
+        "--success-target",
+        choices=("chapter", "capsule-a"),
+        default="chapter",
+    )
     parser.add_argument("--request-timeout-seconds", type=int, default=180)
     parser.add_argument("--max-segments", type=int, default=None)
     parser.add_argument("--heartbeat-seconds", type=float, default=5.0)
@@ -95,6 +112,9 @@ def main() -> int:
         max_actions=max(args.max_actions, 1),
         max_tokens=max(args.max_tokens, 1),
         reasoning_effort=args.reasoning_effort,
+        temperature=args.temperature,
+        first_inference_seed=args.seed,
+        fresh_start_first_segment=args.fresh_start,
         request_timeout_seconds=max(args.request_timeout_seconds, 1),
         no_image=args.no_image,
         no_video=args.no_video,
@@ -107,6 +127,8 @@ def main() -> int:
             str(paths.lineage_root / "nuzlocke" / "ledger.json"),
             "--lineage-id",
             args.lineage_id,
+            "--success-target",
+            args.success_target,
         ),
     )
     supervisor = DurableSegmentSupervisor(

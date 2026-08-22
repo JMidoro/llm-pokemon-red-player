@@ -88,10 +88,22 @@ def build_parser(*, forced_provider: str | None = None) -> argparse.ArgumentPars
     )
     parser.add_argument("--max-actions", type=int, default=100)
     parser.add_argument("--temperature", type=float, default=0.1)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional first inference seed; each action advances it by one.",
+    )
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--request-timeout-seconds", type=int, default=180)
     parser.add_argument("--max-retries", type=int, default=1)
     parser.add_argument("--reasoning-effort", default="low")
+    parser.add_argument(
+        "--success-target",
+        choices=("chapter", "capsule-a"),
+        default="chapter",
+        help="Authoritative bounded-run completion predicate.",
+    )
     parser.add_argument("--no-image", action="store_true")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--no-video", action="store_true")
@@ -388,11 +400,16 @@ def main(
                         snapshot_dict,
                     ),
                 )
-            if chapter_direction.success:
+            success_reached, success_label = support.requested_success_reached(
+                args.success_target,
+                snapshot_dict,
+                chapter_direction,
+            )
+            if success_reached:
                 finish = {
                     "status": "completed",
                     "success": True,
-                    "summary": f"Reached chapter success: {chapter_direction.title}.",
+                    "summary": f"Reached requested success: {success_label}.",
                     "failureCategory": None,
                 }
                 break
@@ -432,6 +449,7 @@ def main(
                 max_history=8,
                 reasoning_effort=args.reasoning_effort,
                 temperature=args.temperature,
+                seed=(args.seed + action_index - 1) if args.seed is not None else None,
                 max_output_tokens=args.max_tokens,
                 runtime_instructions=(
                     "chapterDirection is authoritative for the current local goal.",
@@ -692,6 +710,8 @@ def main(
         context={
             "freshStart": bool(args.fresh_start),
             "maxActions": args.max_actions,
+            "firstInferenceSeed": args.seed,
+            "successTarget": args.success_target,
             "chapterTimeline": chapter_timeline,
             "progressObservations": progress_observations,
             "nuzlocke": public_lineage_context(ruleset, nuzlocke_ledger, final_snapshot),
@@ -702,6 +722,8 @@ def main(
             "stateIn": str(state_in),
             "freshStart": bool(args.fresh_start),
             "maxActions": args.max_actions,
+            "firstInferenceSeed": args.seed,
+            "successTarget": args.success_target,
             "chapterTimeline": chapter_timeline,
             "progressObservations": progress_observations,
             "video": video_artifact,

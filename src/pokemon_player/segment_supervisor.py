@@ -116,6 +116,7 @@ class SegmentRequest:
     attempt: int
     input_state: Path
     segment_dir: Path
+    inference_action_offset: int = 0
 
     @property
     def report_path(self) -> Path:
@@ -221,6 +222,9 @@ class SubprocessSegmentRunner:
     max_actions: int = 100
     max_tokens: int = 2048
     reasoning_effort: str = "low"
+    temperature: float = 0.1
+    first_inference_seed: int | None = None
+    fresh_start_first_segment: bool = False
     request_timeout_seconds: int = 180
     no_image: bool = False
     no_video: bool = False
@@ -323,9 +327,18 @@ class SubprocessSegmentRunner:
             str(self.max_tokens),
             "--reasoning-effort",
             self.reasoning_effort,
+            "--temperature",
+            str(self.temperature),
             "--request-timeout-seconds",
             str(self.request_timeout_seconds),
         ]
+        if self.first_inference_seed is not None:
+            segment_seed = self.first_inference_seed + max(
+                request.inference_action_offset, 0
+            )
+            command.extend(("--seed", str(segment_seed)))
+        if self.fresh_start_first_segment and request.sequence == 1:
+            command.append("--fresh-start")
         if self.model:
             command.extend(("--model", self.model))
         if self.base_url:
@@ -453,6 +466,7 @@ class DurableSegmentSupervisor:
             attempt=attempt,
             input_state=input_state.resolve(),
             segment_dir=segment_dir,
+            inference_action_offset=self._inference_action_offset(sequence),
         )
         registration = {
             "schema": "segment_artifact_manifest_v1",
@@ -535,6 +549,11 @@ class DurableSegmentSupervisor:
                 "status": "checkpointed",
                 "completedUtc": utc_now(),
                 "returnCode": execution.return_code,
+                "directorActionCount": len(
+                    report.get("history")
+                    if isinstance(report.get("history"), list)
+                    else []
+                ),
                 "finish": finish,
                 "checkpoint": checkpoint,
                 "artifacts": artifacts,
@@ -577,6 +596,7 @@ class DurableSegmentSupervisor:
                 "status": "failed",
                 "completedUtc": utc_now(),
                 "returnCode": execution.return_code,
+                "directorActionCount": 0,
                 "finish": {
                     "status": "failed",
                     "failureCategory": "segment_report_missing",
@@ -668,6 +688,9 @@ class DurableSegmentSupervisor:
                 "verdict": (segment.get("checkpoint") or {}).get("verdict"),
                 "manifestPath": f"segments/{segment.get('segmentId')}/manifest.json",
                 "diagnosable": (segment.get("diagnostic") or {}).get("diagnosable"),
+                "directorActionCount": int(
+                    segment.get("directorActionCount") or 0
+                ),
             }
         )
         manifest["segments"] = sorted(
@@ -676,6 +699,39 @@ class DurableSegmentSupervisor:
         )
         manifest["updatedUtc"] = utc_now()
         atomic_write_json(self.paths.manifest, manifest)
+
+    def _inference_action_offset(self, sequence: int) -> int:
+        """Count accepted Director actions before a segment's lineage position.
+
+        A retry of the same sequence starts from the same seed. When older durable
+        manifests predate ``directorActionCount``, read the registered report so a
+        recovered lineage retains the same seed sequence.
+        """
+
+        selected: dict[int, dict[str, Any]] = {}
+        for item in self._manifest().get("segments", []):
+            if not isinstance(item, dict):
+                continue
+            item_sequence = int(item.get("sequence") or 0)
+            if item_sequence <= 0 or item_sequence >= sequence:
+                continue
+            previous = selected.get(item_sequence)
+            if previous is None or int(item.get("attempt") or 0) > int(
+                previous.get("attempt") or 0
+            ):
+                selected[item_sequence] = item
+
+        total = 0
+        for item in selected.values():
+            action_count = item.get("directorActionCount")
+            if isinstance(action_count, int) and action_count >= 0:
+                total += action_count
+                continue
+            segment_id = str(item.get("segmentId") or "")
+            report = read_json(self.paths.segments / segment_id / "report.json") or {}
+            history = report.get("history")
+            total += len(history) if isinstance(history, list) else 0
+        return total
 
     def _advance_sequence(self, segment: dict[str, Any]) -> None:
         manifest = self._manifest()

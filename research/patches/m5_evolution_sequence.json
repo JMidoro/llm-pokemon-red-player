@@ -1,0 +1,45 @@
+{
+  "description": "Turn the pending level-up fixture into a Caterpie level-up so the evolution branch is reproducible.",
+  "goal": "Generate a Milestone 5 evolution sequence without human gameplay.",
+  "metadata": {
+    "milestone": 5,
+    "baseFixture": "resolve_battle_outcome_dialogue_bundle/xp_or_level_up_dialogue"
+  },
+  "operations": [
+    {
+      "type": "set_party_species",
+      "slot": 1,
+      "species": "Caterpie",
+      "rename_to_species": true
+    },
+    {
+      "type": "set_party_moves",
+      "slot": 1,
+      "moves": ["Tackle", "String Shot"],
+      "pp": [35, 40]
+    },
+    {
+      "type": "set_party_stats",
+      "slot": 1,
+      "level": 6
+    },
+    {
+      "type": "raw_memory_write",
+      "address": "0xD179",
+      "value": "0x00",
+      "reason": "Caterpie experience high byte for the pending level-7 evolution fixture."
+    },
+    {
+      "type": "raw_memory_write",
+      "address": "0xD17A",
+      "value": "0x01",
+      "reason": "Caterpie experience middle byte for 343 total experience."
+    },
+    {
+      "type": "raw_memory_write",
+      "address": "0xD17B",
+      "value": "0x57",
+      "reason": "Caterpie experience low byte for 343 total experience."
+    }
+  ]
+}

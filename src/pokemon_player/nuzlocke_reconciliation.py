@@ -28,7 +28,18 @@ def _owned(snapshot: dict[str, Any]) -> set[int]:
 
 def _party(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     values = snapshot.get("party")
-    return [value for value in values if isinstance(value, dict)] if isinstance(values, list) else []
+    if not isinstance(values, list):
+        return []
+    # During post-catch registration, Gen I increments party count before it
+    # finishes populating the new party struct. Do not turn that temporary
+    # species-0/HP-0 slot into a captured-and-dead Pokemon in the ledger.
+    return [
+        value
+        for value in values
+        if isinstance(value, dict)
+        and value.get("species_id") not in {None, 0, 0xFF}
+        and int(value.get("max_hp", 0) or 0) > 0
+    ]
 
 
 def _member_family(member: dict[str, Any]) -> str | None:

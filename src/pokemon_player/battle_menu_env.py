@@ -105,6 +105,7 @@ class BattleMenuFacts:
     selected_item_quantity: int = 0
     first_item_ids: tuple[int, ...] = ()
     first_item_quantities: tuple[int, ...] = ()
+    inventory_item_count: int = 0
     best_ball_index: int = -1
     in_item_flow: bool = False
     throw_initiated: bool = False
@@ -126,6 +127,7 @@ class BattleMenuFacts:
             "selected_item_quantity": self.selected_item_quantity,
             "first_item_ids": list(self.first_item_ids),
             "first_item_quantities": list(self.first_item_quantities),
+            "inventory_item_count": self.inventory_item_count,
             "best_ball_index": self.best_ball_index,
             "in_item_flow": self.in_item_flow,
             "throw_initiated": self.throw_initiated,
@@ -342,11 +344,14 @@ class BattleMenuThrowEnv(_GymEnv):
             terminated = True
         if action_menu_item_selected:
             self._in_item_flow = True
+            # The battle bag remembers its cursor between uses. Once ITEM is
+            # selected, refresh facts with item-flow context so CURRENT_MENU_ITEM
+            # becomes authoritative even when the first rendered bag frame is
+            # still visually classified as the action menu.
+            current = self._facts()
         if current.ui_kind == "item_menu":
             self._in_item_flow = True
-            if previous.ui_kind != "item_menu":
-                self._bag_cursor_index = 0
-                current = self._facts()
+            current = self._facts()
         stale_item_flow = (
             self._in_item_flow
             and current.ui_kind == "action_menu"
@@ -368,6 +373,8 @@ class BattleMenuThrowEnv(_GymEnv):
             self._item_menu_steps += 1
         elif current.ui_kind != "item_menu":
             self._item_menu_steps = 0
+
+        self.previous_facts = current
 
         info = {
             "action_name": action_name,
@@ -411,8 +418,8 @@ class BattleMenuThrowEnv(_GymEnv):
             self._bag_cursor_index = (self._bag_cursor_index - 1) % inventory_size
 
     def _bag_cursor_item_count(self) -> int:
-        inventory_size = max(len(self.previous_facts.first_item_ids), 1) if self.previous_facts else 1
-        return inventory_size + 1
+        inventory_size = self.previous_facts.inventory_item_count if self.previous_facts else 0
+        return max(inventory_size + 1, 1)
 
     def close(self) -> None:
         if self._owns_pyboy:
@@ -453,7 +460,7 @@ class BattleMenuThrowEnv(_GymEnv):
         ui = inspect_battle_ui_screenshot(screenshot_path)
         party_hp = sum(int(member.get("hp", 0)) for member in snap.get("party", []))
         inventory = snap.get("inventory", [])
-        if ui.kind == "item_menu":
+        if ui.kind == "item_menu" or self._in_item_flow:
             self._bag_cursor_index = normalize_bag_cursor_index(
                 int(self.pyboy.memory[mm.CURRENT_MENU_ITEM]),
                 len(inventory),
@@ -484,6 +491,7 @@ class BattleMenuThrowEnv(_GymEnv):
             selected_item_quantity=selected_item_quantity,
             first_item_ids=item_ids,
             first_item_quantities=item_quantities,
+            inventory_item_count=len(inventory),
             best_ball_index=best_ball_inventory_index(inventory),
             in_item_flow=self._in_item_flow,
             throw_initiated=self._throw_initiated,
