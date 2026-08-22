@@ -31,16 +31,6 @@ def attempt_catch(
         f"party_count={len(party_signature)}",
     ]
 
-    if screenshot_path and screenshot_has_throw_dialogue(screenshot_path):
-        evidence.append("screenshot=battle_dialogue")
-        return SkillResult(
-            skill_id=SKILL_ID,
-            status="uncertain",
-            summary="Battle dialogue is visible; advance battle dialogue before attempting a catch.",
-            evidence=tuple(evidence),
-            warnings=warnings,
-        )
-
     if before_snapshot is not None:
         before_balls = poke_ball_count(before_snapshot)
         before_party = party_members(before_snapshot)
@@ -55,11 +45,11 @@ def attempt_catch(
             ]
         )
 
-        if ball_delta < 0 and party_delta > 0 and mode != "battle" and battle_type_raw == 0:
+        if party_delta > 0:
             return SkillResult(
                 skill_id=SKILL_ID,
                 status="succeeded",
-                summary="A ball was consumed, battle ended, and a Pokemon joined the party.",
+                summary="A Pokemon joined the party after the catch attempt.",
                 evidence=tuple(evidence),
                 warnings=warnings,
             )
@@ -82,10 +72,30 @@ def attempt_catch(
                 warnings=warnings,
             )
 
+        if screenshot_path and screenshot_has_throw_dialogue(screenshot_path):
+            evidence.append("screenshot=battle_dialogue")
+            return SkillResult(
+                skill_id=SKILL_ID,
+                status="uncertain",
+                summary="Catch-result dialogue is still visible after the throw.",
+                evidence=tuple(evidence),
+                warnings=warnings,
+            )
+
         return SkillResult(
             skill_id=SKILL_ID,
             status="uncertain",
             summary="No ball consumption or party change was observed after execution.",
+            evidence=tuple(evidence),
+            warnings=warnings,
+        )
+
+    if screenshot_path and screenshot_has_throw_dialogue(screenshot_path):
+        evidence.append("screenshot=battle_dialogue")
+        return SkillResult(
+            skill_id=SKILL_ID,
+            status="uncertain",
+            summary="Battle dialogue is visible; advance battle dialogue before attempting a catch.",
             evidence=tuple(evidence),
             warnings=warnings,
         )

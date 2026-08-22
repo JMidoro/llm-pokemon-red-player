@@ -210,6 +210,7 @@ def execute_attempt_catch(
             "throw_executor": throw_executor,
             "battle_menu_policy": str(battle_menu_policy) if battle_menu_policy else None,
             "battle_menu_max_steps": battle_menu_max_steps,
+            "max_wait_frames": max_wait_frames,
             "render": render,
             "emulation_speed": emulation_speed,
         },
@@ -227,7 +228,10 @@ def execute_attempt_catch(
         ],
     }
 
-    initial_result = attempt_catch(snapshot_to_dict(before))
+    initial_result = attempt_catch(
+        snapshot_to_dict(before),
+        screenshot_path=before_screenshot_path,
+    )
     execution["initial_result"] = initial_result.to_dict()
     if initial_result.status == "blocked":
         trace: list[ButtonInput] = []
@@ -316,21 +320,22 @@ def execute_attempt_catch(
             )
             report_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
             return SkillRunArtifact(run_dir=run_dir, report_path=report_path, result=result)
-        after = snapshot(pyboy)
-        save_screenshot(pyboy, after_screenshot_path)
-        result = SkillResult(
-            skill_id="attempt_catch",
-            status="succeeded",
-            summary="A Poke Ball item was selected; the catch attempt was initiated.",
-            evidence=(
-                f"throw_executor={throw_executor}",
-                f"throw_status={throw_artifact.status}",
-                f"throw_summary={throw_artifact.summary}",
-            ),
+        after = wait_for_attempt_catch_outcome(
+            pyboy,
+            before_snapshot=snapshot_to_dict(before),
+            screenshot_path=after_screenshot_path,
+            trace=trace,
+            render=render,
+            max_wait_frames=max_wait_frames,
+        )
+        result = attempt_catch(
+            snapshot_to_dict(after),
+            before_snapshot=snapshot_to_dict(before),
+            screenshot_path=after_screenshot_path,
         )
         execution["timeline"].append(
             {
-                "event": "attempt_initiated_result",
+                "event": "critic_result",
                 "status": result.status,
                 "summary": result.summary,
             }
@@ -1009,6 +1014,20 @@ def execute_choose_starter(
                 max_wait_frames=max_wait_frames,
                 render=render,
             )
+        after, handoff_trace = wait_for_starter_acquisition_handoff(
+            pyboy,
+            screenshot_path=after_screenshot_path,
+            max_wait_frames=max_wait_frames,
+            render=render,
+        )
+        trace.extend(handoff_trace)
+        execution["timeline"].append(
+            {
+                "event": "starter_acquisition_handoff_resolved",
+                "dialogue_inputs": len(handoff_trace),
+                "got_starter": snapshot_to_dict(after).get("story_events", {}).get("got_starter"),
+            }
+        )
         save_screenshot(pyboy, after_screenshot_path)
         result = choose_starter(
             snapshot_to_dict(after),
@@ -7328,6 +7347,47 @@ def wait_for_party_nickname(
     return last
 
 
+def wait_for_starter_acquisition_handoff(
+    pyboy: object,
+    *,
+    screenshot_path: Path,
+    max_wait_frames: int,
+    render: bool,
+    max_dialogue_inputs: int = 16,
+) -> tuple[Any, list[ButtonInput]]:
+    """Finish the scripted starter handoff without entering the rival battle."""
+    last = snapshot(pyboy)
+    continuation: list[ButtonInput] = []
+    elapsed_frames = 0
+
+    while elapsed_frames < max_wait_frames:
+        current = snapshot(pyboy)
+        current_dict = snapshot_to_dict(current)
+        story_events = current_dict.get("story_events")
+        got_starter = isinstance(story_events, dict) and story_events.get("got_starter") is True
+        save_screenshot(pyboy, screenshot_path)
+        visual = inspect_ui_visual_state(screenshot_path)
+        stable_handoff = (
+            got_starter
+            and current_dict.get("mode") == "overworld"
+            and current_dict.get("battle_type_raw") in {None, 0}
+            and not visual.bottom_text_box
+            and not visual.upper_menu
+        )
+        if stable_handoff or current_dict.get("mode") == "battle":
+            return current, continuation
+        if len(continuation) >= max_dialogue_inputs:
+            return current, continuation
+
+        step = ButtonInput("a", hold_frames=8, settle_frames=72)
+        continuation.append(step)
+        run_timed_trace(pyboy, [step], render=render)
+        elapsed_frames += step.hold_frames + step.settle_frames
+        last = current
+
+    return last, continuation
+
+
 def send_window_event(pyboy: object, event_name: str) -> None:
     from pyboy.utils import WindowEvent
 
@@ -7499,34 +7559,45 @@ def wait_for_attempt_catch_outcome(
     render: bool,
     max_wait_frames: int,
 ) -> Any:
-    before_balls = poke_ball_count(before_snapshot)
+    max_inputs = max(1, min(32, max_wait_frames // 60))
+    inputs_sent = 0
+    settle_polls = 0
     last_snapshot = snapshot(pyboy)
-    last_dialogue_advance_frame = -10_000
-    for frame in range(max_wait_frames):
-        pyboy.tick(1, render)
-        if frame % 15 != 0:
-            continue
+    while inputs_sent < max_inputs and settle_polls < max_inputs * 4:
+        pyboy.tick(1, True)
         current = snapshot(pyboy)
         current_dict = snapshot_to_dict(current)
         save_screenshot(pyboy, screenshot_path)
-        result = attempt_catch(
+        visual = inspect_ui_visual_state(screenshot_path)
+        ui_kind = inspect_battle_ui_screenshot(screenshot_path).kind
+
+        if current_dict.get("mode") != "battle" or current_dict.get("battle_type_raw") in {None, 0}:
+            return current
+        if (
+            visual.compact_choice
+            or screenshot_has_nickname_prompt(screenshot_path)
+            or screenshot_has_nickname_intro_dialogue(screenshot_path)
+        ):
+            return current
+        if ui_kind == "action_menu" and poke_ball_count(current_dict) < poke_ball_count(before_snapshot):
+            return current
+
+        outcome = resolve_battle_outcome_dialogue_bundle(
             current_dict,
-            before_snapshot=before_snapshot,
             screenshot_path=screenshot_path,
         )
-        if result.status in {"succeeded", "failed"} and poke_ball_count(current_dict) < before_balls:
+        if outcome.status == "succeeded":
+            append_and_run_button(pyboy, trace, "a", render=render, settle_frames=180)
+            inputs_sent += 1
+            settle_polls = 0
+            last_snapshot = snapshot(pyboy)
+            continue
+        if ui_kind in {"item_menu", "move_menu", "party_menu"}:
             return current
-        if "screenshot=throw_dialogue" in result.evidence:
-            if frame - last_dialogue_advance_frame >= 60:
-                advance = ButtonInput("a", hold_frames=8, settle_frames=24)
-                trace.append(advance)
-                run_timed_trace(pyboy, [advance], render=render)
-                last_dialogue_advance_frame = frame
-                current = snapshot(pyboy)
-                current_dict = snapshot_to_dict(current)
-            if result.status in {"succeeded", "failed"} and poke_ball_count(current_dict) < before_balls:
-                return current
-        last_snapshot = current
+
+        pyboy.tick(60, render)
+        settle_polls += 1
+        last_snapshot = snapshot(pyboy)
     return last_snapshot
 
 

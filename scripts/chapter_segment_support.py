@@ -15,6 +15,7 @@ if str(SRC) not in sys.path:
 
 from pokemon_player.chapter_direction import ChapterGoal  # noqa: E402
 from pokemon_player import memory_map as mm  # noqa: E402
+from pokemon_player.capsule_a_navigation import resolve_grass_patch, snapshot_position  # noqa: E402
 from pokemon_player.pyboy_lab import ButtonInput, load_state, open_emulator, save_screenshot, save_state, snapshot  # noqa: E402
 from pokemon_player.rom import RomFingerprint  # noqa: E402
 from pokemon_player.skill_execution import (  # noqa: E402
@@ -218,12 +219,19 @@ def requires_viridian_checkpoint(
     if str(snapshot_dict.get("mode", "unknown")) == "battle":
         return False
     position = snapshot_dict.get("position") if isinstance(snapshot_dict.get("position"), dict) else {}
-    if (
-        chapter_direction.chapter_id == "chapter_6_capsule_a"
-        and position.get("map_id") in {0x32, 0x33, 0x34}
-    ):
+    if chapter_direction.chapter_id == "chapter_5b_route_22_spearow" and position.get("map_id") == 0x21:
+        # Reaching Route 22 is durable proof that the Viridian checkpoint travel
+        # already completed, even when a new supervisor segment has no local history.
+        return False
+    if chapter_direction.chapter_id == "chapter_6_capsule_a" and position.get("map_id") in {
+        0x21,
+        0x32,
+        0x33,
+        0x34,
+    }:
         # Frozen Capsule A starts are valid chapter starts after the checkpoint.
-        # Do not force them to backtrack to Viridian before searching the forest.
+        # Reaching Route 22 or the forest is also durable evidence that a clean-boot
+        # lineage passed Viridian, even after a supervisor segment boundary.
         return False
     return chapter_direction.chapter_id in {"chapter_5b_route_22_spearow", "chapter_6_capsule_a"}
 
@@ -310,6 +318,31 @@ def apply_chapter_skill_policy(
                 ],
             )
 
+    search_patch_id = {
+        "chapter_5b_route_22_spearow": "route_22_grass",
+        "chapter_6_capsule_a": "viridian_forest_south_grass",
+    }.get(chapter_direction.chapter_id)
+    search_patch = resolve_grass_patch(search_patch_id) if search_patch_id else None
+    position = snapshot_position(snapshot_dict)
+    hp_ratio = active_hp_ratio(snapshot_dict)
+    if (
+        search_patch
+        and search_patch.contains(position)
+        and snapshot_dict.get("mode") == "overworld"
+        and (hp_ratio is None or hp_ratio > 0.50)
+    ):
+        filtered = [skill for skill in available if skill.get("id") == "enter_grass_search_loop"]
+        if filtered:
+            return (
+                filtered,
+                [
+                    (
+                        f"The player is already inside {search_patch.label}; navigation to the patch is complete. "
+                        "Use enter_grass_search_loop patch=current_map to search for the chapter target."
+                    )
+                ],
+            )
+
     if (
         chapter_direction.chapter_id in {"chapter_7_prepare_for_brock", "chapter_7_level_for_brock"}
         and party_needs_healing(snapshot_dict)
@@ -339,8 +372,24 @@ def apply_chapter_skill_policy(
             )
 
     target_species = chapter_catch_target_species(chapter_direction)
-    if not target_species or enemy_matches_species(snapshot_dict, target_species):
+    if not target_species:
         return available, []
+    if enemy_matches_species(snapshot_dict, target_species):
+        hp_ratio = active_hp_ratio(snapshot_dict)
+        if hp_ratio is not None and hp_ratio <= 0.50:
+            return available, [f"{target_species} is the chapter target, but running remains available below 50% HP."]
+        filtered = [skill for skill in available if skill.get("id") != "run_from_wild_battle"]
+        if len(filtered) == len(available):
+            return filtered, []
+        return (
+            filtered,
+            [
+                (
+                    f"run_from_wild_battle suppressed because the active enemy is the chapter target, "
+                    f"{target_species}; weaken it safely or use attempt_catch."
+                )
+            ],
+        )
     enemy = snapshot_dict.get("enemy") if isinstance(snapshot_dict.get("enemy"), dict) else {}
     enemy_species = enemy.get("species_name") or "unknown"
     suppressed = {"attempt_catch"}

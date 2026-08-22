@@ -108,7 +108,6 @@ def main() -> int:
     if disposition_error:
         print(json.dumps(disposition_error, indent=2))
         return 2
-    lineage_root = case_root / "supervisor" / args.case_id
     metadata_path = case_root / "case-metadata.json"
     first_seed = int(case["firstInferenceSeed"])
 
@@ -147,6 +146,7 @@ def main() -> int:
         return 2
     operations_dir = case_root / "operations"
     paths = SupervisorPaths(case_root / "supervisor", args.case_id)
+    lineage_root = paths.lineage_root
     runner = SubprocessSegmentRunner(
         project_root=ROOT,
         provider="lmstudio-chat",

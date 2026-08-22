@@ -1539,9 +1539,12 @@ def skill_availability(snapshot_dict: dict[str, Any], screenshot_path: Path) -> 
         {
             "id": "literal_button_press",
             "label": SKILL_LABELS["literal_button_press"],
-            "enabled": True,
-            "reason": "Send one literal button press to progress transient UI or make a small recovery input.",
-            "status": "succeeded",
+            "enabled": False,
+            "reason": (
+                "Literal controller input is an operator-only diagnostic escape hatch; "
+                "the LLM Director must use a semantic skill."
+            ),
+            "status": "blocked",
             "params": {
                 "argsSchema": {"button": "one of: a, b, up, down, left, right, start, select"},
                 "exampleArgs": {"button": "a"},

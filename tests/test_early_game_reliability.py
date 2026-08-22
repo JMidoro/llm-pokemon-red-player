@@ -156,7 +156,7 @@ def write_completed_case(
     tested_commit: str = "a" * 40,
 ) -> None:
     case_root = results_root / case_id
-    lineage = case_root / "supervisor" / case_id
+    lineage = case_root / "supervisor" / "lineages" / case_id
     report = successful_report(case_root, lane=lane)
     report.update(
         {

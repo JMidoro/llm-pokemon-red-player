@@ -53,7 +53,8 @@ def test_director_availability_enables_grass_search_but_not_catch_in_overworld()
     assert by_id(skills, "enter_grass_search_loop")["enabled"] is True
     assert by_id(skills, "attempt_catch")["enabled"] is False
     literal = by_id(skills, "literal_button_press")
-    assert literal["enabled"] is True
+    assert literal["enabled"] is False
+    assert "operator-only" in literal["reason"]
     assert literal["params"]["buttons"] == ["a", "b", "up", "down", "left", "right", "start", "select"]
 
 

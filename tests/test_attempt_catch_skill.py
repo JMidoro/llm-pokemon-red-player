@@ -53,6 +53,25 @@ def test_attempt_catch_with_no_observed_delta_is_uncertain() -> None:
     assert "No ball consumption" in result.summary
 
 
+def test_attempt_catch_confirms_party_gain_before_post_catch_prompts_finish() -> None:
+    before = load_record("success_before")["snapshot"]
+    after = json.loads(json.dumps(before))
+    after["inventory"] = [
+        {**item, "quantity": item["quantity"] - 1} if item.get("item_id") == 0x04 else item
+        for item in after["inventory"]
+    ]
+    after["party"].append(
+        {"slot": 5, "species_name": "Nidoran F", "nickname": "NIDORAN"}
+    )
+    after["mode"] = "battle"
+    after["battle_type_raw"] = 1
+
+    result = attempt_catch(after, before_snapshot=before)
+
+    assert result.status == "succeeded"
+    assert "joined the party" in result.summary
+
+
 def test_attempt_catch_failure_classification_marks_throw_executor_failures() -> None:
     result = SkillResult(
         skill_id="attempt_catch",

@@ -145,7 +145,7 @@ def evaluate_case(
     rom_profile: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     case_id = str(case.get("id") or "")
-    lineage_root = case_root / "supervisor" / case_id
+    lineage_root = case_root / "supervisor" / "lineages" / case_id
     attempt_reports = load_segment_reports(lineage_root)
     reports = accepted_lineage_reports(attempt_reports)
     metadata_path = case_root / "case-metadata.json"

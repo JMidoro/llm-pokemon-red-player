@@ -90,6 +90,6 @@ def test_story_interaction_targets_cover_mart_and_oak_checkpoints() -> None:
     }
 
     assert default_interaction_target(mart) == "viridian_mart_clerk"
-    assert interaction_buttons("viridian_mart_clerk") == ("up", "a")
+    assert interaction_buttons("viridian_mart_clerk") == ("left", "a")
     assert default_interaction_target(oak) == "professor_oak"
     assert interaction_buttons("oak") == ("up", "a")

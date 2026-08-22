@@ -37,7 +37,7 @@ INTERACTIONS: dict[str, NpcInteraction] = {
         map_id=0x2A,
         x=2,
         y=5,
-        buttons=("up", "a"),
+        buttons=("left", "a"),
     ),
     "brock": NpcInteraction(
         id="brock",

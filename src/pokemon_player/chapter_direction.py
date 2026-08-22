@@ -111,8 +111,8 @@ def current_chapter_goal(snapshot: dict[str, Any]) -> ChapterGoal:
             evidence=evidence,
             hints=(
                 "Use choose_starter with starter=squirtle for the current early-game path.",
-                "The choose_starter skill owns positioning, confirmation dialogue, and the optional nickname flow.",
-                "Use navigate_within_pallet_region only when the player has not yet reached the starter surface.",
+                "First reach the stable starter-table handoff with navigate_within_pallet_region target=oaks_lab_starter_table.",
+                "The choose_starter skill owns ball selection, confirmation dialogue, and the optional nickname flow from that handoff.",
             ),
         )
 

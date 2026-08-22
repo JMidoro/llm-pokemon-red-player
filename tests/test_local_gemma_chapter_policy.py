@@ -47,6 +47,7 @@ def available_skills() -> list[dict[str, object]]:
         {"id": "run_from_wild_battle", "enabled": True},
         {"id": "talk_to_npc", "enabled": True},
         {"id": "use_move", "enabled": True},
+        {"id": "enter_grass_search_loop", "enabled": True},
     ]
 
 
@@ -119,7 +120,27 @@ def test_pikachu_chapter_allows_attempt_catch_for_target_species_id() -> None:
 
     assert goal.chapter_id == "chapter_6_capsule_a_pikachu_catch"
     assert "attempt_catch" in enabled_ids(filtered)
-    assert notes == []
+    assert "run_from_wild_battle" not in enabled_ids(filtered)
+    assert any("chapter target" in note for note in notes)
+
+
+def test_target_encounter_keeps_run_available_when_active_hp_is_low() -> None:
+    snapshot = {
+        "mode": "battle",
+        "battle_type_raw": 1,
+        "position": {"map_id": 0x21, "x": 31, "y": 11},
+        "active_party_member": {"species_name": "Squirtle", "hp": 9, "max_hp": 21},
+        "party": [{"species_name": "Squirtle", "hp": 9, "max_hp": 21}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 15}],
+        "enemy": {"species_id": 0x05, "species_name": "Spearow"},
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal)
+
+    assert goal.chapter_id == "chapter_5b_route_22_spearow_catch"
+    assert "run_from_wild_battle" in enabled_ids(filtered)
+    assert any("below 50% HP" in note for note in notes)
 
 
 def test_route_22_chapter_suppresses_attempt_catch_for_non_spearow() -> None:
@@ -333,8 +354,71 @@ def test_capsule_a_chapter_start_inside_forest_does_not_backtrack_for_checkpoint
     filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=[])
 
     assert goal.chapter_id == "chapter_6_capsule_a"
-    assert enabled_ids(filtered) == enabled_ids(available_skills())
-    assert notes == []
+    assert enabled_ids(filtered) == {"enter_grass_search_loop"}
+    assert any("navigation to the patch is complete" in note for note in notes)
+
+
+def test_route_22_grass_hands_off_from_navigation_to_encounter_search() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x21, "x": 33, "y": 11},
+        "party": [{"species_name": "Squirtle", "hp": 20, "max_hp": 20, "status": 0}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 15}],
+        "badge_names": [],
+    }
+    history = [
+        {
+            "skillId": "heal_at_pokecenter",
+            "result": {"status": "succeeded", "evidence": ["position=map=0x29,x=3,y=4"]},
+        }
+    ]
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=history)
+
+    assert goal.chapter_id == "chapter_5b_route_22_spearow"
+    assert enabled_ids(filtered) == {"enter_grass_search_loop"}
+    assert any("navigation to the patch is complete" in note for note in notes)
+
+
+def test_route_22_position_preserves_checkpoint_across_supervisor_segments() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x21, "x": 33, "y": 11},
+        "party": [{"species_name": "Squirtle", "hp": 20, "max_hp": 20, "status": 0}],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 15}],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=[])
+
+    assert goal.chapter_id == "chapter_5b_route_22_spearow"
+    assert enabled_ids(filtered) == {"enter_grass_search_loop"}
+    assert all("PokeCenter checkpoint" not in note for note in notes)
+
+
+def test_spearow_catch_at_route_22_preserves_checkpoint_for_next_segment() -> None:
+    snapshot = {
+        "mode": "overworld",
+        "battle_type_raw": 0,
+        "position": {"map_id": 0x21, "x": 31, "y": 11},
+        "party": [
+            {"species_name": "Squirtle", "hp": 19, "max_hp": 22, "status": 0},
+            {"species_name": "Spearow", "hp": 8, "max_hp": 16, "status": 0},
+        ],
+        "inventory": [{"item_id": 0x04, "item_name": "Poke Ball", "quantity": 13}],
+        "badge_names": [],
+    }
+    goal = current_chapter_goal(snapshot)
+
+    filtered, notes = apply_chapter_skill_policy(available_skills(), snapshot, goal, history=[])
+
+    assert goal.chapter_id == "chapter_6_capsule_a"
+    assert "navigate_within_viridian_forest_region" in enabled_ids(filtered)
+    assert all("PokeCenter checkpoint" not in note for note in notes)
 
 
 def test_level_for_brock_training_battle_suppresses_running_and_catching() -> None:
