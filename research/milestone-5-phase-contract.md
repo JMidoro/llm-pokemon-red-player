@@ -90,6 +90,16 @@ Milestone 5 passes only when one fixed commit proves all of the following:
 
 The clean-boot matrix may be a long wall-clock evaluation. It must not be polled through automatic goal continuation. Before starting it, pause the active goal and install a scheduled monitor that checks durable trial summaries at a sensible interval, diagnoses preserved failures, and never stops a healthy run.
 
+The tracked qualification entry point is
+`scripts/run_milestone_5_qualification.py`. A launch must provide the exact
+candidate commit and a candidate-specific results root, and must use the project
+Python environment that contains PyBoy. The case runner checks its emulator
+dependencies before it can archive or create case evidence. On resume, the
+orchestrator skips only cases whose summaries have `status=completed`; a missing
+segment report, runtime failure, or provider abort stops the matrix as
+infrastructure evidence. Only the exact case labeled `infrastructure_abort` may
+be archived and identically rerun with `--restart-infrastructure-abort`.
+
 ## Human burden
 
 No new gameplay capture is currently required. Generated states remain provisional artifacts rather than promoted golden states; this is acceptable for a frozen evaluation derivative when its source, patch, invariants, and hashes are explicit. Human review is limited to a small sample of success/failure bundles after automated scoring.

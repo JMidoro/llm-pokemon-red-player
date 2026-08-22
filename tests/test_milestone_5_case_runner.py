@@ -98,3 +98,17 @@ def test_clean_commit_check_includes_untracked_source_files(
         "--porcelain",
         "--untracked-files=normal",
     ]
+
+
+def test_runtime_dependency_preflight_reports_missing_packages(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        case_runner.importlib.util,
+        "find_spec",
+        lambda module: None if module == "pyboy" else SimpleNamespace(),
+    )
+
+    assert case_runner.runtime_dependency_issues() == [
+        "Python runtime is missing required package: pyboy"
+    ]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import subprocess
 import sys
@@ -82,6 +83,20 @@ def main() -> int:
     )
     if case is None:
         print(f"Frozen case not found in {args.lane}: {args.case_id}")
+        return 2
+
+    dependency_issues = runtime_dependency_issues()
+    if dependency_issues:
+        print(
+            json.dumps(
+                {
+                    "status": "runtime_unavailable",
+                    "issues": dependency_issues,
+                    "pythonExecutable": sys.executable,
+                },
+                indent=2,
+            )
+        )
         return 2
 
     try:
@@ -285,6 +300,18 @@ def clean_tested_commit(root: Path) -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def runtime_dependency_issues() -> list[str]:
+    required_modules = {
+        "PIL": "pillow",
+        "pyboy": "pyboy",
+    }
+    return [
+        f"Python runtime is missing required package: {package}"
+        for module, package in required_modules.items()
+        if importlib.util.find_spec(module) is None
+    ]
 
 
 def resolve_repository_file(root: Path, relative: Path) -> Path:

@@ -168,15 +168,47 @@ def evaluate_case(
     )
 
     if not attempt_reports:
+        supervisor_reason = str(
+            final_checkpoint.get("machineReason")
+            or final_checkpoint.get("reason")
+            or supervisor_state.get("reason")
+            or ""
+        )
+        supervisor_status = str(supervisor_state.get("state") or "")
+        infrastructure_abort = (
+            supervisor_status == "failed"
+            or supervisor_reason in {"model_error", "supervisor_error"}
+        )
+        status = "infrastructure_abort" if infrastructure_abort else "incomplete"
+        evidence = []
+        if supervisor_reason:
+            evidence.append(f"supervisor_reason={supervisor_reason}")
+        segment_checkpoint = _mapping(final_checkpoint.get("segmentCheckpoint"))
+        failure_category = str(
+            _mapping(final_checkpoint.get("finish")).get("failureCategory")
+            or segment_checkpoint.get("verdict")
+            or ""
+        )
+        if failure_category:
+            evidence.append(f"failure_category={failure_category}")
         return {
             "id": case_id,
             "lane": lane,
-            "status": "incomplete",
+            "status": status,
             "success": False,
             "usefulFailure": False,
-            "summary": "No completed segment report exists for this frozen case.",
+            "summary": (
+                "The supervisor failed before producing a completed segment report."
+                if infrastructure_abort
+                else "No completed segment report exists for this frozen case."
+            ),
+            "evidence": evidence,
+            "evidenceIssues": evidence_issues,
             "reportCount": 0,
             "attemptReportCount": 0,
+            "supervisorReason": supervisor_reason or None,
+            "testedCommit": metadata.get("testedCommit"),
+            "firstInferenceSeed": metadata.get("firstInferenceSeed"),
             "executedIllegalActions": [],
             "destructiveActions": [],
             "literalButtonActions": 0,

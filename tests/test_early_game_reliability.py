@@ -10,6 +10,7 @@ from pokemon_player.early_game_reliability import (
     capsule_a_success,
     clean_boot_boulder_success,
     evaluate_deterministic_branches,
+    evaluate_case,
     evaluate_suite,
     failure_is_useful,
     validate_frozen_suite,
@@ -300,6 +301,44 @@ def test_failure_usefulness_requires_category_state_screenshot_and_evidence(
         final_checkpoint={},
         project_root=tmp_path,
     )
+
+
+def test_missing_segment_report_after_supervisor_failure_is_infrastructure_abort(
+    tmp_path: Path,
+) -> None:
+    case_root = tmp_path / "results" / "capsule-1"
+    lineage = case_root / "supervisor" / "lineages" / "capsule-1"
+    write_json(
+        case_root / "case-metadata.json",
+        {
+            "testedCommit": "a" * 40,
+            "firstInferenceSeed": 5201,
+            "humanGameplayInterventions": 0,
+        },
+    )
+    write_json(
+        lineage / "state.json",
+        {"state": "failed", "reason": "supervisor_error"},
+    )
+    write_json(
+        lineage / "final-checkpoint.json",
+        {
+            "machineReason": "supervisor_error",
+            "segmentCheckpoint": {"verdict": "supervisor_error"},
+        },
+    )
+
+    result = evaluate_case(
+        lane="capsuleA",
+        case={"id": "capsule-1"},
+        case_root=case_root,
+        project_root=tmp_path,
+    )
+
+    assert result["status"] == "infrastructure_abort"
+    assert result["success"] is False
+    assert result["testedCommit"] == "a" * 40
+    assert "supervisor_reason=supervisor_error" in result["evidence"]
 
 
 def test_complete_green_matrix_passes_only_with_branch_evidence(tmp_path: Path) -> None:
